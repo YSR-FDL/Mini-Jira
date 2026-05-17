@@ -1,0 +1,72 @@
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --blue:         #0052CC;
+  --blue-dark:    #0747A6;
+  --blue-glow:    rgba(0, 82, 204, 0.15);
+  --red:          #C9372C;
+  --red-glow:     rgba(201, 55, 44, 0.12);
+  --green:        #00875A;
+  --green-light:  #36B37E;
+
+  --text-dark:    #172B4D;
+  --text-mid:     #44546F;
+  --text-soft:    #6B778C;
+  --text-faint:   #97A0AF;
+
+  --border:       #DFE1E6;
+  --border-mid:   #B3BAC5;
+  --input-bg:     #F7F8FA;
+
+  --gradient-left: linear-gradient(145deg, #0747A6 0%, #0052CC 40%, #253858 100%);
+  --gradient-btn:  linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
+
+  --font-title: 'Sora', sans-serif;
+  --font-body:  'DM Sans', sans-serif;
+
+  --r-sm:   6px;
+  --r-md:   10px;
+  --r-lg:   14px;
+  --r-full: 9999px;
+}
+
+/* ─── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #root { height: 100%; width: 100%; }
+body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+button { font-family: var(--font-body); cursor: pointer; }
+input  { font-family: var(--font-body); }
+
+/* ─── SCROLLBAR ──────────────────────────────────────────── */
+.scroll::-webkit-scrollbar       { width: 5px; }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+.scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--r-full); }
+
+/* ─── KEYFRAMES ──────────────────────────────────────────── */
+@keyframes floatA {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%     { transform: translateY(-18px) rotate(4deg); }
+}
+@keyframes floatB {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%     { transform: translateY(-12px) rotate(-3deg); }
+}
+@keyframes floatC {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50%     { transform: translateY(-22px) rotate(6deg); }
+}
+@keyframes pulseRing {
+  0%,100% { opacity:.25; transform:translate(-50%,-50%) scale(1); }
+  50%     { opacity:.07; transform:translate(-50%,-50%) scale(1.06); }
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeScale {
+  from { opacity:0; transform:scale(.96); }
+  to   { opacity:1; transform:scale(1); }
+}
+@keyframes tickPop {
+  from { transform:scale(0) rotate(-20deg); }
+  to   { transform:scale(1) rotate(0deg); }
+}
