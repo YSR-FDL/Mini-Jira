@@ -9,11 +9,16 @@ function App() {
   return (
     <React.StrictMode>
       <BrowserRouter>
-      <Routes>
+      {/*<Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/register" element={<RegisterPage/>} />
-      </Routes>
+      </Routes>*/}
+      <Routes>
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
+    </Routes>
     </BrowserRouter>
     </React.StrictMode>
   );
