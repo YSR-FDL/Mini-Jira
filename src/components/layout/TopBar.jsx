@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Search, Bell, HelpCircle, Settings } from "lucide-react";
-import s from "../styles/Profile.module.css";
+import s from "../../styles/Profile.module.css";
 
 export default function TopBar() {
   const [search, setSearch] = useState("");

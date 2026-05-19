@@ -1,6 +1,6 @@
 import React from "react";
-import { stats } from "../data/mockData";
-import s from "../styles/Profile.module.css";
+import { stats } from "../../data/mockData";
+import s from "../../styles/Profile.module.css";
 
 export default function Statistics() {
   const boxes = [

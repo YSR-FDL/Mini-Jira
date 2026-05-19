@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
-import TopBar from "../components/TopBar";
-import ProfileHeader from "../components/ProfileHeader";
-import Statistics from "../components/Statistics";
-import About from "../components/About";
-import Contributions from "../components/Contributions";
-import s from "../styles/Profile.module.css";
+import Sidebar from "../../components/layout/Sidebar";
+import TopBar from "../../components/layout/TopBar";
+import ProfileHeader from "../../components/profile/ProfileHeader";
+import Statistics from "../../components/profile/Statistics";
+import About from "../../components/profile/About";
+import Contributions from "../../components/profile/Contributions";
+
+import s from "../../styles/Profile.module.css";
 
 export default function ProfilePage() {
   const [activeNav, setActiveNav]   = useState("profile");

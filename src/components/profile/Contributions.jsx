@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Clock, Code2, Palette, CheckSquare} from "lucide-react";
-import { contributions, completedContributions } from "../data/mockData";
-import s from "../styles/Profile.module.css";
+import { contributions, completedContributions } from "../../data/mockData";
+import s from "../../styles/Profile.module.css";
 
 const statusStyles = {
   "En cours": {

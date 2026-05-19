@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import LeftPanel from './LeftPanel'
-import '../../styles/AuthLayout.css'
+import LeftPanel from '../../components/auth/LeftPanel';
+import '../../styles/AuthLayout.css';
 
 const ROLES = [
   { id: 'scrum',    label: 'Scrum Master',  color: '#6554C0' },

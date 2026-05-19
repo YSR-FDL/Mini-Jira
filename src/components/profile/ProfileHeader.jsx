@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { UserCircle, Pencil } from "lucide-react";
-import { userProfile } from "../data/mockData";
-import s from "../styles/Profile.module.css";
+import { userProfile } from "../../data/mockData";
+import s from "../../styles/Profile.module.css";
 import { useNavigate } from "react-router-dom";
 
 export default function ProfileHeader() {

@@ -1,9 +1,9 @@
 import React from 'react';
 import './styles/global.css';
-import LeftPanel from './components/auth/LeftPanel';
-import LoginPage from './components/auth/LoginPage.jsx';
-import RegisterPage from './components/auth/RegisterPage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
+import LeftPanel from './components/auth/LeftPanel.jsx';
+import LoginPage from './pages/auth/LoginPage.jsx';
+import RegisterPage from './pages/auth/RegisterPage.jsx';
+import ProfilePage from './pages/global/ProfilePage.jsx';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 function App() {

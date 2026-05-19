@@ -1,7 +1,7 @@
 import React from "react";
 import { GraduationCap, Users, Building2, MapPin, Mail, Phone, Info } from "lucide-react";
-import { userProfile } from "../data/mockData";
-import s from "../styles/Profile.module.css";
+import { userProfile } from "../../data/mockData";
+import s from "../../styles/Profile.module.css";
 
 const ROWS = [
   /*{ Icon: GraduationCap, value: (p) => p.status},
