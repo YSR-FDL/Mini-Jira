@@ -1,110 +1,76 @@
-// ─────────────────────────────────────────────────────
-//  Sidebar.jsx
-//  Gère son propre state : liste équipes + formulaire
-// ─────────────────────────────────────────────────────
 import React, { useState } from "react";
-import { userProfile, teams } from "../data/mockData";
+import { useNavigate } from "react-router-dom";
+import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight,} from "lucide-react";
+import s from "../styles/Sidebar.module.css";
 
-export default function Sidebar() {
-  // ── State ──────────────────────────────────────────
-  const [teamList, setTeamList]   = useState(teams);
-  const [showForm, setShowForm]   = useState(false);
-  const [newTeamName, setNewTeamName] = useState("");
-  const [error, setError]         = useState("");
+export const navItems = [
+  { id: "dashboard",   label: "Dashboard",  icon: "dashboard" },
+  { id: "projets",     label: "Projets",    icon: "projects"  },
+  { id: "tâches",      label: "Tâches",     icon: "tasks"     },
+  { id: "équipes",     label: "Équipes",    icon: "teams"     },
+  { id: "reports",     label: "Reports",    icon: "reports"   },
+  { id: "paramètres",  label: "Paramètres", icon: "settings"  },
+  { id: "profil",      label: "Profil",     icon: "profile"   },
+];
 
-  // ── Validation + ajout équipe ──────────────────────
-  const handleCreateTeam = () => {
-    if (!newTeamName.trim()) {
-      setError("Le nom de l'équipe est requis");
-      return;
-    }
+const ICONS = {
+  dashboard: LayoutDashboard,
+  projects:  FolderKanban,
+  tasks:     CheckSquare,
+  teams:     Users,
+  reports:   BarChart2,
+  settings:  Settings,
+  profile:   UserCircle,
+};
 
-    const colors = ["#0052CC", "#6554C0", "#00875A", "#FF5630", "#00B8D9", "#FF8B00"];
-    setTeamList((prev) => [
-      ...prev,
-      { id: Date.now(), name: newTeamName.trim(), members: 1, color: colors[prev.length % colors.length] },
-    ]);
+export default function Sidebar({ activeNav, onNavChange, collapsed, onToggle }) {
+  const navigate = useNavigate();
 
-    setNewTeamName("");
-    setError("");
-    setShowForm(false);
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleCreateTeam();
-    if (e.key === "Escape") { setShowForm(false); setError(""); }
+  const handleClick = (id) => {
+    onNavChange(id);
+    if (id === "profil") navigate("/profile");
+    if (id === "tâches") navigate("/tâches");
   };
 
   return (
-    <aside className="sidebar">
+    <aside className={`${s.sidebar}${collapsed ? " " + s.collapsed : ""}`}>
 
-      {/* ── Informations ── */}
-      <div className="sidebar-card">
-        <div className="sidebar-title">Informations</div>
-
-        <div className="info-row">
-          <span>📧</span>
-          <div>
-            <span className="info-label">Email</span>
-            <span className="info-value">{userProfile.email}</span>
+      {/* ── Brand + toggle ── */}
+      <div className={s.brand}>
+        {!collapsed && (
+          <div className={s.brandLeft}>
+            <div className={s.brandText}>
+              <div className={s.brandName}>MiniJira</div>
+              <div className={s.brandSub}>Management Agile</div>
+            </div>
           </div>
-        </div>
-
-        <div className="info-row">
-          <span>📍</span>
-          <div>
-            <span className="info-label">Localisation</span>
-            <span className="info-value">{userProfile.location}</span>
-          </div>
-        </div>
-
-        <div className="info-row">
-          <span>🎓</span>
-          <div>
-            <span className="info-label">Département</span>
-            <span className="info-value">{userProfile.department}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Équipes ── */}
-      <div className="sidebar-card">
-        <div className="sidebar-title">Équipes</div>
-
-        {teamList.map((team) => (
-          <div key={team.id} className="team-item">
-            <span className="team-dot" style={{ background: team.color }} />
-            <span className="team-name">{team.name}</span>
-            <span className="team-count">{team.members} membres</span>
-          </div>
-        ))}
-
-        {/* Formulaire inline */}
-        {showForm && (
-          <div className="new-team-row">
-            <input
-              autoFocus
-              className={`new-team-input${error ? " error" : ""}`}
-              value={newTeamName}
-              onChange={(e) => { setNewTeamName(e.target.value); setError(""); }}
-              onKeyDown={handleKeyDown}
-              placeholder="Nom de l'équipe…"
-            />
-            <button className="new-team-ok" onClick={handleCreateTeam}>OK</button>
-          </div>
-        )}
-
-        {error && (
-          <p className="form-error" style={{ padding: "0 16px 8px" }}>⚠ {error}</p>
         )}
 
         <button
-          className="create-team-btn"
-          onClick={() => { setShowForm((v) => !v); setError(""); }}
+          className={s.toggleBtn}
+          onClick={onToggle}
+          title={collapsed ? "Ouvrir le menu" : "Réduire le menu"}
         >
-          + Créer une équipe
+          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
         </button>
       </div>
+      
+      <nav className={s.nav}>
+        {navItems.map((item) => {
+          const Icon = ICONS[item.icon] || UserCircle;
+          return (
+            <button key={item.id} className={`${s.navItem}${activeNav === item.id ? " " + s.active : ""}`}
+              onClick={() => handleClick(item.id)} data-tooltip={collapsed ? item.label : undefined}
+              title={collapsed ? item.label : undefined}
+            >
+              <span className={s.navIcon}>
+                <Icon size={17} strokeWidth={activeNav === item.id ? 2.2 : 1.8} />
+              </span>
+              <span className={s.navLabel}>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
     </aside>
   );

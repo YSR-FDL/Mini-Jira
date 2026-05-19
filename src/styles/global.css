@@ -1,4 +1,3 @@
-/* ─── TOKENS ─────────────────────────────────────────────── */
 :root {
   --blue:         #0052CC;
   --blue-dark:    #0747A6;
@@ -7,7 +6,9 @@
   --red-glow:     rgba(201, 55, 44, 0.12);
   --green:        #00875A;
   --green-light:  #36B37E;
+  --blue-hover: #1D4ED8;
 
+  --text-light: #6B7280;
   --text-dark:    #172B4D;
   --text-mid:     #44546F;
   --text-soft:    #6B778C;
@@ -16,10 +17,13 @@
   --border:       #DFE1E6;
   --border-mid:   #B3BAC5;
   --input-bg:     #F7F8FA;
+  --bg:#F9FAFB;
+  --white: #FFFFFF;
 
   --gradient-left: linear-gradient(145deg, #0747A6 0%, #0052CC 40%, #253858 100%);
   --gradient-btn:  linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
 
+  --font: 'Inter', 'Segoe UI', sans-serif;
   --font-title: 'Sora', sans-serif;
   --font-body:  'DM Sans', sans-serif;
 
@@ -27,19 +31,41 @@
   --r-md:   10px;
   --r-lg:   14px;
   --r-full: 9999px;
+  --sidebar-w: 240px;
+  --sidebar-w-closed: 64px;
+  --topbar-h: 56px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.09), 0 2px 4px rgba(0,0,0,.05);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,.11), 0 4px 8px rgba(0,0,0,.06);
+  --transition: 220ms cubic-bezier(.4,0,.2,1);
+  --blue-light: rgba(37,99,235,.10);
+--blue-subtle: rgba(37,99,235,.18);
+
 }
 
 /* ─── RESET ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; width: 100%; }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+.app-shell { display: flex; min-height: 100vh; }
 button { font-family: var(--font-body); cursor: pointer; }
 input  { font-family: var(--font-body); }
+
+.modal {
+  background: white; border-radius: var(--radius-lg);
+  width: 100%; max-width: 460px; padding: 32px;
+  box-shadow: var(--shadow-lg); animation: fadeUp .2s ease;
+}
 
 /* ─── SCROLLBAR ──────────────────────────────────────────── */
 .scroll::-webkit-scrollbar       { width: 5px; }
 .scroll::-webkit-scrollbar-track { background: transparent; }
 .scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--r-full); }
+
+
 
 /* ─── KEYFRAMES ──────────────────────────────────────────── */
 @keyframes floatA {
@@ -70,3 +96,8 @@ input  { font-family: var(--font-body); }
   from { transform:scale(0) rotate(-20deg); }
   to   { transform:scale(1) rotate(0deg); }
 }
+
+/* Pour la page profil */
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
