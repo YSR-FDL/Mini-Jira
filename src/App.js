@@ -4,7 +4,13 @@ import LeftPanel from './components/auth/LeftPanel.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
 import ProfilePage from './pages/global/ProfilePage.jsx';
+<<<<<<< HEAD
 import ProfileUpdate from './pages/global/ProfileUpdate.jsx';
+=======
+
+import Backlog from './pages/project/Backlog.jsx';
+
+>>>>>>> 00bb465a18531e09ce17aa003eb78bfecb395af0
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 function App() {
@@ -16,7 +22,13 @@ function App() {
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/register" element={<RegisterPage/>} />
         <Route path="/profile" element={<ProfilePage />} />
+<<<<<<< HEAD
         <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
+=======
+
+        <Route path="/backlog" element={<Backlog />} />
+
+>>>>>>> 00bb465a18531e09ce17aa003eb78bfecb395af0
       </Routes>
     </BrowserRouter>
     </React.StrictMode>

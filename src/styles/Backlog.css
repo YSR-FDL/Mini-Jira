@@ -1,0 +1,233 @@
+:root {
+    /* Primary Brand Colors */
+    --color-primary-blue: #185fa5;
+    --color-primary-blue-light: #e6f1fb;
+    --color-primary-blue-dark: #0f3d78;
+
+    /* Status Colors */
+    --color-success-green: #0f6e56;
+    --color-success-green-light: #e1f5ee;
+    --color-warning-orange: #d48a06;
+    --color-warning-orange-light: #fef3e2;
+    --color-danger-red: #a32d2d;
+    --color-danger-red-light: #fcebeb;
+
+    /* Neutral Gray Scale */
+    --color-gray-100: #f4f5f7;
+    --color-gray-300: #dfe1e6;
+    --color-gray-500: #8993a4;
+    --color-gray-700: #172b4d;
+
+    /* Background Colors */
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f4f5f7;
+
+    /* Border Colors */
+    --color-border-secondary: #dfe1e6;
+    --color-border-tertiary: #ebecf0;
+
+    /* Text Colors */
+    --color-text-primary: #172b4d;
+    --color-text-secondary: #5e6c84;
+    --color-text-tertiary: #8993a4;
+
+    /* Component Border Radii */
+    --border-radius-card: 8px;
+    --border-radius-button: 6px;
+    --border-radius-badge: 12px;
+}
+
+
+/*     FILTER BAR     */
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+    margin-bottom: 16px;
+}
+.filter-chip {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: var(--border-radius-badge);
+    border: 0.5px solid var(--color-border-secondary);
+    background: var(--color-background-primary);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: all 150ms ease;
+}
+.filter-chip:hover {
+    border-color: var(--color-primary-blue);
+    background: var(--color-primary-blue-light);
+    color: var(--color-primary-blue);
+}
+.search-local {
+    min-width: 200px;
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-button);
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    outline: none;
+}
+.search-local:focus { border-color: var(--color-primary-blue); }
+
+/* ========================================= */
+/* SPRINT BLOCK                              */
+/* ========================================= */
+.sprint-block {
+    border: 1px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-card);
+    overflow: hidden;
+    transition: all 200ms ease;
+    margin-bottom: 24px;
+}
+.sprint-block:hover {
+    border-color: var(--color-border-secondary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.sprint-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--color-background-secondary);
+    border-bottom: 1px solid var(--color-border-tertiary);
+}
+.sprint-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+/* ============ +/
+/* STORY ROW */
+
+.story-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--color-border-tertiary);
+    cursor: pointer;
+    background: var(--color-background-primary);
+}
+.story-row:last-child { border-bottom: none; }
+.story-row:hover { background: var(--color-background-secondary); }
+
+.drag-handle {
+    font-size: 12px;
+    color: var(--color-text-tertiary);
+    margin-right: 6px;
+    cursor: grab;
+    opacity: 0.5;
+}
+
+/* Priority Dots */
+.prio-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-right: 10px; }
+.p-critical { background: #e24b4a; }
+.p-high     { background: #ef9f27; }
+.p-med      { background: #5ca8f4; }
+.p-low      { background: #639922; }
+
+/* Story ID & Title */
+.story-id {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    width: 44px;
+    flex-shrink: 0;
+}
+.story-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Priority Badges */
+.priority-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 5px;
+    border-radius: var(--border-radius-badge);
+    margin-right: 6px;
+}
+.priority-critical-badge { background: var(--color-danger-red-light); color: var(--color-danger-red); }
+.priority-high-badge     { background: var(--color-warning-orange-light); color: var(--color-warning-orange); }
+.priority-medium-badge   { background: var(--color-primary-blue-light); color: var(--color-primary-blue); }
+.priority-low-badge      { background: var(--color-success-green-light); color: var(--color-success-green); }
+
+/* Tags */
+.story-tags { display: flex; gap: 5px; margin-left: 10px; }
+.tag {
+    font-size: 10px; padding: 1px 7px;
+    border-radius: var(--border-radius-badge); font-weight: 500;
+}
+.t-feat { background: var(--color-primary-blue-light); color: var(--color-primary-blue); }
+.t-bug  { background: var(--color-danger-red-light); color: var(--color-danger-red); }
+.t-tech { background: var(--color-gray-100); color: var(--color-gray-700); }
+
+/* Status */
+.story-status {
+    font-size: 11px;
+    width: 80px;
+    flex-shrink: 0;
+    text-align: center;
+    margin-left: 8px;
+}
+.s-todo { color: var(--color-text-tertiary); }
+.s-prog { color: var(--color-primary-blue); font-weight: 500; }
+.s-rev  { color: var(--color-warning-orange); font-weight: 500; }
+.s-done { color: var(--color-success-green); font-weight: 500; }
+
+/* Points & Avatar */
+.story-pts {
+    font-size: 11px; color: var(--color-text-tertiary);
+    width: 36px; text-align: right; margin-left: 6px;
+}
+.story-av {
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 10px; font-weight: 500;
+    display: flex; align-items: center; justify-content: center;
+    margin-left: 10px; flex-shrink: 0;
+}
+
+/* ============ +/
+/*  Sprint block */
+
+
+.chevron { font-size: 10px; color: var(--color-text-tertiary); cursor: pointer; transition: transform 0.2s; user-select: none; }
+.sprint-dates { font-size: 11px; color: var(--color-text-tertiary); }
+
+/* Badges de statut du sprint */
+.badge { font-size: 10px; padding: 2px 8px; border-radius: var(--border-radius-badge); font-weight: 500; }
+.b-active { background: var(--color-success-green-light); color: var(--color-success-green); }
+.b-planned { background: var(--color-primary-blue-light); color: var(--color-primary-blue); }
+.b-done { background: var(--color-gray-100); color: var(--color-gray-700); }
+
+/* Jauge de statistiques */
+.sprint-stats { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.stat { font-size: 11px; color: var(--color-text-tertiary); }
+.stat span { color: var(--color-text-primary); font-weight: 500; }
+.pbar-wrap { width: 70px;}
+.pbar-bg { height: 4px; background: var(--color-border-tertiary); border-radius: 2px; }
+.pbar-fill { height: 4px; background: var(--color-success-green); border-radius: 2px; transition: width 0.4s ease; }
+
+/* Actions & Boutons */
+.sprint-actions { display: flex; gap: 6px; }
+.btn-xs { font-size: 11px; padding: 3px 9px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-button); background: transparent; color: var(--color-text-secondary); cursor: pointer; transition: all 150ms ease; }
+.btn-xs:hover { background: var(--color-background-secondary); }
+.btn-xs.blue { background: var(--color-primary-blue); color: white; border-color: var(--color-primary-blue); }
+.btn-xs.blue:hover { background: var(--color-primary-blue-dark); }
+
+/* Bouton Ajouter Ticket */
+.add-story { display: flex; align-items: center; gap: 6px; padding: 9px 14px; font-size: 12px; color: var(--color-text-tertiary); cursor: pointer; border-top: 0.5px dashed var(--color-border-tertiary); transition: all 150ms ease; }
+.add-story:hover { color: var(--color-text-secondary); background: var(--color-background-secondary); }
