@@ -19,13 +19,10 @@ function App() {
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/register" element={<RegisterPage/>} />
         <Route path="/profile" element={<ProfilePage />} />
-<<<<<<< HEAD
         <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
-=======
 
         <Route path="/backlog" element={<Backlog />} />
 
->>>>>>> 00bb465a18531e09ce17aa003eb78bfecb395af0
       </Routes>
     </BrowserRouter>
     </React.StrictMode>
