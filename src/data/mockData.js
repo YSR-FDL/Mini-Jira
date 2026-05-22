@@ -69,4 +69,71 @@ export const completedContributions = [
   },
 ];
 
+export const teamsData = [
+  {
+    id: 1,
+    name: "Équipe Frontend",
+    description: "Développement des interfaces utilisateur et de l'expérience client pour la plateforme...",
+    membres: 12,
+    projets: 5,
+    progression: 85,
+    archived: false,
+  },
+  {
+    id: 2,
+    name: "Équipe Backend",
+    description: "Architecture microservices, gestion des bases de données et APIs haute...",
+    membres: 8,
+    projets: 3,
+    progression: 40,
+    archived: false,
+  },
+  {
+    id: 3,
+    name: "Équipe UI/UX",
+    description: "Conception des systèmes de design, prototypage et tests utilisateurs.",
+    membres: 4,
+    projets: 4,
+    progression: 95,
+    archived: false,
+  },
+  {
+    id: 4,
+    name: "Équipe Recherche Agile",
+    description: "Veille technologique et amélioration continue des processus de gestion de projet.",
+    membres: 5,
+    projets: 2,
+    progression: 25,
+    archived: false,
+  },
+  {
+    id: 5,
+    name: "Équipe Collaboration ENSIAS",
+    description: "Projet académique de fin d'études réalisé en partenariat avec l'ENSIAS.",
+    membres: 20,
+    projets: 1,
+    progression: 0,
+    archived: true,
+  },
+]
+
+export const usersData = [
+  {
+    id: 1,
+    name: "Khalid Lamachi",
+  },
+  {
+    id: 2,
+    name: "Salma Amrani",
+  },
+  {
+    id: 3,
+    name: "Yassine El Alaoui",
+  },
+  {
+    id: 4,
+    name: "Aya Bennani",
+  },
+]
+
 

@@ -20,8 +20,6 @@
   --bg:#F9FAFB;
   --white: #FFFFFF;
 
-    /* ===== Compatibilité Claude ===== */
-
   --blue-primary: var(--blue);
   --sidebar-width: var(--sidebar-w);
   --topbar-height: var(--topbar-h);
@@ -67,11 +65,10 @@
   --shadow-lg: 0 10px 24px rgba(0,0,0,.11), 0 4px 8px rgba(0,0,0,.06);
   --transition: 220ms cubic-bezier(.4,0,.2,1);
   --blue-light: rgba(37,99,235,.10);
---blue-subtle: rgba(37,99,235,.18);
+  --blue-subtle: rgba(37,99,235,.18);
 
 }
 
-/* ─── RESET ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; width: 100%; }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
