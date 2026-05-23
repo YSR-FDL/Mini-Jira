@@ -1,7 +1,7 @@
 
 
 export const taskService = {
-    createTask: async (title, sprintId) => {
+    createTask: async (sprintId, title) => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 const newTask = {
@@ -32,6 +32,15 @@ export const taskService = {
         return new Promise((resolve) => {
             setTimeout(() => {
                 console.log(`[API] Tâche ${taskId} déplacée vers sprint ${newSprintId} à l'index ${newIndex}`);
+                resolve(true);
+            }, 300);
+        });
+    },
+
+    updateTaskStatus: async (taskId, newStatus, newIndex) => {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                console.log(`[API] Statut de la tâche ${taskId} mis à jour : ${newStatus} à l'index ${newIndex}`);
                 resolve(true);
             }, 300);
         });
