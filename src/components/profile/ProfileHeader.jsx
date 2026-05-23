@@ -24,7 +24,7 @@ export default function ProfileHeader() {
             <div className={s.profileRole}>{role}</div>
           </div>
 
-          <button className={s.editProfileBtn} onClick = {() => {navigate("/login");}}>
+          <button className={s.editProfileBtn} onClick = {() => {navigate("/ProfileUpdate");}}>
             <Pencil size={14} /> Modifier mon Profil
           </button>
         </div>

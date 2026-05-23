@@ -10,7 +10,7 @@ export const navItems = [
   { id: "équipes",     label: "Équipes",    icon: "teams"     },
   { id: "reports",     label: "Reports",    icon: "reports"   },
   { id: "paramètres",  label: "Paramètres", icon: "settings"  },
-  { id: "profil",      label: "Profil",     icon: "profile"   },
+  { id: "profile",     label: "Profil",     icon: "profile"   },
 ];
 
 const ICONS = {
@@ -23,13 +23,12 @@ const ICONS = {
   profile:   UserCircle,
 };
 
-export default function Sidebar({ activeNav, onNavChange, collapsed, onToggle }) {
+export default function Sidebar({ activeNav, collapsed, onToggle }) {
   const navigate = useNavigate();
 
   const handleClick = (id) => {
-    onNavChange(id);
-    if (id === "profil") navigate("/profile");
-    if (id === "tâches") navigate("/tâches");
+    if (id === "profile") navigate("/profile");
+    if (id === "tâches") navigate("/profile");
   };
 
   return (

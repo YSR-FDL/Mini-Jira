@@ -1,38 +1,32 @@
 import React, { useState } from "react";
-import Sidebar from "../../components/layout/Sidebar";
-import TopBar from "../../components/layout/TopBar";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import Statistics from "../../components/profile/Statistics";
 import About from "../../components/profile/About";
 import Contributions from "../../components/profile/Contributions";
-
+import Layout from "../../components/layout/Layout";
 import s from "../../styles/Profile.module.css";
 
 export default function ProfilePage() {
-  const [activeNav, setActiveNav]   = useState("profile");
-  const [collapsed, setCollapsed]   = useState(false);
 
   return (
-    <div className="app-shell">
-      <Sidebar activeNav={activeNav} onNavChange={setActiveNav}
-        collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)}
-      />
-
-      <div className={`${s.mainArea}${collapsed ? " " + s.sidebarCollapsed : ""}`}>
-        <TopBar pageTitle="Page profil" />
-
-        <div className={s.pageContent}>
-          <ProfileHeader />
-          
-          <div className={s.profileBody}>
-            <Statistics />
-            <div className={s.bottomColumns}>
-              <About />
-              <Contributions />
+      <Layout activeNav="profile" pageTitle="Page profil">
+          <div className={s.pageContent}>
+            <ProfileHeader />
+            
+            <div className={s.profileBody}>
+              <Statistics />
+              <div className={s.bottomColumns}>
+                <About />
+                <Contributions />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+          {/* Danger zone */}
+            <div className={s.dangerZone}>
+              <p className={s.dangerTitle}>Actions du compte</p>
+              <p className={s.dangerText}>La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.</p>
+              <button className={s.btnDanger}>Supprimer le compte</button>
+            </div>
+      </Layout>
   );
 }

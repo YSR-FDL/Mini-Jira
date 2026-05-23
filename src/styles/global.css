@@ -20,6 +20,31 @@
   --bg:#F9FAFB;
   --white: #FFFFFF;
 
+    /* ===== Compatibilité Claude ===== */
+
+  --blue-primary: var(--blue);
+  --sidebar-width: var(--sidebar-w);
+  --topbar-height: var(--topbar-h);
+
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-900: #0f172a;
+
+  --border-radius: 8px;
+
+  --red-light: #fef2f2;
+  --red-border: #fecaca;
+  --red-text: #dc2626;
+  --red-btn-border: #dc2626;
+
+  --white: #ffffff;
+
   --gradient-left: linear-gradient(145deg, #0747A6 0%, #0052CC 40%, #253858 100%);
   --gradient-btn:  linear-gradient(135deg, #0052CC 0%, #0747A6 100%);
 
