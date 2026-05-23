@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import WaveInput from '../ui/WaveInput';
 import ActionBtn from '../ui/ActionBtn';
 import StatusDropdown from '../ui/StatusDropdown';
-import StoryPointsRadio from '../ui/StoryPointsRadio';
 import './TaskDetailModal.css';
 
 const STATUS_OPTIONS = [
