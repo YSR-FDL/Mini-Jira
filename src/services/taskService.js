@@ -1,7 +1,7 @@
 
 
 export const taskService = {
-    createTask: async (title, sprintId) => {
+    createTask: async (sprintId, title) => {
         return new Promise((resolve) => {
             setTimeout(() => {
                 const newTask = {

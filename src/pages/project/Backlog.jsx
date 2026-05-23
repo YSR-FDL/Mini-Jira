@@ -132,6 +132,28 @@ export default function Backlog() {
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState("Toutes");
   const [sortConfig, setSortConfig] = useState(null);
+  const [activeAssignees, setActiveAssignees] = useState([]);
+
+  // Extraction des assignés uniques pour le backlog complet
+  const assignees = React.useMemo(() => {
+    const uniqueMap = new Map();
+    tasks.forEach((task) => {
+      if (task.assignee && task.assignee.name) {
+        if (!uniqueMap.has(task.assignee.name)) {
+          uniqueMap.set(task.assignee.name, task.assignee);
+        }
+      }
+    });
+    return Array.from(uniqueMap.values());
+  }, [tasks]);
+
+  const handleToggleAssignee = (assigneeName) => {
+    setActiveAssignees((prev) => 
+      prev.includes(assigneeName) 
+        ? prev.filter(name => name !== assigneeName)
+        : [...prev, assigneeName]
+    );
+  };
 
   //   Filtrage:
   // recalculer la liste des tâches à chaque fois qu'on tape dans la recherche ou qu'on clique sur un chip
@@ -152,7 +174,11 @@ export default function Backlog() {
           );
       }
 
-      return matchesSearch && matchesType;
+      // Filtre avatar
+      const matchesAssignee = activeAssignees.length === 0 || 
+        (task.assignee && activeAssignees.includes(task.assignee.name));
+
+      return matchesSearch && matchesType && matchesAssignee;
     })
     .sort((a, b) => {
       if (!sortConfig) return 0;
@@ -187,6 +213,9 @@ export default function Backlog() {
         onFilter={setActiveFilter}
         sortConfig={sortConfig}
         onSortChange={setSortConfig}
+        assignees={assignees}
+        activeAssignees={activeAssignees}
+        onToggleAssignee={handleToggleAssignee}
       />
 
       {/* EN-TÊTE ET ACTIONS DES SPRINTS */}

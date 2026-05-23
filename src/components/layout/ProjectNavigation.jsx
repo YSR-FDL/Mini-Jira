@@ -1,7 +1,10 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import "../../styles/ProjectNavigation.css";
 
 const ProjectNavigation = ({ activeTab, onTabChange }) => {
+  const location = useLocation();
+
   const navItems = [
     { id: "overview", label: "Overview", icon: "visibility" },
     { id: "backlog", label: "Backlog", icon: "list_alt" },
@@ -14,35 +17,38 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
 
   return (
     <nav className="navigation-bar">
-      {navItems.map((item) => (
-        <a
-          key={item.id}
-          href={`#${item.id}`} // En attendant d'utiliser React Router
-          className={`nav-link ${activeTab === item.id ? "active" : ""}`}
-          onClick={(e) => {
-            e.preventDefault(); // Empêche le rechargement de la page
-            onTabChange(item.id);
-          }}
-        >
-          <span className="nav-icon material-symbols-outlined">
-            {item.icon}
-          </span>
-          <span>{item.label}</span>
-        </a>
-      ))}
+      {navItems.map((item) => {
+        // Détermine si le lien est actif via la route ou le fallback activeTab
+        const isActive = location.pathname === `/${item.id}` || activeTab === item.id;
+        
+        return (
+          <Link
+            key={item.id}
+            to={`/${item.id}`}
+            className={`nav-link ${isActive ? "active" : ""}`}
+            onClick={() => {
+              if (onTabChange) onTabChange(item.id);
+            }}
+          >
+            <span className="nav-icon material-symbols-outlined">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+          </Link>
+        );
+      })}
 
       {/* L'onglet Settings est mis à part pour appliquer la classe nav-settings (margin-left: auto) */}
-      <a
-        href="#settings"
-        className={`nav-link nav-settings ${activeTab === "settings" ? "active" : ""}`}
-        onClick={(e) => {
-          e.preventDefault();
-          onTabChange("settings");
+      <Link
+        to="/settings"
+        className={`nav-link nav-settings ${location.pathname === "/settings" || activeTab === "settings" ? "active" : ""}`}
+        onClick={() => {
+          if (onTabChange) onTabChange("settings");
         }}
       >
         <span className="nav-icon material-symbols-outlined">settings</span>
         <span>Settings</span>
-      </a>
+      </Link>
     </nav>
   );
 };
