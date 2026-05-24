@@ -4,11 +4,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
-  height: 36px;
   overflow: hidden;
   cursor: pointer;
-  font-size: 13.5px;
   font-weight: 600;
   z-index: 1;
   color: var(--color);
@@ -17,6 +14,19 @@
   position: relative;
   background: transparent;
   transition: color 0.3s ease;
+}
+
+/* Sizes */
+.action-btn.md {
+  padding: 0 16px;
+  height: 36px;
+  font-size: 13.5px;
+}
+
+.action-btn.sm {
+  padding: 0 12px;
+  height: 28px;
+  font-size: 12px;
 }
 
 /* Variante secondaire (pour le bouton Annuler) */

@@ -12,7 +12,7 @@ export default function ProjectLayout({ children, activeTab, onTabChange, projec
           padding: "24px 32px",
           display: "flex",
           flexDirection: "column",
-          height: "calc(100vh - 56px)",
+          minHeight: "calc(100vh - 56px)",
         }}
       >
         <h1
@@ -30,7 +30,7 @@ export default function ProjectLayout({ children, activeTab, onTabChange, projec
         <ProjectNavigation activeTab={activeTab} onTabChange={onTabChange} />
 
         {/* CONTENU DE LA PAGE (ex: Backlog, Board...) */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {children}
         </div>
       </div>

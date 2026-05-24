@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ActionBtn from '../ui/ActionBtn';
 import StatusDropdown from '../ui/StatusDropdown';
-import './TaskDetailModal.css';
+import '../../styles/TaskDetailModal.css';
 import { 
   FiMoreHorizontal, 
   FiX, 
@@ -306,7 +306,8 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
                     <div className="metadata-label">Type</div>
                     <div className="metadata-value no-hover">
                       <select 
-                        className="type-dropdown"
+                        className="ui-input"
+                        style={{ height: '32px', padding: '0 8px' }}
                         value={editedTask.type || 'task'}
                         onChange={(e) => handleFieldChange('type', e.target.value)}
                       >
@@ -365,7 +366,7 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
                       <input 
                         type="number"
                         min="0"
-                        className="standard-textarea"
+                        className="ui-input"
                         style={{ minHeight: 'auto', height: '32px', width: '60px', padding: '4px 8px', margin: 0 }}
                         value={editedTask.points || 0}
                         onChange={(e) => handleFieldChange('points', Math.max(0, parseInt(e.target.value) || 0))}
@@ -391,7 +392,7 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
                     <div className="metadata-value no-hover date-value">
                       <input 
                         type="date"
-                        className="standard-textarea"
+                        className="ui-input"
                         style={{ minHeight: 'auto', height: '32px', padding: '4px 8px', margin: 0 }}
                         value={editedTask.dueDate || ''}
                         onChange={(e) => handleFieldChange('dueDate', e.target.value)}

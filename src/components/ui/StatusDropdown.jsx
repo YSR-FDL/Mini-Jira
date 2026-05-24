@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './StatusDropdown.css';
+import '../../styles/StatusDropdown.css';
 
 const StatusDropdown = ({ options, value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);

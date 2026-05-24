@@ -29,7 +29,8 @@ function FilterBar({ search, onSearch, activeFilter, onFilter, sortConfig, onSor
         <div className="filter-bar">
 
             <input
-                className="search-local"
+                className="ui-input"
+                style={{ minWidth: '200px', width: 'auto' }}
                 placeholder="Rechercher dans le backlog..."
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}

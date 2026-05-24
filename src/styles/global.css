@@ -82,6 +82,29 @@ input  { font-family: var(--font-body); }
   box-shadow: var(--shadow-lg); animation: fadeUp .2s ease;
 }
 
+/* ─── GLOBAL UI COMPONENTS ───────────────────────────────── */
+.ui-input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-sm);
+  background-color: var(--white);
+  color: var(--text-dark);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.ui-input:focus {
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 0 3px var(--blue-subtle);
+}
+
+.ui-input::placeholder {
+  color: var(--text-faint);
+}
+
 /* ─── SCROLLBAR ──────────────────────────────────────────── */
 .scroll::-webkit-scrollbar       { width: 5px; }
 .scroll::-webkit-scrollbar-track { background: transparent; }

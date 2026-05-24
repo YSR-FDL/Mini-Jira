@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ProjectLayout from '../../components/layout/ProjectLayout';
 import ActionBtn from '../../components/ui/ActionBtn';
 import { projectService } from '../../services/projectService';
-import './Settings.css';
+import '../../styles/Settings.css';
 import { 
   FiSettings, 
   FiSliders, 

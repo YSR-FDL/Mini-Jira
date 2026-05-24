@@ -3,7 +3,7 @@
 .kanban-board-container {
     flex: 1;
     overflow-x: auto;
-    padding: 24px;
+    padding: 16px;
     background-color: var(--color-background-primary);
 }
 

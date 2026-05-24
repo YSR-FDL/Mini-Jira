@@ -1,9 +1,9 @@
 import React from 'react';
-import './ActionBtn.css';
+import '../../styles/ActionBtn.css';
 
-const ActionBtn = ({ children, onClick, variant = 'primary', type = "button" }) => {
+const ActionBtn = ({ children, onClick, variant = 'primary', size = 'md', type = "button" }) => {
   return (
-    <button type={type} className={`action-btn ${variant}`} onClick={onClick}>
+    <button type={type} className={`action-btn ${variant} ${size}`} onClick={onClick}>
       {children}
     </button>
   );
