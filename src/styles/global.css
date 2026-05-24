@@ -72,7 +72,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; width: 100%; }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; height: 100vh; overflow: hidden; }
 button { font-family: var(--font-body); cursor: pointer; }
 input  { font-family: var(--font-body); }
 

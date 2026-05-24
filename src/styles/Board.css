@@ -3,8 +3,10 @@
 .kanban-board-container {
     flex: 1;
     overflow-x: auto;
+    overflow-y: hidden;
     padding: 16px;
     background-color: var(--color-background-primary);
+    min-height: 0;
 }
 
 .kanban-board {
@@ -24,6 +26,7 @@
     background-color: var(--color-background-secondary);
     border-radius: 8px;
     max-height: 100%;
+    min-height: 0;
 }
 
 .kanban-column-header {
