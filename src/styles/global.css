@@ -72,7 +72,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body, #root { height: 100%; width: 100%; }
 body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; height: 100vh; overflow: hidden; }
 button { font-family: var(--font-body); cursor: pointer; }
 input  { font-family: var(--font-body); }
 
@@ -80,6 +80,29 @@ input  { font-family: var(--font-body); }
   background: white; border-radius: var(--radius-lg);
   width: 100%; max-width: 460px; padding: 32px;
   box-shadow: var(--shadow-lg); animation: fadeUp .2s ease;
+}
+
+/* ─── GLOBAL UI COMPONENTS ───────────────────────────────── */
+.ui-input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-mid);
+  border-radius: var(--r-sm);
+  background-color: var(--white);
+  color: var(--text-dark);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.ui-input:focus {
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 0 3px var(--blue-subtle);
+}
+
+.ui-input::placeholder {
+  color: var(--text-faint);
 }
 
 /* ─── SCROLLBAR ──────────────────────────────────────────── */

@@ -3,51 +3,12 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ProjectLayout from '../../components/layout/ProjectLayout';
 import ActionBtn from '../../components/ui/ActionBtn';
 import '../../styles/BoardControlBar.css';
-import './Sprints.css';
+import '../../styles/Sprints.css';
+import StoryRow from '../../components/backlog/StoryRow';
 import { FiMoreHorizontal, FiCalendar, FiChevronDown, FiChevronRight } from 'react-icons/fi';
-import { FaTasks, FaBug, FaBookmark } from 'react-icons/fa';
-
 import { initialBacklogIssues, initialActiveSprint, initialUpcomingSprints, initialCompletedSprints } from '../../data/projectsMockData';
 
 // --- HELPER COMPONENTS ---
-const getTypeIcon = (type) => {
-  switch(type) {
-    case 'bug': return <FaBug color="#F15B50" />;
-    case 'story': return <FaBookmark color="#579DFF" />;
-    default: return <FaTasks color="#4BCE97" />;
-  }
-};
-
-const IssueRow = ({ issue, index }) => (
-  <Draggable draggableId={issue.id} index={index}>
-    {(provided, snapshot) => (
-      <div 
-        className={`issue-row ${snapshot.isDragging ? 'is-dragging' : ''}`}
-        ref={provided.innerRef}
-        {...provided.draggableProps}
-        {...provided.dragHandleProps}
-      >
-        <div className="issue-drag-handle">
-          <FiMoreHorizontal size={16} style={{ transform: 'rotate(90deg)' }} />
-        </div>
-        <div className="issue-id">
-          {getTypeIcon(issue.type)} <span>{issue.id}</span>
-        </div>
-        <div className="issue-title">{issue.title}</div>
-        <div className="issue-meta">
-          <div className="issue-status">{issue.status}</div>
-          <div className="issue-points">{issue.points || '-'}</div>
-          {issue.assignee ? (
-            <div className="issue-avatar">{issue.assignee}</div>
-          ) : (
-            <div className="issue-avatar" style={{backgroundColor: '#DFE1E6', color: '#172B4D'}}>?</div>
-          )}
-        </div>
-      </div>
-    )}
-  </Draggable>
-);
-
 const ProgressBar = ({ issues }) => {
   const total = issues.length || 1;
   const todoCount = issues.filter(i => i.status === 'todo').length;
@@ -193,7 +154,7 @@ export default function Sprints() {
 
 
   return (
-    <ProjectLayout activeTab={activeTab} onTabChange={setActiveTab}>
+    <ProjectLayout activeTab={activeTab} onTabChange={setActiveTab} projectName="Mini-Jira">
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="sprints-page-container scroll">
           
@@ -247,7 +208,7 @@ export default function Sprints() {
                       {activeSprint.issues.length === 0 ? (
                         <div className="empty-sprint">Glissez des tickets ici pour les planifier dans ce sprint.</div>
                       ) : (
-                        activeSprint.issues.map((issue, index) => <IssueRow key={issue.id} issue={issue} index={index} />)
+                        activeSprint.issues.map((issue, index) => <StoryRow key={issue.id} task={issue} index={index} />)
                       )}
                       {provided.placeholder}
                     </div>
@@ -294,7 +255,7 @@ export default function Sprints() {
                         {sprint.issues.length === 0 ? (
                           <div className="empty-sprint">Planifiez ce sprint en y glissant des tickets depuis le backlog.</div>
                         ) : (
-                          sprint.issues.map((issue, index) => <IssueRow key={issue.id} issue={issue} index={index} />)
+                          sprint.issues.map((issue, index) => <StoryRow key={issue.id} task={issue} index={index} />)
                         )}
                         {provided.placeholder}
                       </div>
@@ -321,7 +282,7 @@ export default function Sprints() {
                     {backlogIssues.length === 0 ? (
                       <div className="empty-sprint">Le backlog est vide. Créez de nouveaux tickets.</div>
                     ) : (
-                      backlogIssues.map((issue, index) => <IssueRow key={issue.id} issue={issue} index={index} />)
+                      backlogIssues.map((issue, index) => <StoryRow key={issue.id} task={issue} index={index} />)
                     )}
                     {provided.placeholder}
                   </div>
@@ -375,6 +336,7 @@ export default function Sprints() {
                   <label>Nom du sprint</label>
                   <input 
                     type="text" 
+                    className="ui-input"
                     value={newSprint.name} 
                     onChange={e => setNewSprint({...newSprint, name: e.target.value})} 
                     placeholder="Sprint 5" 
@@ -386,6 +348,7 @@ export default function Sprints() {
                     <label>Date de début</label>
                     <input 
                       type="date" 
+                      className="ui-input"
                       value={newSprint.startDate} 
                       onChange={e => setNewSprint({...newSprint, startDate: e.target.value})} 
                       required 
@@ -395,6 +358,7 @@ export default function Sprints() {
                     <label>Date de fin</label>
                     <input 
                       type="date" 
+                      className="ui-input"
                       value={newSprint.endDate} 
                       onChange={e => setNewSprint({...newSprint, endDate: e.target.value})} 
                       required 
@@ -404,10 +368,12 @@ export default function Sprints() {
                 <div className="form-group-sprint">
                   <label>Objectif du sprint</label>
                   <textarea 
+                    className="ui-input"
                     value={newSprint.goal} 
                     onChange={e => setNewSprint({...newSprint, goal: e.target.value})} 
                     placeholder="Qu'essayons-nous d'accomplir ?" 
                     rows={3} 
+                    style={{ resize: 'vertical' }}
                   />
                 </div>
               </div>

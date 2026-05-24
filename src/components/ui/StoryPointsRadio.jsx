@@ -1,5 +1,5 @@
 import React from 'react';
-import './StoryPointsRadio.css';
+import '../../styles/StoryPointsRadio.css';
 
 const StoryPointsRadio = ({ name, options, selectedValue, onChange }) => {
   return (

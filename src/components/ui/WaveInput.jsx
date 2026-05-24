@@ -1,5 +1,5 @@
 import React from 'react';
-import './WaveInput.css';
+import '../../styles/WaveInput.css';
 
 const WaveInput = ({ label, value, onChange, required = true }) => {
   return (

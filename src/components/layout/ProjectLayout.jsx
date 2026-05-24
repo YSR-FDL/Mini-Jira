@@ -3,16 +3,22 @@ import Layout from "./Layout";
 import ProjectNavigation from "./ProjectNavigation";
 import s from "../../styles/Profile.module.css";
 
-export default function ProjectLayout({ children, activeTab, onTabChange, projectName }) {
+export default function ProjectLayout({
+  children,
+  activeTab,
+  onTabChange,
+  projectName,
+}) {
   return (
     <Layout activeNav="projets" pageTitle={projectName}>
       <div
         className={s.pageContent}
         style={{
-          padding: "24px 32px",
+          padding: "16px 24px",
           display: "flex",
           flexDirection: "column",
-          height: "calc(100vh - 56px)",
+          height: "100%",
+          minHeight: 0,
         }}
       >
         <h1
@@ -21,16 +27,27 @@ export default function ProjectLayout({ children, activeTab, onTabChange, projec
             fontWeight: "500",
             color: "var(--color-text-primary)",
             marginBottom: "8px",
+            flexShrink: 0,
           }}
         >
           {projectName || "Projet"}
         </h1>
 
         {/* NAVIGATION DU PROJET */}
-        <ProjectNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        <div style={{ flexShrink: 0 }}>
+          <ProjectNavigation activeTab={activeTab} onTabChange={onTabChange} />
+        </div>
 
         {/* CONTENU DE LA PAGE (ex: Backlog, Board...) */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div
+          style={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            overflowY: "auto",
+          }}
+        >
           {children}
         </div>
       </div>

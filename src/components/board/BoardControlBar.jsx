@@ -1,5 +1,6 @@
 import React from 'react';
 import '../../styles/BoardControlBar.css';
+import ActionBtn from '../ui/ActionBtn';
 
 function BoardControlBar({ 
   search, 
@@ -17,7 +18,8 @@ function BoardControlBar({
       <div className="board-controls-left">
         <input
           type="text"
-          className="search-local"
+          className="ui-input"
+          style={{ minWidth: '200px', width: 'auto' }}
           placeholder="Rechercher dans le board..."
           value={search}
           onChange={(e) => onSearch(e.target.value)}
@@ -70,9 +72,9 @@ function BoardControlBar({
             </div>
           </div>
         )}
-        <button className="btn-complete-sprint" onClick={onCompleteSprint}>
-          Complete Sprint
-        </button>
+        <ActionBtn variant="secondary" onClick={onCompleteSprint}>
+          Clôturer le sprint
+        </ActionBtn>
       </div>
     </div>
   );

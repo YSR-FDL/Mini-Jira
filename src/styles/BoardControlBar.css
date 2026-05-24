@@ -15,19 +15,7 @@
     gap: 24px;
 }
 
-.search-local {
-  min-width: 200px;
-  font-size: 12px;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border-secondary);
-  border-radius: 6px; /* correspond à var(--border-radius-button) */
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  outline: none;
-}
-.search-local:focus {
-  border-color: var(--color-primary-blue);
-}
+/* Removed .search-local, now using .ui-input */
 
 .board-filters-avatars {
     display: flex;
@@ -113,18 +101,4 @@
     height: 14px;
 }
 
-.btn-complete-sprint {
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    border-radius: 4px;
-    background-color: var(--color-background-secondary);
-    color: var(--color-text-primary);
-    border: 1px solid var(--color-border-secondary);
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.btn-complete-sprint:hover {
-    background-color: var(--color-gray-300);
-}
+/* Removed redundant button and input styles, using global UI classes instead */

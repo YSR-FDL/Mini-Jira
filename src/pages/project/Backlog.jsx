@@ -4,6 +4,7 @@ import ProjectLayout from "../../components/layout/ProjectLayout";
 import FilterBar from "../../components/backlog/FilterBar";
 import SprintBlock from "../../components/backlog/SprintBlock";
 import TaskDetailModal from "../../components/shared/TaskDetailModal";
+import ActionBtn from "../../components/ui/ActionBtn";
 import { initialSprints, initialTasks } from "../../data/projectsMockData";
 import { taskService } from "../../services/taskService";
 
@@ -244,12 +245,9 @@ export default function Backlog() {
           marginBottom: "16px",
         }}
       >
-        <button
-          className="btn-xs blue"
-          style={{ padding: "6px 12px", fontSize: "12px" }}
-        >
+        <ActionBtn size="sm" variant="primary">
           + Créer un sprint
-        </button>
+        </ActionBtn>
       </div>
 
       {/* LISTE DES SPRINTS */}
