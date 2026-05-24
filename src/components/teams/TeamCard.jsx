@@ -15,39 +15,24 @@ export default function TeamCard({ team, onView }) {
       : "var(--blue)"
 
   return (
-    <div
-      className={
-        s.teamCard +
-        (team.archived ? ` ${s.teamCardArchived}` : "")
-      }
-    >
+    <div className={ s.teamCard + (team.archived ? ` ${s.teamCardArchived}` : "")}>
       <div className={s.teamCardHeader}>
         <h3 className={s.teamCardName}>{team.name}</h3>
 
         <div className={s.teamCardMenuWrap}>
-          <button
-            className={s.teamCardMenuBtn}
-            onClick={() => setMenuOpen((v) => !v)}
-          >
+          <button className={s.teamCardMenuBtn}  onClick={() => setMenuOpen((v) => !v)}>
             <MoreVertical size={16} />
           </button>
 
           {menuOpen && (
             <div className={s.teamCardDropdown}>
-              <button onClick={() => setMenuOpen(false)}>
-                Modifier
-              </button>
-
-              <button onClick={() => setMenuOpen(false)}>
-                Archiver
-              </button>
-
-              <button
-                className={s.danger}
-                onClick={() => setMenuOpen(false)}
-              >
-                Supprimer
-              </button>
+              {!team.archived && (
+                <>
+                  <button onClick={() => setMenuOpen(false)}>Modifier</button>
+                  <button onClick={() => setMenuOpen(false)}>Archiver</button>
+                </>
+              )}
+              <button className={s.danger} onClick={() => setMenuOpen(false)}>Supprimer</button>
             </div>
           )}
         </div>
@@ -67,9 +52,7 @@ export default function TeamCard({ team, onView }) {
         </div>
 
         <div>
-          <span className={s.teamCardMetaLabel}>
-            Projets
-          </span>
+          <span className={s.teamCardMetaLabel}> Projets </span>
 
           <span className={s.teamCardMetaValue}>
             {team.projets} projets
@@ -100,19 +83,9 @@ export default function TeamCard({ team, onView }) {
       </div>
 
       {team.archived ? (
-        <button
-          className={`${s.teamCardBtn} ${s.teamCardBtnArchived}`}
-          disabled
-        >
-          Archivé
-        </button>
+        <button className={`${s.teamCardBtn} ${s.teamCardBtnArchived}`} disabled> Archivé</button>
       ) : (
-        <button
-          className={s.teamCardBtn}
-          onClick={() => onView && onView(team)}
-        >
-          Consulter l'équipe
-        </button>
+        <button className={s.teamCardBtn} onClick={() => onView && onView(team)}>Consulter l'équipe</button>
       )}
     </div>
   )

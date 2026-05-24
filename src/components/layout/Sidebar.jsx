@@ -28,7 +28,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
 
   const handleClick = (id) => {
     if (id === "profile") navigate("/profile");
-    if (id === "projets") navigate("/backlog");
+    if (id === "projets") navigate("/projects");
     if (id === "équipes") navigate("/teams");
   };
 

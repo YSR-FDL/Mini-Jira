@@ -9,6 +9,7 @@ import Backlog from './pages/project/Backlog.jsx';
 import Board from './pages/project/Board.jsx';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import TeamsPage from './pages/global/TeamsPage.jsx';
+import ProjectsPage from './pages/global/ProjectsPage.jsx';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/backlog" element={<Backlog />} />
         <Route path="/board" element={<Board />} />
 
+        <Route path="/projects" element={<ProjectsPage />} />
       </Routes>
     </BrowserRouter>
     </React.StrictMode>
