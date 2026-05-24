@@ -17,27 +17,26 @@ import TeamDetailsPage from './pages/global/TeamDetailsPage.jsx'
 
 function App() {
   return (
-    <React.StrictMode>
+    <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
-          <Route path="/teams" element={<TeamsPage />} />
-          
-          {/* Project routes */}
-          <Route path="/overview" element={<Overview />} />
-          <Route path="/backlog" element={<Backlog />} />
-          <Route path="/board" element={<Board />} />
-          <Route path="/sprints" element={<Sprints />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/detailsTeam/:id" element={<TeamDetailsPage />} />
-      </Routes>
-    </BrowserRouter>
-    </React.StrictMode>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
+            <Route path="/teams" element={<TeamsPage />} />
+            <Route path="/overview" element={<Overview />} />
+            <Route path="/backlog" element={<Backlog />} />
+            <Route path="/board" element={<Board />} />
+            <Route path="/sprints" element={<Sprints />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/projects" element={<ProjectsPage />} />
+            
+            <Route path="/detailsTeam/:id" element={<TeamDetailsPage />} />
+        </Routes>
+      </BrowserRouter>
+    </>
   );
 }
 
