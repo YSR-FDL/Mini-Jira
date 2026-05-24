@@ -12,6 +12,7 @@ import Settings from "./pages/project/Settings.jsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import TeamsPage from "./pages/global/TeamsPage.jsx";
 import ProjectsPage from "./pages/global/ProjectsPage.jsx";
+import Overview from "./pages/project/Overview.jsx";
 
 function App() {
   return (
@@ -24,6 +25,9 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
           <Route path="/teams" element={<TeamsPage />} />
+          
+          {/* Project routes */}
+          <Route path="/overview" element={<Overview />} />
           <Route path="/backlog" element={<Backlog />} />
           <Route path="/board" element={<Board />} />
           <Route path="/sprints" element={<Sprints />} />

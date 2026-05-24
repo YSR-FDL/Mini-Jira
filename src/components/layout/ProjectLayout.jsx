@@ -1,6 +1,7 @@
 import React from "react";
 import Layout from "./Layout";
 import ProjectNavigation from "./ProjectNavigation";
+import ProjectHeader from "./ProjectHeader";
 import s from "../../styles/Profile.module.css";
 
 export default function ProjectLayout({
@@ -21,20 +22,11 @@ export default function ProjectLayout({
           minHeight: 0,
         }}
       >
-        <h1
-          style={{
-            fontSize: "20px",
-            fontWeight: "500",
-            color: "var(--color-text-primary)",
-            marginBottom: "8px",
-            flexShrink: 0,
-          }}
-        >
-          {projectName || "Projet"}
-        </h1>
+        {/* HEADER DU PROJET PERSISTANT */}
+        <ProjectHeader />
 
         {/* NAVIGATION DU PROJET */}
-        <div style={{ flexShrink: 0 }}>
+        <div style={{ flexShrink: 0, marginBottom: "24px" }}>
           <ProjectNavigation activeTab={activeTab} onTabChange={onTabChange} />
         </div>
 
