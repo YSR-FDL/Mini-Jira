@@ -47,6 +47,9 @@ export default function Backlog() {
   };
 
   const handleTagChange = (taskId, newTag, tagIndex) => {
+    // Sauvegarde de l'état précédent pour le rollback
+    const previousTask = tasks.find(t => t.id === taskId);
+
     // Mise à jour optimiste et instantanée (Dynamique)
     setTasks((prevTasks) =>
       prevTasks.map((t) => {
@@ -62,15 +65,24 @@ export default function Backlog() {
     // Appel API en arrière-plan
     taskService.updateTaskTag(taskId, newTag, tagIndex).catch(error => {
       console.error("Erreur lors de la modification du tag", error);
+      // Rollback en cas d'erreur
+      setTasks(prev => prev.map(t => t.id === taskId ? previousTask : t));
+      alert("Erreur lors de la modification du tag. L'état a été restauré.");
     });
   };
 
   const handleUpdateTask = (updatedTask) => {
+    // Sauvegarde de l'état précédent pour le rollback
+    const previousTask = tasks.find(t => t.id === updatedTask.id);
+
     setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
     setSelectedTaskId(null);
 
     taskService.updateTask(updatedTask.id, updatedTask).catch(err => {
       console.error("Erreur lors de la sauvegarde de la tâche", err);
+      // Rollback en cas d'erreur
+      setTasks(prev => prev.map(t => t.id === updatedTask.id ? previousTask : t));
+      alert("Échec de la mise à jour. La tâche a été restaurée à son état précédent.");
     });
   };
 
@@ -84,6 +96,9 @@ export default function Backlog() {
     ) {
       return;
     }
+
+    // Sauvegarde de l'état global des tâches avant le déplacement
+    const previousTasks = [...tasks];
 
     setTasks((prevTasks) => {
       // 1. Trouver la tâche déplacée
@@ -125,6 +140,9 @@ export default function Backlog() {
       .moveTask(draggableId, destination.droppableId, destination.index)
       .catch((error) => {
         console.error("Erreur lors du déplacement", error);
+        // Rollback en cas d'erreur
+        setTasks(previousTasks);
+        alert("Impossible de déplacer le ticket. La position a été restaurée.");
       });
   };
 
