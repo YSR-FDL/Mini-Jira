@@ -9,10 +9,10 @@ export default function ProjectLayout({ children, activeTab, onTabChange, projec
       <div
         className={s.pageContent}
         style={{
-          padding: "24px 32px",
+          padding: "16px 24px",
           display: "flex",
           flexDirection: "column",
-          minHeight: "calc(100vh - 56px)",
+          height: "calc(100vh - 56px)",
         }}
       >
         <h1
@@ -30,7 +30,7 @@ export default function ProjectLayout({ children, activeTab, onTabChange, projec
         <ProjectNavigation activeTab={activeTab} onTabChange={onTabChange} />
 
         {/* CONTENU DE LA PAGE (ex: Backlog, Board...) */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
           {children}
         </div>
       </div>
