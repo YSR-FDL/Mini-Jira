@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react"
-import s from "../../styles/CreateTeamButton.module.css"
+import s from "../../styles/teams/CreateTeamButton.module.css"
 
 export default function CreateTeamButton({ onClick }) {
   return (

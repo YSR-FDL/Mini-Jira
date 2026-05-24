@@ -5,7 +5,7 @@ import TeamCard from "../../components/teams/TeamCard"
 import CreateTeamModal from "../../components/teams/CreateTeamModal"
 import CreateTeamButton from "../../components/teams/CreateTeamButton"
 import { teamsData } from "../../data/mockData"
-import s from "../../styles/TeamsPage.module.css"
+import s from "../../styles/teams/TeamsPage.module.css"
 
 export default function TeamsPage() {
   const [teams, setTeams] = useState(teamsData)

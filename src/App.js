@@ -13,6 +13,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import TeamsPage from "./pages/global/TeamsPage.jsx";
 import ProjectsPage from "./pages/global/ProjectsPage.jsx";
 import Overview from "./pages/project/Overview.jsx";
+import TeamDetailsPage from './pages/global/TeamDetailsPage.jsx'
 
 function App() {
   return (
@@ -32,10 +33,10 @@ function App() {
           <Route path="/board" element={<Board />} />
           <Route path="/sprints" element={<Sprints />} />
           <Route path="/settings" element={<Settings />} />
-
           <Route path="/projects" element={<ProjectsPage />} />
-        </Routes>
-      </BrowserRouter>
+          <Route path="/detailsTeam/:id" element={<TeamDetailsPage />} />
+      </Routes>
+    </BrowserRouter>
     </React.StrictMode>
   );
 }

@@ -78,6 +78,7 @@ export const teamsData = [
     projets: 5,
     progression: 85,
     archived: false,
+    createdAt: 'Dec 05, 2024',
   },
   {
     id: 2,
@@ -87,6 +88,7 @@ export const teamsData = [
     projets: 3,
     progression: 40,
     archived: false,
+    createdAt: 'Dec 05, 2024',
   },
   {
     id: 3,
@@ -96,6 +98,7 @@ export const teamsData = [
     projets: 4,
     progression: 95,
     archived: false,
+    createdAt: 'Dec 05, 2024',
   },
   {
     id: 4,
@@ -105,6 +108,7 @@ export const teamsData = [
     projets: 2,
     progression: 25,
     archived: false,
+    createdAt: 'Dec 05, 2024',
   },
   {
     id: 5,
@@ -114,6 +118,7 @@ export const teamsData = [
     projets: 1,
     progression: 0,
     archived: true,
+    createdAt: 'Dec 05, 2024',
   },
 ]
 
@@ -187,3 +192,86 @@ export const initialProjects = [
     archived: true,
   },
 ]
+
+
+export const teamMembersData = {
+  1: [
+    { id: 1, name: "Khalid Lamachi",role: "Développeur",email: "khalidlamachi2005@gmail.com",initials: "KL", color: "#0052CC"},
+    { id: 1, name: "Yasser Foudil",role: "Développeur",email: "YasserFoudil@gmail.com",initials: "YF", color: "#0052CC"},
+  ],
+  2: [
+    { id: 1, name: "Khalid Lamachi",role: "Développeur",email: "khalidlamachi2005@gmail.com",initials: "KL", color: "#0052CC"},
+  ],
+  3: [
+    { id: 1, name: "Khalid Lamachi",role: "Développeur",email: "khalidlamachi2005@gmail.com",initials: "KL", color: "#0052CC",},
+  ],
+  4: [
+    { id: 1, name: "Khalid Lamachi",role: "Développeur",email: "khalidlamachi2005@gmail.com",initials: "KL", color: "#0052CC",},
+  ],
+  5: [
+    { id: 1, name: "Khalid Lamachi",role: "Développeur",email: "khalidlamachi2005@gmail.com",initials: "KL", color: "#0052CC",},
+  ],
+};
+
+
+export const teamProjectsData = {
+  1: [
+    {
+      id: 1,
+      title: 'MiniJira Platform',
+      description: 'Lorem, ipsum dolor sit amet consectetur adipisicing elit. Cumque quos dolorum debitis asperiores alias voluptas fugit similique nostrum iste cupiditate hic, molestiae officiis consectetur doloremque exercitationem, est eaque. Fuga, ipsam.',
+      status: 'EN COURS',
+      progress: 65,
+      members: 7,
+      tasksCompleted: 12,
+      tasksTotal: 20,
+      dueDate: 'Oct 24, 2024',
+      archived: false,
+    },
+  ],
+  2: [
+    {
+      id: 3,
+      title: 'ENSIAS Collaboration Tool',
+      description: 'A hub for university project teamwork, connecting researchers',
+      status: 'TERMINÉ',
+      progress: 100,
+      members: 3,
+      tasksCompleted: 45,
+      tasksTotal: 45,
+      dueDate: 'Sep 10, 2024',
+      doneDate: true,
+      archived: false,
+    },
+  ],
+  3: [
+    {
+      id: 3,
+      title: 'ENSIAS Collaboration Tool',
+      description: 'A hub for university project teamwork, connecting researchers',
+      status: 'TERMINÉ',
+      progress: 100,
+      members: 3,
+      tasksCompleted: 45,
+      tasksTotal: 45,
+      dueDate: 'Sep 10, 2024',
+      doneDate: true,
+      archived: false,
+    },
+  ],
+  4: [],
+  5: [
+    {
+      id: 4,
+      title: 'Smart Task Tracker',
+      description: 'AI-powered task prioritization that adapts to your work habits and...',
+      status: 'EN COURS',
+      progress: 15,
+      members: 1,
+      tasksCompleted: 3,
+      tasksTotal: 20,
+      dueDate: 'Dec 05, 2024',
+      archived: true,
+    },
+  ],
+};

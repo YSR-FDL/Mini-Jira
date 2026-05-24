@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { X, Plus } from "lucide-react"
 import { usersData } from "../../data/mockData"
-import s from "../../styles/CreateTeamModal.module.css"
+import s from "../../styles/teams/CreateTeamModal.module.css"
 
 export default function CreateTeamModal({onClose,onCreate}) {
   const [name, setName] = useState("")
