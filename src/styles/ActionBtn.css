@@ -36,17 +36,23 @@
   color: var(--color-text-secondary);
 }
 
+/* Variante danger */
+.action-btn.danger {
+  --color: #dc2626;
+}
+
 .action-btn::before {
   position: absolute;
   content: "";
   background: var(--color);
-  width: 200px;
-  height: 200px;
+  width: 150%;
+  padding-bottom: 150%;
   z-index: -1;
   border-radius: 50%;
-  top: 100%;
-  left: 100%;
-  transition: 0.3s all;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.3s ease-out;
 }
 
 .action-btn:hover {
@@ -54,6 +60,5 @@
 }
 
 .action-btn:hover::before {
-  top: -30px;
-  left: -30px;
+  transform: translate(-50%, -50%) scale(1);
 }

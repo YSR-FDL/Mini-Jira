@@ -20,13 +20,13 @@ export default function ProfilePage() {
                 <Contributions />
               </div>
             </div>
-          </div>
-          {/* Danger zone */}
+            {/* Danger zone */}
             <div className={s.dangerZone}>
               <p className={s.dangerTitle}>Actions du compte</p>
               <p className={s.dangerText}>La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.</p>
               <button className={s.btnDanger}>Supprimer le compte</button>
             </div>
+          </div>
       </Layout>
   );
 }

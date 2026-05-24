@@ -342,9 +342,9 @@ export default function Settings() {
                 <span className="danger-action-title">Archiver le projet</span>
                 <span className="danger-action-desc">Le projet sera en lecture seule et n'apparaîtra plus dans les tableaux actifs.</span>
               </div>
-              <button type="button" className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ActionBtn type="button" variant="danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FiArchive /> Archiver
-              </button>
+              </ActionBtn>
             </div>
 
             <div className="danger-action-row">
@@ -352,9 +352,9 @@ export default function Settings() {
                 <span className="danger-action-title">Supprimer le projet</span>
                 <span className="danger-action-desc">Toutes les données, tâches et configurations seront définitivement perdues.</span>
               </div>
-              <button type="button" className="btn-danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ActionBtn type="button" variant="danger" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FiTrash2 /> Supprimer
-              </button>
+              </ActionBtn>
             </div>
           </section>
 
