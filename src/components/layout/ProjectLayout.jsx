@@ -2,7 +2,7 @@ import React from "react";
 import Layout from "./Layout";
 import ProjectNavigation from "./ProjectNavigation";
 import ProjectHeader from "./ProjectHeader";
-import s from "../../styles/Profile.module.css";
+import s from "../../styles/Profile/Profile.module.css";
 
 export default function ProjectLayout({
   children,

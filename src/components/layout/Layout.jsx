@@ -2,7 +2,7 @@ import { useState } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
-import s from "../../styles/Profile.module.css";
+import s from "../../styles/Profile/Profile.module.css";
 
 export default function Layout({ children, activeNav, pageTitle }) {
     const [collapsed, setCollapsed] = useState(false);

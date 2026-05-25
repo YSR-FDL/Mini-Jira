@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import Layout from "../../components/layout/Layout";
-import styles from "../../styles/ProfileUpdate.module.css";
+import styles from "../../styles/Profile/ProfileUpdate.module.css";
 
 const ROLES = [ "Designer", "Développeur", "Testeur", "Scrum Master", "Product Owner", "Autre"];
 

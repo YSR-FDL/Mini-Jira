@@ -4,7 +4,7 @@ import Statistics from "../../components/profile/Statistics";
 import About from "../../components/profile/About";
 import Contributions from "../../components/profile/Contributions";
 import Layout from "../../components/layout/Layout";
-import s from "../../styles/Profile.module.css";
+import s from "../../styles/Profile/Profile.module.css";
 
 export default function ProfilePage() {
 

@@ -30,6 +30,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "profile") navigate("/profile");
     if (id === "projets") navigate("/projects");
     if (id === "équipes") navigate("/teams");
+    if (id === "tâches") navigate("/tasks");
   };
 
   return (
