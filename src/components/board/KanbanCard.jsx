@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import '../../styles/Board.css';
+import '../../styles/Board/Board.css';
 
 const PRIORITY_CONFIG = {
   critical: 'critical',

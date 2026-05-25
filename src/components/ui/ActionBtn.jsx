@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/ActionBtn.css';
+import '../../styles/Ui/ActionBtn.css';
 
 const ActionBtn = ({ children, onClick, variant = 'primary', size = 'md', type = "button", ...props }) => {
   return (

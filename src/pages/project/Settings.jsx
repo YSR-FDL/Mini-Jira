@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ProjectLayout from '../../components/layout/ProjectLayout';
 import ActionBtn from '../../components/ui/ActionBtn';
 import { projectService } from '../../services/projectService';
-import '../../styles/Settings.css';
+import '../../styles/Project/Settings.css';
 import { 
   FiSettings, 
   FiSliders, 
@@ -165,18 +165,6 @@ export default function Settings() {
               <p className="settings-section-subtitle">Ajustez le comportement et le cycle de vie du projet.</p>
               
               <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Type de projet</label>
-                  <select 
-                    className="form-select"
-                    value={config.type}
-                    onChange={(e) => handleConfigChange('type', e.target.value)}
-                  >
-                    <option value="Scrum">Scrum</option>
-                    <option value="Kanban">Kanban</option>
-                    <option value="Simple">Simple</option>
-                  </select>
-                </div>
                 <div className="form-group">
                   <label className="form-label">Statut du projet</label>
                   <select 

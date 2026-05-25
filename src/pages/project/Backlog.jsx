@@ -8,7 +8,7 @@ import ActionBtn from "../../components/ui/ActionBtn";
 import { initialSprints, initialTasks } from "../../data/projectsMockData";
 import { taskService } from "../../services/taskService";
 
-import "../../styles/Backlog.css";
+import "../../styles/Backlog/Backlog.css";
 
 export default function Backlog() {
   const [activeTab, setActiveTab] = useState("backlog");

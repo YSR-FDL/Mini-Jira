@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ActionBtn from '../ui/ActionBtn';
 import StatusDropdown from '../ui/StatusDropdown';
-import '../../styles/TaskDetailModal.css';
+import '../../styles/Shared/TaskDetailModal.css';
 import { 
   FiMoreHorizontal, 
   FiX, 
@@ -12,8 +12,7 @@ import {
   FiAlignLeft, 
   FiList, 
   FiActivity,
-  FiMessageSquare,
-  FiShare2
+  FiMessageSquare
 } from 'react-icons/fi';
 import { FaBug, FaTasks, FaBookmark, FaExclamationCircle } from 'react-icons/fa';
 
@@ -110,6 +109,14 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
     }
   };
 
+  const handleSelfAssign = () => {
+    const updated = {
+      ...editedTask,
+      assignee: { name: 'Yasser', initials: 'YA', bgColor: '#185fa5', textColor: '#FFF' }
+    };
+    saveChanges(updated, "S'est assigné le ticket.");
+  };
+
   // Field change handlers
   const handleFieldChange = (field, value) => {
     let message = null;
@@ -162,7 +169,7 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
           </div>
           <div className="header-actions">
             <ActionBtn variant="secondary" onClick={() => {}}>Assigner</ActionBtn>
-            <ActionBtn variant="secondary" onClick={() => {}}><FiShare2 style={{marginRight: '6px'}}/> Partager</ActionBtn>
+            <ActionBtn variant="secondary" onClick={handleSelfAssign}>S'assigner</ActionBtn>
             <button className="icon-btn" title="Actions supplémentaires"><FiMoreHorizontal size={20} /></button>
             <button className="close-btn" onClick={requestClose} type="button" title="Fermer (Esc)"><FiX size={24} /></button>
           </div>
@@ -336,10 +343,26 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
                   <div className="metadata-group">
                     <div className="metadata-label">Assigné à</div>
                     <div className="metadata-value">
-                      <div className="user-display">
-                        <div className="user-avatar-small">Y</div>
-                        Yasser
-                      </div>
+                      {editedTask.assignee ? (
+                        <div className="user-display">
+                          <div 
+                            className="user-avatar-small"
+                            style={{
+                              background: editedTask.assignee.bgColor || '#e6f1fb',
+                              color: editedTask.assignee.textColor || '#185fa5',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: '600'
+                            }}
+                          >
+                            {editedTask.assignee.initials || (editedTask.assignee.name ? editedTask.assignee.name.substring(0, 2).toUpperCase() : '—')}
+                          </div>
+                          {editedTask.assignee.name || editedTask.assignee}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '13px' }}>Non assigné</span>
+                      )}
                     </div>
                   </div>
 
