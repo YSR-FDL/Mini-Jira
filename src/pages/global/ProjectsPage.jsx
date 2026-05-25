@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import ProjectCard from '../../components/page projets/ProjectCard'
-import styles from '../../styles/ProjectsPage.module.css'
+import styles from '../../styles/Project/ProjectsPage.module.css'
 import Layout from "../../components/layout/Layout"
 import {initialProjects} from "../../data/mockData";
 import { Plus } from 'lucide-react';

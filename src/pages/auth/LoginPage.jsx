@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import LeftPanel from '../../components/auth/LeftPanel';
-import '../../styles/AuthLayout.css';
+import '../../styles/Auth/AuthLayout.css';
 
 export default function LoginPage() {
   const navigate = useNavigate()

@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/BoardControlBar.css';
+import '../../styles/Board/BoardControlBar.css';
 
 const TYPE_FILTERS = ['Toutes', 'Feature', 'Bug', 'Tech'];
 

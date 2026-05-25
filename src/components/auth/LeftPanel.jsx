@@ -1,4 +1,4 @@
-import '../../styles/LeftPanel.css'
+import '../../styles/Auth/LeftPanel.css'
 
 const FEATURES = [
   {

@@ -7,7 +7,7 @@ import TaskDetailModal from '../../components/shared/TaskDetailModal';
 import { initialSprints, initialTasks } from '../../data/projectsMockData';
 import { taskService } from '../../services/taskService';
 
-import '../../styles/Board.css';
+import '../../styles/Board/Board.css';
 
 const COLUMNS = [
   { id: 'todo', title: 'À Faire' },

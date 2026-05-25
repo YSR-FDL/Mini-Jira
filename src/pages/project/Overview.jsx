@@ -2,7 +2,7 @@ import React from "react";
 import ProjectLayout from "../../components/layout/ProjectLayout";
 import { Link } from "react-router-dom";
 import { metrics, activeSprintSummary, taskBreakdown, recentActivity } from "../../data/mockOverviewData";
-import "../../styles/Overview.css";
+import "../../styles/Project/Overview.css";
 import ActionBtn from "../../components/ui/ActionBtn";
 
 export default function Overview() {

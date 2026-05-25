@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import styles from '../../styles/ProjectCard.module.css'
+import styles from '../../styles/Project/ProjectCard.module.css'
 import { useNavigate } from 'react-router-dom'
 
 const statusColors = {

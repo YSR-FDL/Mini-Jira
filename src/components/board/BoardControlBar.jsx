@@ -1,5 +1,5 @@
 import React from 'react';
-import '../../styles/BoardControlBar.css';
+import '../../styles/Board/BoardControlBar.css';
 import ActionBtn from '../ui/ActionBtn';
 
 function BoardControlBar({ 

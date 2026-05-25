@@ -1,6 +1,6 @@
 import React from "react";
 import { projectInfo, members } from "../../data/mockOverviewData";
-import "../../styles/ProjectHeader.css";
+import "../../styles/Layout/ProjectHeader.css";
 
 export default function ProjectHeader() {
   return (

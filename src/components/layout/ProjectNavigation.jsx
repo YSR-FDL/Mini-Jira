@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import "../../styles/ProjectNavigation.css";
+import "../../styles/Layout/ProjectNavigation.css";
 
 const ProjectNavigation = ({ activeTab, onTabChange }) => {
   const location = useLocation();

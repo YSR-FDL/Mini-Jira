@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight,} from "lucide-react";
-import s from "../../styles/Sidebar.module.css";
+import s from "../../styles/Layout/Sidebar.module.css";
 
 export const navItems = [
   { id: "dashboard",   label: "Dashboard",  icon: "dashboard" },
