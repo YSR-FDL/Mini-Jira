@@ -8,7 +8,7 @@ export const navItems = [
   { id: "projets",     label: "Projets",    icon: "projects"  },
   { id: "tâches",      label: "Tâches",     icon: "tasks"     },
   { id: "équipes",     label: "Équipes",    icon: "teams"     },
-  { id: "reports",     label: "Reports",    icon: "reports"   },
+  { id: "reports",     label: "Bug Reports",    icon: "reports"   },
   { id: "paramètres",  label: "Paramètres", icon: "settings"  },
   { id: "profile",     label: "Profil",     icon: "profile"   },
 ];
@@ -31,6 +31,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "projets") navigate("/projects");
     if (id === "équipes") navigate("/teams");
     if (id === "tâches") navigate("/tasks");
+    if (id === "reports") navigate("/reports");
   };
 
   return (
