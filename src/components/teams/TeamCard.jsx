@@ -2,6 +2,7 @@ import { useState } from "react"
 import { MoreVertical } from "lucide-react"
 import s from "../../styles/teams/TeamCard.module.css"
 import { useNavigate } from "react-router-dom"
+import ActionBtn from "../ui/ActionBtn"
 
 export default function TeamCard({ team, onView }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -82,3 +83,5 @@ export default function TeamCard({ team, onView }) {
     </div>
   )
 }
+
+{/*<ActionBtn onClick={handleConsulter}>Consulter l'équipe</ActionBtn>*/}
