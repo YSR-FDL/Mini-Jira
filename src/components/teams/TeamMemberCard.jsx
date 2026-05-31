@@ -25,13 +25,13 @@ export default function TeamMemberCard({ member, onViewProfile, onRemove }) {
   return (
     <div className={styles.card}>
       <div className={styles.cardTop}>
-        <div className={styles.avatar} style={{ background: member.color || 'var(--blue)' }}>
-          {member.initials}
+        <div className={styles.avatar} style={{ background:'var(--blue)' }}>
+          {`${member?.prenom?.charAt(0) || ""}${member?.nom?.charAt(0) || ""}`.toUpperCase()}
         </div>
 
         <div className={styles.memberInfo}>
-          <span className={styles.memberName}>{member.name}</span>
-          <span className={styles.memberRole}>{member.role}</span>
+          <span className={styles.memberName}>{member.nom} {member.prenom}</span>
+          <span className={styles.memberRole}>{member.login}</span>
         </div>
       </div>
 

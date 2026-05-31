@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight,} from "lucide-react";
+import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight, LogOut,} from "lucide-react";
 import s from "../../styles/Layout/Sidebar.module.css";
 
 export const navItems = [
@@ -74,6 +74,15 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
         })}
       </nav>
 
+      <div className={s.footer}>
+        <button className={`${s.navItem} ${s.logoutBtn}`} onClick={() => {localStorage.removeItem("user");navigate("/login")}}
+          data-tooltip={collapsed ? "Déconnexion" : undefined} title={collapsed ? "Déconnexion" : undefined}>
+          <span className={s.navIcon}>
+            <LogOut size={17} strokeWidth={1.8} />
+          </span>
+          <span className={s.navLabel}>Déconnexion</span>
+        </button>
+      </div>
     </aside>
   );
 }

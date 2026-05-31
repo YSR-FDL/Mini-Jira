@@ -1,19 +1,18 @@
 import { useState } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
-
 import s from "../../styles/Profile/Profile.module.css";
 
 export default function Layout({ children, activeNav, pageTitle }) {
     const [collapsed, setCollapsed] = useState(false);
+    const user = JSON.parse(localStorage.getItem("user"));
 
     return (
         <div className="app-shell">
-            <Sidebar activeNav={activeNav} collapsed={collapsed}
-                    onToggle={() => setCollapsed((v) => !v)}/>
+            <Sidebar activeNav={activeNav} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)}/>
 
             <div className={`${s.mainArea} ${collapsed ? s.sidebarCollapsed : ""}`}>
-                <TopBar pageTitle={pageTitle} />
+                <TopBar pageTitle={pageTitle} user={user}/>
                 {children}
             </div>
         </div>

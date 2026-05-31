@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, Plus } from "lucide-react"
-import { usersData } from "../../data/mockData"
 import s from "../../styles/teams/CreateTeamModal.module.css"
+import axios from "axios"
 
 export default function CreateTeamModal({onClose,onCreate}) {
   const [name, setName] = useState("")
@@ -9,9 +9,28 @@ export default function CreateTeamModal({onClose,onCreate}) {
   const [memberInput, setMemberInput] = useState("")
   const [members, setMembers] = useState([])
   const [errors, setErrors] = useState({})
+  const [users, setUsers] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const filteredUsers = usersData.filter((user) =>
-    user.name.toLowerCase().includes(memberInput.toLowerCase())
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get(
+          "http://localhost:8080/Backend_PFA/GetAllUsers"
+        );
+        setUsers(response.data);
+        console.log(users);
+      }
+      catch(error) {
+        console.error(error);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter((u) =>
+    u.id !== user.id &&
+    (`${u.prenom} ${u.nom}`).toLowerCase().includes(memberInput.toLowerCase())
   )
 
   const handleAddMember = (user) => {
@@ -36,28 +55,18 @@ export default function CreateTeamModal({onClose,onCreate}) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-
     const newErrors = {}
-
     if (!name.trim()) {
       newErrors.name = "Le nom est requis"
     }
-
     if (!description.trim()) {
       newErrors.description = "La description est requise"
     }
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
-
-    onCreate({
-      name: name.trim(),
-      description: description.trim(),
-      members,
-    })
-
+    onCreate({name: name.trim(), description: description.trim(), members})
     onClose()
   }
 
@@ -97,7 +106,7 @@ export default function CreateTeamModal({onClose,onCreate}) {
                 {filteredUsers.length > 0 ? (
                   filteredUsers.map((user) => (
                     <div key={user.id} className={s.searchItem}>
-                      <span>{user.name}</span>
+                      <span>{user.prenom} {user.nom}</span>
 
                       <button type="button" className={s.addUserBtn} onClick={() => handleAddMember(user)}>
                         <Plus size={15} />
@@ -114,7 +123,7 @@ export default function CreateTeamModal({onClose,onCreate}) {
               <div className={s.membersList}>
                 {members.map((member) => (
                   <div key={member.id} className={s.memberChip}>
-                    <span>{member.name}</span>
+                    <span>{member.prenom} {member.nom}</span>
 
                     <button type="button" onClick={() => handleRemoveMember(member)}>x</button>
                   </div>

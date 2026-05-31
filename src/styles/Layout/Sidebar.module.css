@@ -212,6 +212,16 @@
   flex-shrink: 0;
 }
 
+/* ── Bouton Déconnexion ─────────────────────── */
+.logoutBtn {
+  color: var(--text-light);
+}
+
+.logoutBtn:hover {
+  background: #FEF2F2;
+  color: #DC2626;
+}
+
 /* ── Mobile overlay ─────────────────────────── */
 @media (max-width: 768px) {
   .sidebar {

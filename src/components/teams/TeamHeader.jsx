@@ -47,27 +47,27 @@ export default function TeamHeader({ team, onEdit, onAddMember, onDelete }) {
   return (
     <div className={styles.header}>
       <div className={styles.topRow}>
-        <div className={styles.teamIcon}>{team.name.charAt(0)}</div>
+        <div className={styles.teamIcon}>{team.nom.charAt(0)}</div>
 
         <div className={styles.teamInfo}>
           <div className={styles.nameRow}>
-            <h1 className={styles.teamName}>{team.name}</h1>
+            <h1 className={styles.teamName}>{team.nom}</h1>
           </div>
-          <p className={styles.domain}>{team.domain}</p>
-          <p className={styles.description}>{team.description}</p>
+          <p className={styles.description}>{team.objectif}</p>
 
           <div className={styles.metaList}>
-            <span className={styles.metaItem}> {iconCalendar}Créée le {team.createdAt}</span>
+            <span className={styles.metaItem}> {iconCalendar}Créée le {new Date(team.dateCreation).toLocaleString("fr-FR", {day: "2-digit",month: "2-digit",
+                  year: "numeric",hour: "2-digit",minute: "2-digit",second: "2-digit"})}</span>
             <span className={styles.metaSeparator}>·</span>
             <span className={styles.metaItem}>
               {iconUsers}
-              {team.membres} membres
+              {team.membres.length} membres
             </span>
             <span className={styles.metaSeparator}>·</span>
-            <span className={styles.metaItem}>
+            {/*<span className={styles.metaItem}>
               {iconFolder}
               {team.projets} projets
-            </span>
+            </span>*/}
           </div>
         </div>
 

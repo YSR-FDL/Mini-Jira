@@ -20,7 +20,7 @@ const statusStyles = {
   }
 };
 
-function ContribItem({ item }) {
+function ContribItem({ item, user }) {
   const iconStyle = statusStyles[item.status];
   return (
     <div className={s.contribItem}>
@@ -28,10 +28,7 @@ function ContribItem({ item }) {
         <div className={s.contribIcon} style={{background:iconStyle.bg, color:iconStyle.color}}>
           <CheckSquare size={17}/>
         </div>
-        <span
-          className={s.statusBadge}
-          style={{ background: item.statusBg, color: item.statusColor }}
-        >
+        <span className={s.statusBadge} style={{ background: item.statusBg, color: item.statusColor }}>
           {item.status}
         </span>
       </div>
@@ -68,16 +65,10 @@ export default function Contributions() {
       <div className={s.contribHeader}>
         <span className={s.contribTitle}>Contributions</span>
         <div className={s.tabToggle}>
-          <button
-            className={`${s.tabToggleBtn}${activeTab === "active" ? " " + s.active : ""}`}
-            onClick={() => setActiveTab("active")}
-          >
+          <button className={`${s.tabToggleBtn}${activeTab === "active" ? " " + s.active : ""}`} onClick={() => setActiveTab("active")}>
             Active
           </button>
-          <button
-            className={`${s.tabToggleBtn}${activeTab === "completed" ? " " + s.active : ""}`}
-            onClick={() => setActiveTab("completed")}
-          >
+          <button className={`${s.tabToggleBtn}${activeTab === "completed" ? " " + s.active : ""}`} onClick={() => setActiveTab("completed")}>
             Completed
           </button>
         </div>

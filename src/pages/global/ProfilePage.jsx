@@ -1,30 +1,27 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ProfileHeader from "../../components/profile/ProfileHeader";
 import Statistics from "../../components/profile/Statistics";
 import About from "../../components/profile/About";
 import Contributions from "../../components/profile/Contributions";
 import Layout from "../../components/layout/Layout";
 import s from "../../styles/Profile/Profile.module.css";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
+  const user = JSON.parse(localStorage.getItem("user"));
 
   return (
       <Layout activeNav="profile" pageTitle="Page profil">
           <div className={s.pageContent}>
-            <ProfileHeader />
+            <ProfileHeader user={user}/>
             
             <div className={s.profileBody}>
               <Statistics />
               <div className={s.bottomColumns}>
-                <About />
-                <Contributions />
+                <About user={user} />
+                <Contributions user={user} />
               </div>
-            </div>
-            {/* Danger zone */}
-            <div className={s.dangerZone}>
-              <p className={s.dangerTitle}>Actions du compte</p>
-              <p className={s.dangerText}>La suppression de votre compte est irréversible. Toutes vos données seront définitivement effacées.</p>
-              <button className={s.btnDanger}>Supprimer le compte</button>
             </div>
           </div>
       </Layout>

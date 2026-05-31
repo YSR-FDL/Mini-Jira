@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Users, FolderOpen } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
@@ -7,18 +7,32 @@ import TeamMemberCard from '../../components/teams/TeamMemberCard'
 import { teamsData, teamMembersData, teamProjectsData } from '../../data/mockData'
 import s from '../../styles/teams/TeamDetailsPage.module.css'
 import ProjectCard from '../../components/page projets/ProjectCard'
+import axios from 'axios'
 
 export default function TeamDetailsPage() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  // Trouver l'équipe correspondant à l'id dans l'URL
-  const teamId = parseInt(id, 10)
-  const team = teamsData.find((t) => t.id === teamId)
+  const [team, setTeam] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [projects, setProjects] = useState([]);
 
-  // Récupérer les membres et projets de cette équipe
-  const [members, setMembers] = useState(teamMembersData[teamId] || [])
-  const projects = teamProjectsData[teamId] || []
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/Backend_PFA/GetTeam?id=${id}`
+        );
+        setTeam(response.data);
+        setMembers(response.data.membres || []);
+      }
+      catch(error) {
+        console.error(error);
+      }
+    };
+
+    fetchTeam();
+  }, [id]);
 
   // Si l'équipe n'existe pas, afficher un message d'erreur
   if (!team) {
@@ -78,16 +92,11 @@ export default function TeamDetailsPage() {
             Toutes les équipes
           </button>
           <span className={s.breadcrumbSep}>/</span>
-          <span className={s.breadcrumbCurrent}>{team.name}</span>
+          <span className={s.breadcrumbCurrent}>{team.nom}</span>
         </div>
 
         {/* ── Header de l'équipe ── */}
-        <TeamHeader
-          team={team}
-          onEdit={handleEdit}
-          onAddMember={handleAddMember}
-          onDelete={handleDelete}
-        />
+        <TeamHeader team={team} onEdit={handleEdit} onAddMember={handleAddMember} onDelete={handleDelete}/>
 
         {/* ── Section Membres ── */}
         <section className={s.section}>
@@ -95,11 +104,11 @@ export default function TeamDetailsPage() {
             <div className={s.sectionTitle}>
               <Users size={16} color="var(--blue)" />
               <h2>Membres de l'équipe</h2>
-              <span className={s.countBadge}>{members.length}</span>
+              <span className={s.countBadge}>{team.membres.length}</span>
             </div>
           </div>
 
-          {members.length > 0 ? (
+          {team.membres.length > 0 ? (
             <div className={s.membersGrid}>
               {members.map((member, index) => (
                 <div key={member.id} style={{ animationDelay: `${index * 0.06}s` }}>

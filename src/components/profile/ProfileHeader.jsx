@@ -4,7 +4,15 @@ import { userProfile } from "../../data/mockData";
 import s from "../../styles/Profile/Profile.module.css";
 import { useNavigate } from "react-router-dom";
 
-export default function ProfileHeader() {
+const rolesLabels = {
+  scrum: "Scrum Master",
+  po: "Product Owner",
+  dev: "Développeur",
+  designer: "Designer",
+  tester: "Testeur"
+}
+
+export default function ProfileHeader({user}) {
   const [name, setName] = useState(userProfile.fullName);
   const [role, setRole] = useState(userProfile.role);
   const navigate = useNavigate();
@@ -20,8 +28,15 @@ export default function ProfileHeader() {
           </div>
 
           <div className={s.profileInfo}>
-            <div className={s.profileName}>{name}</div>
-            <div className={s.profileRole}>{role}</div>
+            <div className={s.profileName}>{user.nom} {user.prenom}</div>
+            <div className={s.profileRole}>
+                {user.experiences.map((role, index) => (
+                  <span key={index}>
+                    {rolesLabels[role]}
+                    {index < user.experiences.length - 1 && ", "}
+                  </span>
+                ))}
+            </div>
           </div>
 
           <button className={s.editProfileBtn} onClick = {() => {navigate("/ProfileUpdate");}}>

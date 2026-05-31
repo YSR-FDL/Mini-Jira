@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import LeftPanel from '../../components/auth/LeftPanel';
 import '../../styles/Auth/AuthLayout.css';
+import axios from 'axios';
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -10,67 +11,82 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState({})
   const [showPass, setShowPass] = useState(false)
+  const location = useLocation();
+  const [toast, setToast] = useState("");
 
-  const handleSubmit = (e) => {
+  const showToast = (message) => {
+    setToast(message);
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => {
+      setToast("");
+    }, 2800);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-
     const newErrors = {}
-
     if (!email.trim()) {
       newErrors.email = "L'adresse e-mail est requise"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Veuillez entrer une adresse e-mail valide'
     }
-
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = "Veuillez entrer une adresse e-mail valide"
+    }
     if (!password.trim()) {
-      newErrors.password = 'Le mot de passe est requis'
-    } else if (password.length < 6) {
-      newErrors.password = 'Minimum 6 caractères'
+      newErrors.password = "Le mot de passe est requis"
     }
-
+    else if (password.length < 6) {
+      newErrors.password = "Minimum 6 caractères"
+    }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
-
     setErrors({})
+
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/Backend_PFA/AuthUser",
+        {
+          email: email,
+          password: password
+        }
+      )
+      const user = response.data
+      localStorage.setItem("user", JSON.stringify(response.data));
+      navigate("/profile")
+    }
+    catch(error) {
+      console.error(error)
+      showToast("Login ou mot de passe incorrect");
+    }
   }
+
+  useEffect(() => {
+    if (location.state?.accountDeleted) {
+      showToast("Votre compte a été supprimé");
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   return (
     <div className="authPage">
       <LeftPanel />
-
       <div className="rightPanel scroll">
         <div className="dotGrid" />
-
         <div className="formArea">
-
           <form onSubmit={handleSubmit} noValidate>
             <h2 className="formTitle">Bon retour</h2>
             <p className="formSubtitle">
               Connectez-vous à votre espace Mini Jira
             </p>
-
             <div className="fields">
-
-              {/* Email */}
               <div className="fieldGroup">
                 <label className="label">
                   Adresse e-mail professionnelle
                 </label>
-
                 <div className={`inputWrap ${errors.email ? 'hasError' : ''}`}>
                   <span className="inputIcon">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="2" y="4" width="20" height="16" rx="2"/>
                       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                     </svg>
@@ -215,6 +231,7 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+      {toast && ( <div className="toast">{toast} </div>)}
     </div>
   )
 }

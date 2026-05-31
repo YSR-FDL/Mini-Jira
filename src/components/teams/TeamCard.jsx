@@ -2,10 +2,12 @@ import { useState } from "react"
 import { MoreVertical } from "lucide-react"
 import s from "../../styles/teams/TeamCard.module.css"
 import { useNavigate } from "react-router-dom"
-import ActionBtn from "../ui/ActionBtn"
+import EditTeamModal from "./EditTeamModal";
 
-export default function TeamCard({ team, onView }) {
+export default function TeamCard({ team, onDelete, onUpdate, onArchive}) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const navigate = useNavigate();
 
   const handleConsulter = () => {
@@ -13,18 +15,14 @@ export default function TeamCard({ team, onView }) {
   }
 
   const progressColor =
-    team.progression >= 80
-      ? "var(--blue)"
-      : team.progression >= 50
-      ? "var(--blue)"
-      : team.archived
-      ? "var(--border-mid)"
-      : "var(--blue)"
+    team.progression >= 80 ? "var(--blue)" : team.progression >= 50 ? "var(--blue)"
+      : team.isArchived ? "var(--border-mid)" : "var(--blue)"
 
   return (
-    <div className={ s.teamCard + (team.archived ? ` ${s.teamCardArchived}` : "")}>
+    <>
+    <div className={ s.teamCard + (team.isArchived ? ` ${s.teamCardArchived}` : "")}>
       <div className={s.teamCardHeader}>
-        <h3 className={s.teamCardName}>{team.name}</h3>
+        <h3 className={s.teamCardName}>{team.nom}</h3>
 
         <div className={s.teamCardMenuWrap}>
           <button className={s.teamCardMenuBtn}  onClick={() => setMenuOpen((v) => !v)}>
@@ -33,24 +31,24 @@ export default function TeamCard({ team, onView }) {
 
           {menuOpen && (
             <div className={s.teamCardDropdown}>
-              {!team.archived && (
+              {!team.isArchived && (
                 <>
-                  <button onClick={() => setMenuOpen(false)}>Modifier</button>
-                  <button onClick={() => setMenuOpen(false)}>Archiver</button>
+                  <button onClick={() => {setMenuOpen(false);setShowEditModal(true);}}>Modifier</button>
+                  <button onClick={() => {setMenuOpen(false);onArchive(team.id);}}>Archiver</button>
                 </>
               )}
-              <button className={s.danger} onClick={() => setMenuOpen(false)}>Supprimer</button>
+              <button className={s.danger} onClick={() => {setMenuOpen(false);setShowDeleteConfirm(true);}}>Supprimer</button>
             </div>
           )}
         </div>
       </div>
 
-      <p className={s.teamCardDesc}>{team.description}</p>
+      <p className={s.teamCardDesc}>{team.objectif}</p>
 
       <div className={s.teamCardMeta}>
         <div>
           <span className={s.teamCardMetaLabel}> Membres </span>
-          <span className={s.teamCardMetaValue}> {team.membres} membres </span>
+          <span className={s.teamCardMetaValue}> {team.membres?.length || 0} membres </span>
         </div>
 
         <div>
@@ -62,7 +60,7 @@ export default function TeamCard({ team, onView }) {
       <div className={s.teamCardProgressSection}>
         <div className={s.teamCardProgressHeader}>
           <span className={s.teamCardProgressLabel}> Progression d'activité </span>
-          <span className={s.teamCardProgressPct}> {team.progression}% </span>
+          <span className={s.teamCardProgressPct}> {team.progression}0% </span>
         </div>
 
         <div className={s.teamCardProgressTrack}>
@@ -75,13 +73,50 @@ export default function TeamCard({ team, onView }) {
         </div>
       </div>
 
-      {team.archived ? (
+      {team.isArchived ? (
         <button className={`${s.teamCardBtn} ${s.teamCardBtnArchived}`} disabled> Archivé</button>
       ) : (
         <button className={s.teamCardBtn} onClick={handleConsulter}>Consulter l'équipe</button>
       )}
     </div>
+          {showDeleteConfirm && (
+        <div className={s.modalOverlay}>
+          <div className={s.deleteModal}>
+            <h3>Confirmer la suppression</h3>
+
+            <p>
+              Cette action est irréversible. Voulez-vous vraiment supprimer
+              l'équipe "{team.nom}" ?
+            </p>
+
+            <div className={s.modalActions}>
+              <button
+                className={s.cancelBtn}
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Annuler
+              </button>
+
+              <button
+                className={s.deleteBtn}
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  onDelete(team.id);
+                }}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showEditModal && (
+        <EditTeamModal
+          team={team}
+          onClose={() => setShowEditModal(false)}
+          onUpdate={onUpdate}
+        />
+      )}
+    </>
   )
 }
-
-{/*<ActionBtn onClick={handleConsulter}>Consulter l'équipe</ActionBtn>*/}

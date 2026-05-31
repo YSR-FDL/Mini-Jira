@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import LeftPanel from '../../components/auth/LeftPanel';
 import '../../styles/Auth/AuthLayout.css';
-
+import axios from "axios";
 const ROLES = [
   { id: 'scrum',    label: 'Scrum Master',  color: '#6554C0' },
   { id: 'po',       label: 'Product Owner', color: '#FF5630' },
@@ -14,8 +14,7 @@ const ROLES = [
 export default function RegisterPage() {
   const navigate = useNavigate()
 
-  // ── State ──────────────────────────────────────────────────
-  const [userId,          setUserId]          = useState('')
+  // ── State ─────────────────────────────────────────────
   const [firstName,       setFirstName]       = useState('')
   const [lastName,        setLastName]        = useState('')
   const [email,           setEmail]           = useState('')
@@ -26,6 +25,15 @@ export default function RegisterPage() {
   const [showPass,        setShowPass]        = useState(false)
   const [showConfirm,     setShowConfirm]     = useState(false)
   const [success,         setSuccess]         = useState(false)
+  const [toast, setToast] = useState("");
+
+  const showToast = (message) => {
+    setToast(message);
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => {
+      setToast("");
+    }, 2800);
+  };
 
   // ── Toggle rôle ────────────────────────────────────────────
   const toggleRole = (id) => {
@@ -39,13 +47,9 @@ export default function RegisterPage() {
   const clearError = (field) => setErrors(prev => ({ ...prev, [field]: '' }))
 
   // ── Validation & submit ────────────────────────────────────
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-
     const newErrors = {}
-
-    if (!userId.trim())
-      newErrors.userId = "L'identifiant est requis"
 
     if (!firstName.trim())
       newErrors.firstName = 'Le prénom est requis'
@@ -75,12 +79,27 @@ export default function RegisterPage() {
       setErrors(newErrors)
       return
     }
-
     setErrors({})
-    setSuccess(true)
+    try {
+      const response = await axios.post("http://localhost:8080/Backend_PFA/AddUser",
+        {
+          nom: lastName,
+          prenom: firstName,
+          email: email,
+          password: password,
+          experiences: selectedRoles,
+          type_utilisateur: "MEMBRE"
+        }
+      )
+      console.log(response.data)
+      setSuccess(true)
+    }
+    catch(error) {
+      console.error(error)
+      showToast("Erreur lors de l'inscription");
+    }
   }
 
-  // ── Render ─────────────────────────────────────────────────
   return (
     <div className="authPage">
       <LeftPanel />
@@ -312,6 +331,7 @@ export default function RegisterPage() {
           )}
         </div>
       </div>
+      {toast && ( <div className="toast">{toast} </div>)}
     </div>
   )
 }

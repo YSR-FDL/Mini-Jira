@@ -198,3 +198,56 @@
   transform: none;
   box-shadow: none;
 }
+
+/*---Confirmation suppression---*/
+.modalOverlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.15s ease;
+}
+
+.deleteModal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%; max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.2s ease;
+}
+
+.deleteModal h3 {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+.deleteModal p {
+  font-size: 14px; 
+  color: var(--text-mid); 
+  line-height: 1.6; 
+  margin-bottom: 4px;
+}
+
+.modalActions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+.cancelBtn {
+  padding: 9px 18px; border: 1px solid var(--border); background: var(--white);
+  border-radius: var(--r-md); font-size: 13px; color: var(--text-mid);
+  transition: background var(--transition); font-family: var(--font-body);
+}
+
+.deleteBtn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  cursor: pointer;
+}
