@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight, LogOut,} from "lucide-react";
+import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight, LogOut, User, IdCard} from "lucide-react";
 import s from "../../styles/Layout/Sidebar.module.css";
 
 export const navItems = [
@@ -11,6 +11,7 @@ export const navItems = [
   { id: "reports",     label: "Bug Reports",    icon: "reports"   },
   { id: "paramètres",  label: "Paramètres", icon: "settings"  },
   { id: "profile",     label: "Profil",     icon: "profile"   },
+  { id: "users", label: "Gestion des utilisateurs", icon: "users"},
 ];
 
 const ICONS = {
@@ -21,6 +22,7 @@ const ICONS = {
   reports:   BarChart2,
   settings:  Settings,
   profile:   UserCircle,
+  users: IdCard
 };
 
 export default function Sidebar({ activeNav, collapsed, onToggle }) {
@@ -32,12 +34,12 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "équipes") navigate("/teams");
     if (id === "tâches") navigate("/tasks");
     if (id === "reports") navigate("/reports");
+    if (id === "users") navigate("/users");
   };
 
   return (
     <aside className={`${s.sidebar}${collapsed ? " " + s.collapsed : ""}`}>
 
-      {/* ── Brand + toggle ── */}
       <div className={s.brand}>
         {!collapsed && (
           <div className={s.brandLeft}>

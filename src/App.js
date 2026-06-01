@@ -16,6 +16,7 @@ import Overview from "./pages/project/Overview.jsx";
 import TeamDetailsPage from './pages/global/TeamDetailsPage.jsx'
 import TasksPage from "./pages/global/TasksPage.jsx"
 import ReportsPage from "./pages/global/ReportsPage.jsx"
+import UsersPage from "./pages/global/UsersPage.jsx";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
             <Route path="/tasks" element={<TasksPage/>} />
             <Route path="/detailsTeam/:id" element={<TeamDetailsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/users" element={<UsersPage/>} />
         </Routes>
       </BrowserRouter>
     </>
