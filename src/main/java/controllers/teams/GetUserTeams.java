@@ -1,28 +1,35 @@
-package controlers;
-//test 
+package controllers.teams;
+
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import structures_DAO.TeamDao;
 import structures_DAO.UtilisateurDAO;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
+
 import com.google.gson.Gson;
+
+import classes.Team;
 import classes.Utilisateur;
 
-@WebServlet("/AuthUser")
-public class AuthUser extends HttpServlet {
+@WebServlet("/GetUserTeams")
+public class GetUserTeams extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	UtilisateurDAO UDAO;
-    public AuthUser() {
+	TeamDao TDAO;
+    public GetUserTeams() {
         super();
     }
 
 	public void init(ServletConfig config) throws ServletException {
 		UDAO = new UtilisateurDAO();
+		TDAO = new TeamDao();
 	}
 	
 	protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -45,18 +52,11 @@ public class AuthUser extends HttpServlet {
 		
 		String json = sb.toString();
 		Gson gson = new Gson();
-		Utilisateur user_recu = gson.fromJson(json, Utilisateur.class);
-		System.out.println(user_recu);
-		Utilisateur user = UDAO.authentification(user_recu.getEmail(), user_recu.getPassword());
-		System.out.println(user);
-
-		PrintWriter out = response.getWriter();
-		response.setContentType("application/json");
-		if(user == null) {
-			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-			out.print("{\"message\":\"error\"}");
-		} else {
-			out.print(gson.toJson(user));
-		}	
+		Utilisateur user = gson.fromJson(json, Utilisateur.class);
+        List<Team> teams = TDAO.getUserTeams(user.getId(), user.getType_utilisateur());
+        response.setContentType("application/json");
+        PrintWriter out = response.getWriter();
+        out.print(gson.toJson(teams));
 	}
+
 }

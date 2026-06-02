@@ -1,4 +1,4 @@
-package controlers.teams;
+package controllers.teams;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;

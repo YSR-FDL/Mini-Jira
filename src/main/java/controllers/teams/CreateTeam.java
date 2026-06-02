@@ -1,4 +1,4 @@
-package controlers.teams;
+package controllers.teams;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -7,28 +7,24 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import structures_DAO.TeamDao;
-import structures_DAO.UtilisateurDAO;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.List;
 
 import com.google.gson.Gson;
 
 import classes.Team;
-import classes.Utilisateur;
 
-@WebServlet("/GetUserTeams")
-public class GetUserTeams extends HttpServlet {
+@WebServlet("/CreateTeam")
+public class CreateTeam extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	UtilisateurDAO UDAO;
-	TeamDao TDAO;
-    public GetUserTeams() {
+    TeamDao TDAO;
+    public CreateTeam() {
         super();
     }
 
 	public void init(ServletConfig config) throws ServletException {
-		UDAO = new UtilisateurDAO();
 		TDAO = new TeamDao();
 	}
 	
@@ -43,20 +39,27 @@ public class GetUserTeams extends HttpServlet {
 		response.setHeader("Access-Control-Allow-Origin",  "*");
 	   	response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 	   	response.setHeader("Access-Control-Allow-Headers", "Content-Type");
-	   	BufferedReader reader = request.getReader();
-		StringBuilder sb = new StringBuilder();
-		String line;
-		while((line = reader.readLine()) != null) {
-			sb.append(line);
-		}
-		
-		String json = sb.toString();
-		Gson gson = new Gson();
-		Utilisateur user = gson.fromJson(json, Utilisateur.class);
-        List<Team> teams = TDAO.getUserTeams(user.getId(), user.getType_utilisateur());
+       
+        BufferedReader reader = request.getReader();
+        StringBuilder sb = new StringBuilder();
+        String line;
+        while((line = reader.readLine()) != null) {
+            sb.append(line);
+        }
+        Gson gson = new Gson();
+        System.out.println("Ta fin a sahbi, ra wasslatni lbar9iya");
+        
+        Team team = gson.fromJson(sb.toString(), Team.class);
+        int nb = TDAO.createTeam(team);
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
-        out.print(gson.toJson(teams));
+        if(nb == 0) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"message\":\"error\"}");
+        }
+        else {
+        	out.print(gson.toJson(team));
+        }
 	}
 
 }
