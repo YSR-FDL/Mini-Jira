@@ -49,7 +49,7 @@ public class AuthUser extends HttpServlet {
 		System.out.println(user_recu);
 		Utilisateur user = UDAO.authentification(user_recu.getEmail(), user_recu.getPassword());
 		System.out.println(user);
-		
+		System.out.println("msg reçu ");
 		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		if(user == null) {
