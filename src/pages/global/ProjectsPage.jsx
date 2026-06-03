@@ -4,13 +4,13 @@ import styles from '../../styles/Project/ProjectsPage.module.css'
 import Layout from "../../components/layout/Layout"
 import {initialProjects} from "../../data/mockData";
 import { Plus } from 'lucide-react';
+import CreateProjectModal from "../../components/page projets/CreateProjectModal";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState(initialProjects)
   const [filter, setFilter] = useState('All Projects')
   const [sort, setSort] = useState('Recent')
   const [showModal, setShowModal] = useState(false)
-  const [newProject, setNewProject] = useState({ title: '', description: '' })
   const [errors, setErrors] = useState({})
 
   const filteredProjects = projects.filter(p => {
@@ -32,30 +32,6 @@ export default function ProjectsPage() {
 
     return b.id - a.id
   })
-
-  const handleCreateProject = (e) => {
-    e.preventDefault()
-    const newErrors = {}
-    if (!newProject.title.trim()) newErrors.title = 'Le titre est requis'
-    if (!newProject.description.trim()) newErrors.description = 'La description est requise'
-    if (Object.keys(newErrors).length > 0) { setErrors(newErrors); return }
-
-    const created = {
-      id: Date.now(),
-      title: newProject.title,
-      description: newProject.description,
-      status: 'ACTIVE',
-      progress: 0,
-      members: 1,
-      tasksCompleted: 0,
-      tasksTotal: 0,
-      dueDate: 'TBD',
-    }
-    setProjects([...projects, created])
-    setNewProject({ title: '', description: '' })
-    setErrors({})
-    setShowModal(false)
-  }
 
   return (
     <Layout activeNav="projets" pageTitle="Projets">
@@ -96,38 +72,10 @@ export default function ProjectsPage() {
         <button className={styles.fab} onClick={() => setShowModal(true)}>+</button>
 
         {showModal && (
-          <div className={styles.overlay} onClick={() => setShowModal(false)}>
-            <div className={styles.modal} onClick={e => e.stopPropagation()}>
-              <h2 className={styles.modalTitle}>Créer un nouveau projet</h2>
-              <form onSubmit={handleCreateProject} className={styles.form}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Nom du projet</label>
-                  <input
-                    className={`${styles.input} ${errors.title ? styles.inputError : ''}`}
-                    placeholder="Enter project title"
-                    value={newProject.title}
-                    onChange={e => setNewProject({ ...newProject, title: e.target.value })}
-                  />
-                  {errors.title && <span className={styles.error}>{errors.title}</span>}
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Description</label>
-                  <textarea
-                    className={`${styles.input} ${styles.textarea} ${errors.description ? styles.inputError : ''}`}
-                    placeholder="Describe your project..."
-                    value={newProject.description}
-                    onChange={e => setNewProject({ ...newProject, description: e.target.value })}
-                    rows={3}
-                  />
-                  {errors.description && <span className={styles.error}>{errors.description}</span>}
-                </div>
-                <div className={styles.modalActions}>
-                  <button type="button" className={styles.cancelBtn} onClick={() => setShowModal(false)}>Annuler</button>
-                  <button type="submit" className={styles.submitBtn}>Créer un projet</button>
-                </div>
-              </form>
-            </div>
-          </div>
+          <CreateProjectModal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+          />
         )}
       </div>
     </Layout>
