@@ -1,21 +1,44 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import ProjectCard from '../../components/page projets/ProjectCard'
 import styles from '../../styles/Project/ProjectsPage.module.css'
 import Layout from "../../components/layout/Layout"
-import {initialProjects} from "../../data/mockData";
 import { Plus } from 'lucide-react';
 import CreateProjectModal from "../../components/page projets/CreateProjectModal";
+import axios from 'axios';
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState(initialProjects)
+  const [projects, setProjects] = useState([])
   const [filter, setFilter] = useState('All Projects')
   const [sort, setSort] = useState('Recent')
   const [showModal, setShowModal] = useState(false)
   const [errors, setErrors] = useState({})
+  const [toast, setToast] = useState("");
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => {
+      setToast("");
+    }, 2800);
+  };
+
+  const fetchProjects = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const response = await axios.get(
+        `http://localhost:8080/Backend_PFA/GetUserProjects?idUser=${user.id}`
+      );
+      setProjects(response.data);
+    } catch(error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
 
   const filteredProjects = projects.filter(p => {
     if (filter === 'Tout les projets') return true
-    if (filter === 'En cours') return p.status === 'EN COURS'
+    if (filter === 'En cours') return p.etat === 'EN COURS'
     if (filter === 'Terminé') return p.status === 'TERMINÉ'
     if (filter === 'Archivé') return p.archived
     return true
@@ -23,7 +46,7 @@ export default function ProjectsPage() {
 
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     if (sort === 'Trier par : Nom') {
-      return a.title.localeCompare(b.title)
+      return a.nomProjet.localeCompare(b.nomProjet)
     }
 
     if (sort === 'Trier par : Progression') {
@@ -32,6 +55,22 @@ export default function ProjectsPage() {
 
     return b.id - a.id
   })
+
+  const handleCreateProject = async (projet) => {
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/CreateProject",
+        projet
+      );
+      await fetchProjects();
+      showToast("Projet créé avec succès");
+      setShowModal(false);
+    } catch(error) {
+      console.error(error);
+      showToast("Erreur lors de la création");
+      setShowModal(false);
+    }
+};
 
   return (
     <Layout activeNav="projets" pageTitle="Projets">
@@ -58,11 +97,11 @@ export default function ProjectsPage() {
 
         <div className={styles.grid}>
           {sortedProjects.map((project, i) => (
-            <div key={project.id} style={{ animationDelay: `${i * 0.06}s` }}>
+            <div key={project.idProject} style={{ animationDelay: `${i * 0.06}s` }}>
               <ProjectCard project={project} />
             </div>
           ))}
-          <div className={styles.createCard}>
+          <div className={styles.createCard} onClick={() => setShowModal(true)}>
             <div className={styles.createIcon}> <Plus size={24} /> </div>
             <h3 className={styles.createTitle}>Créer un projet</h3>
             <p className={styles.createSub}>Commencer un nouveau projet</p>
@@ -72,10 +111,15 @@ export default function ProjectsPage() {
         <button className={styles.fab} onClick={() => setShowModal(true)}>+</button>
 
         {showModal && (
-          <CreateProjectModal
-            isOpen={showModal}
-            onClose={() => setShowModal(false)}
+          <CreateProjectModal isOpen={showModal}
+            onClose={() => setShowModal(false)} onCreate={handleCreateProject}
           />
+        )}
+
+        {toast && (
+          <div className={`${styles.toast} ${toast === "Erreur lors de la création" ? styles.toastError : ""}`}>
+            {toast}
+          </div>
         )}
       </div>
     </Layout>
