@@ -95,6 +95,7 @@
 .dot-progress { background-color: var(--color-primary-blue); }
 .dot-review { background-color: var(--color-warning-orange); }
 .dot-done { background-color: var(--color-success-green); }
+.dot-custom { background-color: var(--color-gray-600, #4b5563); }
 
 @keyframes fadeSlideDown {
   from { opacity: 0; transform: translateY(-4px); }
