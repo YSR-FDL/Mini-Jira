@@ -9,7 +9,7 @@ import { taskService } from '../../services/taskService';
 
 import '../../styles/Board/Board.css';
 
-const COLUMNS = [
+const INITIAL_COLUMNS = [
   { id: 'todo', title: 'À Faire' },
   { id: 'in-progress', title: 'En Cours' },
   { id: 'review', title: 'En Revue' },
@@ -20,6 +20,9 @@ export default function Board() {
   const [activeTab, setActiveTab] = useState('board');
   const [sprints, setSprints] = useState(initialSprints);
   const [tasks, setTasks] = useState(initialTasks);
+  const [columns, setColumns] = useState(INITIAL_COLUMNS);
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [newColumnTitle, setNewColumnTitle] = useState('');
 
   // Nouveaux états pour la barre de contrôle
   const [search, setSearch] = useState('');
@@ -166,6 +169,25 @@ export default function Board() {
     }
   };
 
+  const handleAddColumn = () => {
+    if (!newColumnTitle || newColumnTitle.trim() === '') return;
+    const title = newColumnTitle.trim();
+    // Génère un id unique
+    const id = title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Supprime les accents
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    if (columns.some(col => col.id === id)) {
+      alert("Ce statut existe déjà.");
+      return;
+    }
+
+    setColumns(prev => [...prev, { id, title }]);
+    setIsAddingColumn(false);
+    setNewColumnTitle('');
+  };
+
   if (!activeSprint) {
     return (
       <ProjectLayout activeTab={activeTab} onTabChange={setActiveTab} projectName="Mini-Jira">
@@ -191,7 +213,7 @@ export default function Board() {
       <div className="kanban-board-container scroll">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="kanban-board">
-            {COLUMNS.map((col) => {
+            {columns.map((col) => {
               const colTasks = activeTasks.filter((t) => t.status === col.id);
               return (
                 <KanbanColumn
@@ -204,6 +226,42 @@ export default function Board() {
                 />
               );
             })}
+
+            {/* Ajouter un nouveau statut */}
+            <div className="kanban-column-container add-column-wrapper">
+              {isAddingColumn ? (
+                <div className="add-column-form">
+                  <input
+                    type="text"
+                    className="ui-input new-column-title-input"
+                    placeholder="Nom du statut..."
+                    value={newColumnTitle}
+                    onChange={(e) => setNewColumnTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddColumn();
+                      else if (e.key === 'Escape') setIsAddingColumn(false);
+                    }}
+                    autoFocus
+                  />
+                  <div className="add-column-actions">
+                    <button onClick={handleAddColumn} className="add-column-save-btn">
+                      Ajouter
+                    </button>
+                    <button onClick={() => setIsAddingColumn(false)} className="add-column-cancel-btn">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button className="add-column-trigger-btn" onClick={() => setIsAddingColumn(true)}>
+                  <svg className="kanban-add-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: '6px' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Ajouter un statut
+                </button>
+              )}
+            </div>
+
           </div>
         </DragDropContext>
       </div>
@@ -213,6 +271,7 @@ export default function Board() {
           task={tasks.find(t => t.id === selectedTaskId)}
           onClose={() => setSelectedTaskId(null)}
           onSave={handleUpdateTask}
+          columns={columns}
         />
       )}
     </ProjectLayout>

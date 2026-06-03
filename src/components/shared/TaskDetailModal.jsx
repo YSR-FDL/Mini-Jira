@@ -16,20 +16,33 @@ import {
 } from 'react-icons/fi';
 import { FaBug, FaTasks, FaBookmark, FaExclamationCircle } from 'react-icons/fa';
 
-const STATUS_OPTIONS = [
-  { value: 'todo', label: 'À Faire', colorClass: 'dot-todo' },
-  { value: 'progress', label: 'En Cours', colorClass: 'dot-progress' },
-  { value: 'review', label: 'En Revue', colorClass: 'dot-review' },
-  { value: 'done', label: 'Terminé', colorClass: 'dot-done' }
-];
-
 const TYPE_OPTIONS = [
   { value: 'task', label: 'Tâche', icon: <FaTasks color="#4BCE97" style={{ marginRight: '8px' }}/> },
   { value: 'bug', label: 'Bug', icon: <FaBug color="#F15B50" style={{ marginRight: '8px' }}/> },
   { value: 'story', label: 'Story', icon: <FaBookmark color="#579DFF" style={{ marginRight: '8px' }}/> }
 ];
 
-const TaskDetailModal = ({ task, onClose, onSave }) => {
+const TaskDetailModal = ({ task, onClose, onSave, columns = [] }) => {
+  const statusOptions = columns.length > 0 
+    ? columns.map(col => {
+        let colorClass = 'dot-custom';
+        if (col.id === 'todo') colorClass = 'dot-todo';
+        else if (col.id === 'in-progress' || col.id === 'progress') colorClass = 'dot-progress';
+        else if (col.id === 'review') colorClass = 'dot-review';
+        else if (col.id === 'done') colorClass = 'dot-done';
+        return {
+          value: col.id,
+          label: col.title,
+          colorClass
+        };
+      })
+    : [
+        { value: 'todo', label: 'À Faire', colorClass: 'dot-todo' },
+        { value: 'in-progress', label: 'En Cours', colorClass: 'dot-progress' },
+        { value: 'review', label: 'En Revue', colorClass: 'dot-review' },
+        { value: 'done', label: 'Terminé', colorClass: 'dot-done' }
+      ];
+
   const [editedTask, setEditedTask] = useState({ ...task });
   const [isClosing, setIsClosing] = useState(false);
   const [newComment, setNewComment] = useState("");
@@ -121,8 +134,8 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
   const handleFieldChange = (field, value) => {
     let message = null;
     if (field === 'status') {
-      const oldStatus = STATUS_OPTIONS.find(s => s.value === editedTask.status)?.label || editedTask.status;
-      const newStatus = STATUS_OPTIONS.find(s => s.value === value)?.label || value;
+      const oldStatus = statusOptions.find(s => s.value === editedTask.status)?.label || editedTask.status;
+      const newStatus = statusOptions.find(s => s.value === value)?.label || value;
       message = `A changé le statut de '${oldStatus}' à '${newStatus}'.`;
     } else if (field === 'points') {
       message = `A estimé l'effort à ${value} points.`;
@@ -298,7 +311,7 @@ const TaskDetailModal = ({ task, onClose, onSave }) => {
                   <div className="metadata-label">STATUT</div>
                   <div className="metadata-value no-hover" style={{ margin: 0, padding: 0 }}>
                     <StatusDropdown 
-                      options={STATUS_OPTIONS}
+                      options={statusOptions}
                       value={editedTask.status}
                       onChange={(val) => handleFieldChange('status', val)}
                     />
