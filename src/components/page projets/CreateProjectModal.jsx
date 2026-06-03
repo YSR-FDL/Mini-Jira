@@ -3,14 +3,15 @@ import styles from "../../styles/Project/CreateProjectModal.module.css";
 import axios from "axios";
 import { Trash2 } from "lucide-react";
 
-function CreateProjectModal({ isOpen, onClose }) {
+export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
     const [nomProjet, setNomProjet] = useState("");
     const [cle, setCle] = useState("");
+    const user = JSON.parse(localStorage.getItem("user"));
 
     const [etats, setEtats] = useState([
         "À faire",
         "En cours",
-        "Revue en cours",
+        "En Revue",
         "Terminé",
     ]);
 
@@ -27,33 +28,9 @@ function CreateProjectModal({ isOpen, onClose }) {
         setEtats(nouveauxEtats);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
-
-        const projet = {nomProjet, cle, etats};
-
-        try {
-        await axios.post(
-            "http://localhost:8080/api/projets",
-            projet
-        );
-
-        alert("Projet créé avec succès");
-
-        setNomProjet("");
-        setCle("");
-        setEtats([
-            "À faire",
-            "En cours",
-            "Revue en cours",
-            "Terminé",
-        ]);
-
-        onClose();
-        } catch (error) {
-        console.error(error);
-        alert("Erreur lors de la création du projet");
-        }
+        onCreate({nomProjet, cle, etats, idCreateur: user.id});
     };
 
     if (!isOpen) return null;
@@ -100,5 +77,3 @@ function CreateProjectModal({ isOpen, onClose }) {
         </div>
     );
 }
-
-export default CreateProjectModal;

@@ -9,22 +9,21 @@ const statusColors = {
 }
 
 export default function ProjectCard({ project }) {
-  const statusStyle = statusColors[project.status] || statusColors['ACTIVE']
   const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate();
-
-  const progressColor = project.progress >= 100 ? 'var(--green)' : project.progress >= 50  ? 'var(--blue)' :
-    project.progress >= 25  ? '#F79009' : 'var(--red)'
+  const progress = 50;
+  const progressColor = progress >= 100 ? 'var(--green)' : progress >= 50  ? 'var(--blue)' :
+    progress >= 25  ? '#F79009' : 'var(--red)'
 
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <h3 className={styles.title}>{project.title}</h3>
+        <h3 className={styles.title}>{project.nomProjet}</h3>
         <div className={styles.menuWrapper}>
           <button className={styles.menuBtn} onClick={() => setMenuOpen(!menuOpen)}>⋮</button>
           {menuOpen && (
             <div className={styles.dropdown}>
-              {!project.archived ? (
+              {!project.isArchived ? (
               <>
                 <button onClick={() => setMenuOpen(false)}>Modifier</button>
                 <button onClick={() => setMenuOpen(false)}>Archiver</button>
@@ -34,29 +33,26 @@ export default function ProjectCard({ project }) {
           )}
         </div>
       </div>
-      <p className={styles.desc}>{project.description}</p>
-      <span className={styles.badge} style={{ background: statusStyle.bg, color: statusStyle.color, border: `1px solid ${statusStyle.border}` }}>
-        {project.status}
-      </span>
+      <p className={styles.desc}>{project.cle}</p>
       <div className={styles.progressSection}>
         <div className={styles.progressLabel}>
           <span>Progress</span>
-          <span>{project.progress}%</span>
+          <span>{progress}%</span>
         </div>
         <div className={styles.progressTrack}>
-          <div className={styles.progressBar} style={{ width: `${project.progress}%`, background: progressColor }}/>
+          <div className={styles.progressBar} style={{ width: `${progress}%`, background: progressColor }}/>
         </div>
       </div>
       <div className={styles.meta}>
-        <span className={styles.members}>{project.members} Member{project.members !== 1 ? 's' : ''}</span>
-        <span className={styles.tasks}>✓ {project.tasksCompleted}/{project.tasksTotal} tâches</span>
+        <span className={styles.members}>  0 Member{project.members !== 1 ? 's' : ''}</span>
+        <span className={styles.tasks}>✓ 0/20 tâches</span>
       </div>
       <div className={styles.footer}>
-        <span className={styles.due}>Date limite : {project.dueDate}</span>
+        <span className={styles.due}>Créé le : {project.dateCreation}</span>
         {project.archived ? (
           <button className={`${styles.openBtn} ${styles.projectCardBtnArchived}`} disabled> Archivé</button>
         ) : (
-          <button className={styles.openBtn} onClick={() => {navigate("/overview")}}>Consulter le projet</button>
+          <button className={styles.openBtn} onClick={() => {navigate(`/overview/${project.idProject}`)}}>Consulter le projet</button>
         )}
       </div>
     </div>
