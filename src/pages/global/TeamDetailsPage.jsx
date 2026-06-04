@@ -8,6 +8,8 @@ import { teamsData, teamMembersData, teamProjectsData } from '../../data/mockDat
 import s from '../../styles/teams/TeamDetailsPage.module.css'
 import ProjectCard from '../../components/page projets/ProjectCard'
 import axios from 'axios'
+import EditTeamModal from '../../components/teams/EditTeamModal'
+import AddMemberModal from "../../components/teams/AddMemberModal";
 
 export default function TeamDetailsPage() {
   const { id } = useParams()
@@ -16,6 +18,74 @@ export default function TeamDetailsPage() {
   const [team, setTeam] = useState(null);
   const [members, setMembers] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState(null);
+  const handleEdit = () => {
+    setShowEditModal(true);
+  };
+
+  const handleAddMembers = async (selectedMembers) => {
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/AddMembersToTeam",
+        {
+          idTeam: team.id,
+          members: selectedMembers.map(member => member.id)
+        }
+      );
+
+      setTeam(prev => ({
+        ...prev,
+        membres: [...prev.membres, ...selectedMembers]
+      }));
+
+      setMembers(prev => [
+        ...prev,
+        ...selectedMembers
+      ]);
+
+      setShowAddMemberModal(false);
+    }
+    catch(error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdateTeam = async (id, nom, objectif) => {
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/UpdateTeam",
+        {
+          id,
+          nom,
+          objectif
+        }
+      );
+      setTeam(prev => ({...prev, nom, objectif}));
+      setShowEditModal(false);
+    }
+    catch(error) {
+      console.error(error);
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/DeleteTeam",
+        {
+          id: team.id
+        }
+      );
+      navigate("/teams");
+    }
+    catch(error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     const fetchTeam = async () => {
@@ -49,13 +119,37 @@ export default function TeamDetailsPage() {
     )
   }
 
-  //  Retirer un membre de l'équipe 
-  function handleRemoveMember(member) {
-    const ok = window.confirm(`Retirer ${member.name} de l'équipe ?`)
-    if (ok) {
-      setMembers((prev) => prev.filter((m) => m.id !== member.id))
+
+  const confirmRemoveMember = async () => {
+    try {
+
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/RemoveMemberFromTeam",
+        {
+          idTeam: team.id,
+          idUser: memberToRemove.id
+        }
+      );
+
+      setMembers(prev =>
+        prev.filter(m => m.id !== memberToRemove.id)
+      );
+
+      setTeam(prev => ({
+        ...prev,
+        membres: prev.membres.filter(
+          m => m.id !== memberToRemove.id
+        )
+      }));
+
+      setShowRemoveMemberConfirm(false);
+      setMemberToRemove(null);
+
     }
-  }
+    catch(error) {
+      console.error(error);
+    }
+  };
 
   //  Voir le profil d'un membre 
   function handleViewProfile(member) {
@@ -67,21 +161,21 @@ export default function TeamDetailsPage() {
     navigate('/projects')
   }
 
-  //  Actions du header 
-  function handleEdit() {
-    alert("le formulaire de modification de l'équipe")
-  }
+  const handleRemoveMember = (member) => {
+    setMemberToRemove(member);
+    setShowRemoveMemberConfirm(true);
+  };
 
-  function handleAddMember() {
-    alert("le formulaire d'ajout de membre")
-  }
+  const openAddMemberModal  = () => {
+    setShowAddMemberModal(true);
+  };
 
-  function handleDelete() {
-    const ok = window.confirm("Supprimer cette équipe ? Cette action est irréversible.")
-    if (ok) navigate('/teams')
-  }
+  const handleDelete = () => {
+      setShowDeleteConfirm(true);
+  };
 
   return (
+    <>
     <Layout activeNav="équipes" pageTitle="Détails équipe">
       <main className={s.page}>
 
@@ -96,7 +190,7 @@ export default function TeamDetailsPage() {
         </div>
 
         {/* ── Header de l'équipe ── */}
-        <TeamHeader team={team} onEdit={handleEdit} onAddMember={handleAddMember} onDelete={handleDelete}/>
+        <TeamHeader team={team} onEdit={handleEdit} onAddMember={openAddMemberModal} onDelete={handleDelete} />
 
         {/* ── Section Membres ── */}
         <section className={s.section}>
@@ -153,6 +247,77 @@ export default function TeamDetailsPage() {
         </section>
 
       </main>
+      {showDeleteConfirm && (
+        <div className={s.modalOverlay}>
+          <div className={s.deleteModal}>
+            <h3>Confirmer la suppression</h3>
+
+            <p>
+              Cette action est irréversible. Voulez-vous vraiment supprimer
+              l'équipe "{team.nom}" ?
+            </p>
+
+            <div className={s.modalActions}>
+              <button className={s.cancelBtn} onClick={() => setShowDeleteConfirm(false)}>
+                Annuler
+              </button>
+
+              <button className={s.deleteBtn} onClick={() => {setShowDeleteConfirm(false);handleDeleteTeam();}}>
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRemoveMemberConfirm && (
+        <div className={s.modalOverlay}>
+          <div className={s.deleteModal}>
+            <h3>Confirmer le retrait</h3>
+
+            <p>
+              Voulez-vous vraiment retirer
+              {" "}
+              "{memberToRemove?.prenom} {memberToRemove?.nom}"
+              {" "}
+              de cette équipe ?
+            </p>
+
+            <div className={s.modalActions}>
+              <button
+                className={s.cancelBtn}
+                onClick={() => {
+                  setShowRemoveMemberConfirm(false);
+                  setMemberToRemove(null);
+                }}
+              >
+                Annuler
+              </button>
+
+              <button
+                className={s.deleteBtn}
+                onClick={confirmRemoveMember}
+              >
+                Retirer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showAddMemberModal && (
+        <AddMemberModal
+            team={team}
+            onClose={() => setShowAddMemberModal(false)}
+            onAddMembers={handleAddMembers}
+        />
+      )}
     </Layout>
+    {showEditModal && (
+        <EditTeamModal
+            team={team}
+            onClose={() => setShowEditModal(false)}
+            onUpdate={handleUpdateTeam}
+        />
+    )}
+    </>
   )
 }
