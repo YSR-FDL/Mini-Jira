@@ -2,6 +2,13 @@
 # Eclipse
 .metadata/
 .settings/
+.classpath
+.project
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
 
 # Build
 build/
