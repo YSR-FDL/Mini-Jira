@@ -12,9 +12,9 @@
 /* La fenêtre modale - Agrandi pour 2 colonnes */
 .modal-content {
   background: white;
-  width: 1040px;
+  width: 860px;
   max-width: 95vw;
-  height: 90vh;
+  max-height: 85vh;
   border-radius: 8px;
   box-shadow: 0 8px 16px rgba(0,0,0,0.1);
   display: flex;
@@ -119,8 +119,8 @@
   overflow-y: auto;
   flex: 1;
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-  gap: 40px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: 32px;
 }
 
 /* Typography & General */

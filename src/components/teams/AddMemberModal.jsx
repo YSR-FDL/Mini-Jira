@@ -11,7 +11,7 @@ export default function AddMemberModal({team, onClose, onAddMembers }) {
     const fetchUsers = async () => {
         try {
         const response = await axios.get(
-            "http://localhost:8080/Backend_PFA/GetAllUsers"
+            "http://localhost:8080/GetAllUsers"
         );
 
         setUsers(response.data);

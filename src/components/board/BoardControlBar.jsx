@@ -10,7 +10,8 @@ function BoardControlBar({
   onToggleAssignee, 
   onClearFilters,
   sprint, 
-  onCompleteSprint 
+  onCompleteSprint,
+  isSM
 }) {
   return (
     <div className="board-control-bar">
@@ -72,9 +73,11 @@ function BoardControlBar({
             </div>
           </div>
         )}
-        <ActionBtn variant="secondary" onClick={onCompleteSprint}>
-          Clôturer le sprint
-        </ActionBtn>
+        {isSM && (
+          <ActionBtn variant="secondary" onClick={onCompleteSprint}>
+            Clôturer le sprint
+          </ActionBtn>
+        )}
       </div>
     </div>
   );
