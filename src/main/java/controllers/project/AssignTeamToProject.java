@@ -1,4 +1,4 @@
-package controllers.agile;
+package controllers.project;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -6,23 +6,20 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.TaskDAO;
-
+import structures_DAO.ProjectDAO;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import com.google.gson.Gson;
-import classes.Task;
+import com.google.gson.JsonObject;
 
-@WebServlet("/UpdateTask")
-public class UpdateTask extends HttpServlet {
+@WebServlet("/AssignTeamToProject")
+public class AssignTeamToProject extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private TaskDAO taskDAO;
+    private ProjectDAO PDAO;
 
-    @Override
     public void init(ServletConfig config) throws ServletException {
-        taskDAO = new TaskDAO();
+        PDAO = new ProjectDAO();
     }
 
     @Override
@@ -33,7 +30,6 @@ public class UpdateTask extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
-    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -46,27 +42,16 @@ public class UpdateTask extends HttpServlet {
             sb.append(line);
         }
 
+        String json = sb.toString();
         Gson gson = new Gson();
-        Task task = gson.fromJson(sb.toString(), Task.class);
+        JsonObject obj = gson.fromJson(json, JsonObject.class);
+        int projectId = obj.get("projectId").getAsInt();
+        int idTeam = obj.has("idTeam") && !obj.get("idTeam").isJsonNull() ? obj.get("idTeam").getAsInt() : 0;
 
-        if (task.getTitre() != null && task.getTitre().trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            PrintWriter out = response.getWriter();
-            out.print("{\"message\":\"error\",\"error\":\"Title cannot be empty\"}");
-            return;
-        }
+        int nb = PDAO.assignTeamToProject(projectId, idTeam);
 
-        int nb;
-        if (task.getTitre() == null && task.getTypeTache() != null) {
-            nb = taskDAO.updateTaskType(task.getIdTask(), task.getTypeTache());
-        } else {
-            nb = taskDAO.updateTask(task);
-        }
-
-        response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json");
         PrintWriter out = response.getWriter();
         if (nb > 0) {
             out.print("{\"message\":\"success\"}");

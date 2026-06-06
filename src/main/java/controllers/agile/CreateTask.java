@@ -48,6 +48,16 @@ public class CreateTask extends HttpServlet {
 
         Gson gson = new Gson();
         Task task = gson.fromJson(sb.toString(), Task.class);
+        
+        if (task.getTitre() == null || task.getTitre().trim().isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            PrintWriter out = response.getWriter();
+            out.print("{\"message\":\"error\",\"error\":\"Title cannot be empty\"}");
+            return;
+        }
+
         int nb = taskDAO.addTask(task);
 
         response.setContentType("application/json");

@@ -13,10 +13,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import com.google.gson.Gson;
-import classes.Task;
+import com.google.gson.JsonObject;
 
-@WebServlet("/UpdateTask")
-public class UpdateTask extends HttpServlet {
+@WebServlet("/DeleteTask")
+public class DeleteTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
 
@@ -47,23 +47,10 @@ public class UpdateTask extends HttpServlet {
         }
 
         Gson gson = new Gson();
-        Task task = gson.fromJson(sb.toString(), Task.class);
+        JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
+        int taskId = body.get("taskId").getAsInt();
 
-        if (task.getTitre() != null && task.getTitre().trim().isEmpty()) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            PrintWriter out = response.getWriter();
-            out.print("{\"message\":\"error\",\"error\":\"Title cannot be empty\"}");
-            return;
-        }
-
-        int nb;
-        if (task.getTitre() == null && task.getTypeTache() != null) {
-            nb = taskDAO.updateTaskType(task.getIdTask(), task.getTypeTache());
-        } else {
-            nb = taskDAO.updateTask(task);
-        }
+        int nb = taskDAO.deleteTask(taskId);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
