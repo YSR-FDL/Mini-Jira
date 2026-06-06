@@ -8,6 +8,7 @@ import StoryRow from '../../components/backlog/StoryRow';
 import { FiMoreHorizontal, FiCalendar, FiChevronDown, FiChevronRight } from 'react-icons/fi';
 import { taskService } from '../../services/taskService';
 import { sprintService } from '../../services/sprintService';
+import { projectService } from '../../services/projectService';
 import CreateSprintModal from '../../components/sprints/CreateSprintModal';
 
 // --- HELPER COMPONENTS ---
@@ -46,6 +47,14 @@ export default function Sprints() {
   const [upcomingSprints, setUpcomingSprints] = useState([]);
   const [completedSprints, setCompletedSprints] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // RBAC State
+  const [isSM, setIsSM] = useState(false);
+  const [isPO, setIsPO] = useState(false);
+
+  // Backlog Filters
+  const [backlogAssigneeFilter, setBacklogAssigneeFilter] = useState('all');
+  const [backlogTypeFilter, setBacklogTypeFilter] = useState('all');
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -60,8 +69,16 @@ export default function Sprints() {
     setLoading(true);
     
     try {
+      const projectData = await projectService.getProjectById(projectId);
       const fetchedSprints = await sprintService.getAll(projectId);
       const fetchedTasks = await taskService.getProjectTasks(projectId);
+
+      // Compute RBAC
+      const currentUserId = parseInt(localStorage.getItem('userId'), 10);
+      if (projectData && currentUserId) {
+        setIsSM(projectData.idSM === currentUserId || projectData.idCreateur === currentUserId);
+        setIsPO(projectData.idPO === currentUserId || projectData.idCreateur === currentUserId);
+      }
 
       // Partition sprints
       const active = fetchedSprints.find(s => s.status === 'active' || s.status === 'actif');
@@ -181,7 +198,7 @@ export default function Sprints() {
 
           <div className="sprints-header">
             <h1 className="sprints-title">Sprints</h1>
-            <ActionBtn variant="primary" onClick={() => setIsCreateModalOpen(true)}>Créer un sprint</ActionBtn>
+            {isSM && <ActionBtn variant="primary" onClick={() => setIsCreateModalOpen(true)}>Créer un sprint</ActionBtn>}
           </div>
 
           <div className="filter-bar" style={{ marginBottom: '32px' }}>
@@ -213,7 +230,7 @@ export default function Sprints() {
                   </div>
                   <div className="sprint-actions">
                     <ActionBtn variant="secondary">Voir le board</ActionBtn>
-                    <ActionBtn variant="secondary" style={{backgroundColor: '#F4F5F7'}} onClick={() => setIsTerminateModalOpen(true)}>Terminer le sprint</ActionBtn>
+                    {isSM && <ActionBtn variant="secondary" style={{backgroundColor: '#F4F5F7'}} onClick={() => setIsTerminateModalOpen(true)}>Terminer le sprint</ActionBtn>}
                   </div>
                 </div>
 
@@ -255,13 +272,15 @@ export default function Sprints() {
                     </div>
                   </div>
                     <div className="sprint-actions">
-                      <ActionBtn
-                        variant="secondary"
-                        onClick={() => startUpcomingSprint(sprint.id)}
-                        style={activeSprint ? {opacity: 0.6} : {}}
-                      >
-                        Démarrer
-                      </ActionBtn>
+                      {isSM && (
+                        <ActionBtn
+                          variant="secondary"
+                          onClick={() => startUpcomingSprint(sprint.id)}
+                          style={activeSprint ? {opacity: 0.6} : {}}
+                        >
+                          Démarrer
+                        </ActionBtn>
+                      )}
                       <button className="icon-btn"><FiMoreHorizontal size={18} /></button>
                     </div>
                   </div>
@@ -288,9 +307,31 @@ export default function Sprints() {
           )}
 
           {/* BACKLOG SECTION FOR DRAG AND DROP */}
-          {(filter === 'all' || filter === 'active' || filter === 'upcoming') && (
+          {(filter === 'all' || filter === 'active' || filter === 'upcoming') && (() => {
+            const filteredBacklog = backlogIssues.filter(issue => {
+              const matchAssignee = backlogAssigneeFilter === 'all' || (issue.assignee && issue.assignee.name === backlogAssigneeFilter);
+              const matchType = backlogTypeFilter === 'all' || issue.typeTache === backlogTypeFilter || (issue.tags && issue.tags[0] === backlogTypeFilter);
+              return matchAssignee && matchType;
+            });
+            const uniqueAssignees = [...new Set(backlogIssues.map(i => i.assignee?.name).filter(Boolean))];
+
+            return (
             <div className="sprints-section" style={{marginTop: '48px'}}>
-              <h2 className="section-heading">Backlog (Non planifié) <span className="badge">{backlogIssues.length}</span></h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h2 className="section-heading" style={{ margin: 0 }}>Backlog (Non planifié) <span className="badge">{filteredBacklog.length}</span></h2>
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <select value={backlogTypeFilter} onChange={e => setBacklogTypeFilter(e.target.value)} className="ui-input" style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #ccc' }}>
+                    <option value="all">Tous les types</option>
+                    <option value="Feature">Feature</option>
+                    <option value="Bug">Bug</option>
+                    <option value="Tech">Tech</option>
+                  </select>
+                  <select value={backlogAssigneeFilter} onChange={e => setBacklogAssigneeFilter(e.target.value)} className="ui-input" style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid #ccc' }}>
+                    <option value="all">Tous les assignés</option>
+                    {uniqueAssignees.map(name => <option key={name} value={name}>{name}</option>)}
+                  </select>
+                </div>
+              </div>
 
               <Droppable droppableId="backlog">
                 {(provided, snapshot) => (
@@ -298,19 +339,19 @@ export default function Sprints() {
                     className={`sprint-issues-container ${snapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    style={{ backgroundColor: 'white', border: '1px solid var(--color-border-secondary)', padding: '16px', borderRadius: '8px' }}
+                    style={{ backgroundColor: 'white', border: '1px solid var(--color-border-secondary)', padding: '16px', borderRadius: '8px', minHeight: '100px' }}
                   >
-                    {backlogIssues.length === 0 ? (
-                      <div className="empty-sprint">Le backlog est vide. Créez de nouveaux tickets.</div>
+                    {filteredBacklog.length === 0 ? (
+                      <div className="empty-sprint">Le backlog est vide ou aucun ticket ne correspond aux filtres.</div>
                     ) : (
-                      backlogIssues.map((issue, index) => <StoryRow key={issue.id} task={issue} index={index} />)
+                      filteredBacklog.map((issue, index) => <StoryRow key={issue.id} task={issue} index={index} />)
                     )}
                     {provided.placeholder}
                   </div>
                 )}
               </Droppable>
             </div>
-          )}
+          );})()}
 
           {/* COMPLETED SPRINTS */}
           {(filter === 'all' || filter === 'completed') && completedSprints.length > 0 && (

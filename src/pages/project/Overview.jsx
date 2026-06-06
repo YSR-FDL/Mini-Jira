@@ -34,7 +34,7 @@ export default function Overview() {
       try {
         const projectData = await projectService.getProjectById(projectId);
         if (projectData && projectData.idTeam) {
-          const response = await axios.get(`http://localhost:8080/Backend_PFA/GetTeam?id=${projectData.idTeam}`);
+          const response = await axios.get(`http://localhost:8080/GetTeam?id=${projectData.idTeam}`);
           if (response.data && response.data.membres) {
             setMembers(response.data.membres.map(m => {
               const nom = m.nom || '';

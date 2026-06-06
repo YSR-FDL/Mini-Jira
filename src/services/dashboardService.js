@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = 'http://localhost:8080/Backend_PFA';
+const API = 'http://localhost:8080';
 
 export const dashboardService = {
     getMetrics: (projectId) =>

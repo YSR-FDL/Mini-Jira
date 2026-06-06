@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/Backend_PFA';
+const API_BASE_URL = 'http://localhost:8080';
 
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
@@ -85,7 +85,7 @@ export const taskService = {
 
     moveTask: async (taskId, newSprintId) => {
         const rawTaskId = parseInt(taskId.toString().replace('MJ-', ''), 10);
-        const targetSprint = (newSprintId === null || newSprintId === 'null') ? null : parseInt(newSprintId, 10);
+        const targetSprint = (newSprintId === null || newSprintId === 'null' || newSprintId === 'backlog') ? null : parseInt(newSprintId, 10);
         const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint });
         return response.data.message === 'success';
     },

@@ -24,13 +24,25 @@ export default function Board() {
   const [activeAssignees, setActiveAssignees] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
 
+  // RBAC State
+  const [isSM, setIsSM] = useState(false);
+  const [isPO, setIsPO] = useState(false);
+
   useEffect(() => {
     const loadBoard = async () => {
       const rawId = localStorage.getItem('selectedProjectId');
       const projectId = (rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1;
       try {
-        // 1. Load project to get columns (états)
+        // 1. Load project to get columns (états) and roles
         const projectData = await projectService.getProjectById(projectId);
+        
+        // Compute RBAC
+        const currentUserId = parseInt(localStorage.getItem('userId'), 10);
+        if (projectData && currentUserId) {
+          setIsSM(projectData.idSM === currentUserId || projectData.idCreateur === currentUserId);
+          setIsPO(projectData.idPO === currentUserId || projectData.idCreateur === currentUserId);
+        }
+
         if (projectData && projectData.etats && projectData.etats.length > 0) {
           setColumns(projectData.etats.map(etat => ({ id: etat.trim(), title: etat.trim() })));
         }
@@ -166,12 +178,15 @@ export default function Board() {
             onClearFilters={handleClearFilters}
             sprint={activeSprint}
             onCompleteSprint={handleCompleteSprint}
+            isSM={isSM}
         />
         {/* NOUVEAU BOUTON DE CRÉATION SUR LE BOARD */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '15px', paddingRight: '10px' }}>
-          <ActionBtn size="sm" variant="secondary" onClick={() => setSelectedTaskId('NEW')}>
-            + Créer un ticket détaillé
-          </ActionBtn>
+          {isPO && (
+            <ActionBtn size="sm" variant="secondary" onClick={() => setSelectedTaskId('NEW')}>
+              + Créer un ticket détaillé
+            </ActionBtn>
+          )}
         </div>
         <div className="kanban-board-container scroll">
           <DragDropContext onDragEnd={handleDragEnd}>

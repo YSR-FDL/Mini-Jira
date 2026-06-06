@@ -30,7 +30,7 @@ export default function TeamDetailsPage() {
   const handleAddMembers = async (selectedMembers) => {
     try {
       await axios.post(
-        "http://localhost:8080/Backend_PFA/AddMembersToTeam",
+        "http://localhost:8080/AddMembersToTeam",
         {
           idTeam: team.id,
           members: selectedMembers.map(member => member.id)
@@ -57,7 +57,7 @@ export default function TeamDetailsPage() {
   const handleUpdateTeam = async (id, nom, objectif) => {
     try {
       await axios.post(
-        "http://localhost:8080/Backend_PFA/UpdateTeam",
+        "http://localhost:8080/UpdateTeam",
         {
           id,
           nom,
@@ -75,7 +75,7 @@ export default function TeamDetailsPage() {
   const handleDeleteTeam = async () => {
     try {
       await axios.post(
-        "http://localhost:8080/Backend_PFA/DeleteTeam",
+        "http://localhost:8080/DeleteTeam",
         {
           id: team.id
         }
@@ -91,7 +91,7 @@ export default function TeamDetailsPage() {
     const fetchTeam = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8080/Backend_PFA/GetTeam?id=${id}`
+          `http://localhost:8080/GetTeam?id=${id}`
         );
         setTeam(response.data);
         setMembers(response.data.membres || []);
@@ -124,7 +124,7 @@ export default function TeamDetailsPage() {
     try {
 
       await axios.post(
-        "http://localhost:8080/Backend_PFA/RemoveMemberFromTeam",
+        "http://localhost:8080/RemoveMemberFromTeam",
         {
           idTeam: team.id,
           idUser: memberToRemove.id

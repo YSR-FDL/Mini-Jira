@@ -24,7 +24,7 @@ export default function ProjectsPage() {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       const response = await axios.get(
-        `http://localhost:8080/Backend_PFA/GetUserProjects?idUser=${user.id}`
+        `http://localhost:8080/GetUserProjects?idUser=${user.id}`
       );
       setProjects(response.data);
     } catch(error) {
@@ -59,7 +59,7 @@ export default function ProjectsPage() {
   const handleCreateProject = async (projet) => {
     try {
       await axios.post(
-        "http://localhost:8080/Backend_PFA/CreateProject",
+        "http://localhost:8080/CreateProject",
         projet
       );
       await fetchProjects();

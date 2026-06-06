@@ -45,7 +45,7 @@ export default function LoginPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/Backend_PFA/AuthUser",
+        "http://localhost:8080/AuthUser",
         {
           email: email,
           password: password

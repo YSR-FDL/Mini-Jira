@@ -93,7 +93,7 @@ export default function ProfileUpdate() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/Backend_PFA/UpdateUser",
+        "http://localhost:8080/UpdateUser",
         {
           id: user.id,
           nom: lastName,
@@ -146,7 +146,7 @@ const handleUpdatePassword = async () => {
   console.log(newPassword);
   try {
     const response = await axios.post(
-      "http://localhost:8080/Backend_PFA/UpdatePassword",
+      "http://localhost:8080/UpdatePassword",
       {
         id: user.id,
         password : newPassword
@@ -182,7 +182,7 @@ const handleUpdatePassword = async () => {
   const handleDeleteAccount = async () => {
   try {
     const response = await axios.post(
-      "http://localhost:8080/Backend_PFA/DeleteAccount",
+      "http://localhost:8080/DeleteAccount",
       {
         id: user.id
       }
