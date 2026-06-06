@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styles from '../../styles/teams/TeamHeader.module.css'
+import EditTeamModal from './EditTeamModal'
 
 const iconEdit = (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -45,6 +46,7 @@ const iconFolder = (
 
 export default function TeamHeader({ team, onEdit, onAddMember, onDelete }) {
   return (
+  <>
     <div className={styles.header}>
       <div className={styles.topRow}>
         <div className={styles.teamIcon}>{team.nom.charAt(0)}</div>
@@ -87,5 +89,8 @@ export default function TeamHeader({ team, onEdit, onAddMember, onDelete }) {
         </div>
       </div>
     </div>
+  </>
   )
 }
+
+{/*onUpdate={onUpdate}*/}

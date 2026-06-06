@@ -1,0 +1,171 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 43, 77, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn .15s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  animation: fadeScale .18s ease;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.header h2 {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.closeBtn:hover {
+  background: var(--gray-100);
+  color: var(--text-dark);
+}
+
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+  color: var(--text-dark);
+  background: var(--input-bg);
+  outline: none;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
+}
+
+.input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+  background: var(--white);
+}
+
+.userList {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--white);
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.userItem:last-child {
+  border-bottom: none;
+}
+
+.addBtn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--blue);
+  color: var(--white);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.addBtn:hover {
+  background: var(--blue-hover);
+}
+
+.selectedSection {
+  margin-top: 18px;
+}
+
+.selectedSection h4 {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+
+.selectedItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--blue-light);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+}
+
+.removeBtn {
+  border: none;
+  background: transparent;
+  color: var(--red-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.cancelBtn {
+  padding: 9px 20px;
+  border-radius: var(--r-md);
+  background: var(--gray-100);
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.cancelBtn:hover {
+  background: var(--gray-200);
+}
+
+.confirmBtn {
+  padding: 9px 20px;
+  border-radius: var(--r-md);
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+}
+
+.confirmBtn:hover {
+  background: var(--blue-hover);
+}
