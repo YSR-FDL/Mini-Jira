@@ -1,28 +1,38 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {LayoutDashboard, FolderKanban, CheckSquare,Users, BarChart2, Settings, UserCircle,ChevronLeft, ChevronRight, LogOut, User, IdCard} from "lucide-react";
+import {
+  LayoutDashboard,
+  FolderKanban,
+  CheckSquare,
+  Users,
+  Settings,
+  UserCircle,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+  User,
+  IdCard,
+} from "lucide-react";
 import s from "../../styles/Layout/Sidebar.module.css";
 
 export const navItems = [
-  { id: "dashboard",   label: "Dashboard",  icon: "dashboard" },
-  { id: "projets",     label: "Projets",    icon: "projects"  },
-  { id: "tâches",      label: "Tâches",     icon: "tasks"     },
-  { id: "équipes",     label: "Équipes",    icon: "teams"     },
-  { id: "reports",     label: "Bug Reports",    icon: "reports"   },
-  { id: "paramètres",  label: "Paramètres", icon: "settings"  },
-  { id: "profile",     label: "Profil",     icon: "profile"   },
-  { id: "users", label: "Gestion des utilisateurs", icon: "users"},
+  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+  { id: "projets", label: "Projets", icon: "projects" },
+  { id: "tâches", label: "Tâches", icon: "tasks" },
+  { id: "équipes", label: "Équipes", icon: "teams" },
+  { id: "paramètres", label: "Paramètres", icon: "settings" },
+  { id: "profile", label: "Profil", icon: "profile" },
+  { id: "users", label: "Gestion des utilisateurs", icon: "users" },
 ];
 
 const ICONS = {
   dashboard: LayoutDashboard,
-  projects:  FolderKanban,
-  tasks:     CheckSquare,
-  teams:     Users,
-  reports:   BarChart2,
-  settings:  Settings,
-  profile:   UserCircle,
-  users: IdCard
+  projects: FolderKanban,
+  tasks: CheckSquare,
+  teams: Users,
+  settings: Settings,
+  profile: UserCircle,
+  users: IdCard,
 };
 
 export default function Sidebar({ activeNav, collapsed, onToggle }) {
@@ -33,13 +43,11 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "projets") navigate("/projects");
     if (id === "équipes") navigate("/teams");
     if (id === "tâches") navigate("/tasks");
-    if (id === "reports") navigate("/reports");
     if (id === "users") navigate("/users");
   };
 
   return (
     <aside className={`${s.sidebar}${collapsed ? " " + s.collapsed : ""}`}>
-
       <div className={s.brand}>
         {!collapsed && (
           <div className={s.brandLeft}>
@@ -58,17 +66,23 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
           {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
         </button>
       </div>
-      
+
       <nav className={s.nav}>
         {navItems.map((item) => {
           const Icon = ICONS[item.icon] || UserCircle;
           return (
-            <button key={item.id} className={`${s.navItem}${activeNav === item.id ? " " + s.active : ""}`}
-              onClick={() => handleClick(item.id)} data-tooltip={collapsed ? item.label : undefined}
+            <button
+              key={item.id}
+              className={`${s.navItem}${activeNav === item.id ? " " + s.active : ""}`}
+              onClick={() => handleClick(item.id)}
+              data-tooltip={collapsed ? item.label : undefined}
               title={collapsed ? item.label : undefined}
             >
               <span className={s.navIcon}>
-                <Icon size={17} strokeWidth={activeNav === item.id ? 2.2 : 1.8} />
+                <Icon
+                  size={17}
+                  strokeWidth={activeNav === item.id ? 2.2 : 1.8}
+                />
               </span>
               <span className={s.navLabel}>{item.label}</span>
             </button>
@@ -77,8 +91,15 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
       </nav>
 
       <div className={s.footer}>
-        <button className={`${s.navItem} ${s.logoutBtn}`} onClick={() => {localStorage.removeItem("user");navigate("/login")}}
-          data-tooltip={collapsed ? "Déconnexion" : undefined} title={collapsed ? "Déconnexion" : undefined}>
+        <button
+          className={`${s.navItem} ${s.logoutBtn}`}
+          onClick={() => {
+            localStorage.removeItem("user");
+            navigate("/login");
+          }}
+          data-tooltip={collapsed ? "Déconnexion" : undefined}
+          title={collapsed ? "Déconnexion" : undefined}
+        >
           <span className={s.navIcon}>
             <LogOut size={17} strokeWidth={1.8} />
           </span>

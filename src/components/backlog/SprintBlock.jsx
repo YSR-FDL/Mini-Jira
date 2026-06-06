@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import StoryRow from './StoryRow';
 
-export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, sortConfig, onTaskClick }) {
+export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, onStartClick, onTerminateClick, onDeleteClick }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -21,13 +21,15 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
         }
     };
 
+    const isBacklog = sprint.id === 'backlog' || sprint.id === 'null' || sprint.id === null;
+
     // status badge
     let badgeClass = 'b-planned';
     let statusLabel = 'Planifié';
-    if (sprint.status === 'active') {
+    if (sprint.status === 'active' || sprint.status === 'actif') {
         badgeClass = 'b-active';
         statusLabel = 'Actif';
-    } else if (sprint.status === 'done') {
+    } else if (sprint.status === 'done' || sprint.status === 'completed' || sprint.status === 'terminee') {
         badgeClass = 'b-done';
         statusLabel = 'Terminé';
     }
@@ -60,46 +62,50 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                 <span className="sprint-title">{sprint.name}</span>
 
                 {/* Format de date désiré : 11 mai -> 17 mai 2026 */}
-                {sprint.startDate && sprint.endDate ? (
+                {!isBacklog && (sprint.startDate && sprint.endDate ? (
                     <span className="sprint-dates">{sprint.startDate} -> {sprint.endDate}</span>
                 ) : (
-                    sprint.id !== 'backlog' && <button className="btn-xs" style={{ marginLeft: 8 }}>Ajouter des dates</button>
-                )}
+                    <button className="btn-xs" style={{ marginLeft: 8 }}>Ajouter des dates</button>
+                ))}
 
                 {/* Masquer le badge if conteneur de Backlog général */}
-                {sprint.id !== 'backlog' && <span className={`badge ${badgeClass}`}>{statusLabel}</span>}
+                {!isBacklog && <span className={`badge ${badgeClass}`}>{statusLabel}</span>}
 
                 {/* Affichage de la capacité au format souhaité (ex: 8/18 pts) */}
-                <div className="sprint-stats">
-                    <span className="stat"><span>{donePoints}</span>/{totalPoints} pts</span>
-                    <div className="pbar-wrap">
-                        <div className="pbar-bg">
-                            <div className="pbar-fill" style={{ width: `${progressPercent}%` }}></div>
+                {!isBacklog && (
+                    <div className="sprint-stats">
+                        <span className="stat"><span>{donePoints}</span>/{totalPoints} pts</span>
+                        <div className="pbar-wrap">
+                            <div className="pbar-bg">
+                                <div className="pbar-fill" style={{ width: `${progressPercent}%` }}></div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 <div className="sprint-actions">
-                    {sprint.status === 'planned' && (
-                        <button className="btn-xs blue">Démarrer le sprint</button>
+                    {!isBacklog && isSM && (sprint.status === 'planned' || sprint.status === 'a venir' || sprint.status === 'upcoming') && (
+                        <button className="btn-xs blue" onClick={() => onStartClick && onStartClick(sprint.id)}>Démarrer le sprint</button>
                     )}
-                    {sprint.status === 'active' && (
-                        <button className="btn-xs">Terminer le sprint</button>
+                    {!isBacklog && isSM && (sprint.status === 'active' || sprint.status === 'actif') && (
+                        <button className="btn-xs" onClick={() => onTerminateClick && onTerminateClick(sprint.id)}>Terminer le sprint</button>
                     )}
-                    <div style={{ position: 'relative' }}>
-                        <button className="btn-xs" onClick={() => setMenuOpen(!menuOpen)}>•••</button>
-                        {menuOpen && (
-                            <div className="sprint-menu" style={{
-                                position: 'absolute', right: 0, top: '100%', marginTop: '4px',
-                                background: 'var(--color-background-primary)', border: '1px solid var(--color-border-tertiary)',
-                                borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 10,
-                                display: 'flex', flexDirection: 'column', width: '120px'
-                            }}>
-                                <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }} onClick={() => setMenuOpen(false)}>Modifier le sprint</span>
-                                <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--color-danger-red)' }} onClick={() => setMenuOpen(false)}>Supprimer le sprint</span>
-                            </div>
-                        )}
-                    </div>
+                    {!isBacklog && isSM && (
+                        <div style={{ position: 'relative' }}>
+                            <button className="btn-xs" onClick={() => setMenuOpen(!menuOpen)}>•••</button>
+                            {menuOpen && (
+                                <div className="sprint-menu" style={{
+                                    position: 'absolute', right: 0, top: '100%', marginTop: '4px',
+                                    background: 'var(--color-background-primary)', border: '1px solid var(--color-border-tertiary)',
+                                    borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 10,
+                                    display: 'flex', flexDirection: 'column', width: '120px'
+                                }}>
+                                    <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }} onClick={() => setMenuOpen(false)}>Modifier le sprint</span>
+                                    <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--color-danger-red)' }} onClick={() => { setMenuOpen(false); onDeleteClick && onDeleteClick(sprint.id); }}>Supprimer le sprint</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -125,6 +131,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                         index={index}
                                         isDragDisabled={!!sortConfig}
                                         onTagChange={(newTag, tagIndex) => onTagChange && onTagChange(task.id, newTag, tagIndex)}
+                                        onPriorityChange={(newPriority) => onPriorityChange && onPriorityChange(task.id, newPriority)}
                                         onClick={() => onTaskClick && onTaskClick(task.id)}
                                     />
                                 ))

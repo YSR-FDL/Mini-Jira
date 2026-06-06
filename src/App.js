@@ -7,7 +7,6 @@ import ProfilePage from "./pages/global/ProfilePage.jsx";
 import ProfileUpdate from "./pages/global/ProfileUpdate.jsx";
 import Backlog from "./pages/project/Backlog.jsx";
 import Board from "./pages/project/Board.jsx";
-import Sprints from "./pages/project/Sprints.jsx";
 import Settings from "./pages/project/Settings.jsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import TeamsPage from "./pages/global/TeamsPage.jsx";
@@ -33,7 +32,7 @@ function App() {
             <Route path="/overview/:id" element={<Overview />} />
             <Route path="/backlog" element={<Backlog />} />
             <Route path="/board" element={<Board />} />
-            <Route path="/sprints" element={<Sprints />} />
+            <Route path="/sprints" element={<Navigate to="/backlog" replace />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/tasks" element={<TasksPage/>} />

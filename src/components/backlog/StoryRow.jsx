@@ -2,33 +2,28 @@ import React from "react";
 import { Draggable } from "@hello-pangea/dnd";
 
 const PRIORITY_CONFIG = {
-  critical: {
-    dotClass: "prio-dot p-critical",
-    badgeClass: "priority-badge priority-critical-badge",
-    label: "CRITICAL",
-  },
-  high: {
-    dotClass: "prio-dot p-high",
-    badgeClass: "priority-badge priority-high-badge",
-    label: "HIGH",
-  },
-  medium: {
-    dotClass: "prio-dot p-med",
-    badgeClass: "priority-badge priority-medium-badge",
-    label: "MEDIUM",
-  },
-  low: {
-    dotClass: "prio-dot p-low",
-    badgeClass: "priority-badge priority-low-badge",
-    label: "LOW",
-  },
+  critical: { dotClass: "prio-dot p-critical", badgeClass: "priority-badge priority-critical-badge", label: "CRITICAL" },
+  critique: { dotClass: "prio-dot p-critical", badgeClass: "priority-badge priority-critical-badge", label: "CRITICAL" },
+  high: { dotClass: "prio-dot p-high", badgeClass: "priority-badge priority-high-badge", label: "HIGH" },
+  élevée: { dotClass: "prio-dot p-high", badgeClass: "priority-badge priority-high-badge", label: "HIGH" },
+  elevee: { dotClass: "prio-dot p-high", badgeClass: "priority-badge priority-high-badge", label: "HIGH" },
+  medium: { dotClass: "prio-dot p-med", badgeClass: "priority-badge priority-medium-badge", label: "MEDIUM" },
+  moyenne: { dotClass: "prio-dot p-med", badgeClass: "priority-badge priority-medium-badge", label: "MEDIUM" },
+  low: { dotClass: "prio-dot p-low", badgeClass: "priority-badge priority-low-badge", label: "LOW" },
+  faible: { dotClass: "prio-dot p-low", badgeClass: "priority-badge priority-low-badge", label: "LOW" },
 };
 
 const STATUS_CONFIG = {
   "in-progress": { className: "story-status s-prog", label: "En cours" },
+  "en cours": { className: "story-status s-prog", label: "En cours" },
   todo: { className: "story-status s-todo", label: "À faire" },
+  "à faire": { className: "story-status s-todo", label: "À faire" },
+  "a faire": { className: "story-status s-todo", label: "À faire" },
   done: { className: "story-status s-done", label: "Terminé" },
+  "terminé": { className: "story-status s-done", label: "Terminé" },
+  "termine": { className: "story-status s-done", label: "Terminé" },
   review: { className: "story-status s-rev", label: "En revue" },
+  "en revue": { className: "story-status s-rev", label: "En revue" },
 };
 
 const TAG_CONFIG = {
@@ -37,7 +32,7 @@ const TAG_CONFIG = {
   tech: { className: "tag t-tech", label: "Tech" },
 };
 
-function StoryRow({ task, onTagChange, index, isDragDisabled = false, onClick }) {
+function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick }) {
   if (!task) return null;
 
   const { id, title, priority, status, tags = [], points, assignee } = task;
@@ -48,20 +43,48 @@ function StoryRow({ task, onTagChange, index, isDragDisabled = false, onClick })
   const getInitials = (name) =>
     name ? name.substring(0, 2).toUpperCase() : "—";
 
-  const handleTagClick = (index, e) => {
+  const handleTagClick = (tagIdx, e) => {
     e.stopPropagation();
     if (!onTagChange) return;
 
-    const types = ["feature", "bug", "tech"];
-    const currentTag = tags[index]?.toLowerCase();
+    const types = ["Feature", "Bug", "Tech"];
+    let currentTag = (tags[tagIdx] || "").toLowerCase();
+    if (currentTag === "fonctionnalité" || currentTag === "fonctionnalite") currentTag = "feature";
+    else if (currentTag === "anomalie") currentTag = "bug";
+    else if (currentTag === "technique") currentTag = "tech";
 
-    let nextType = "feature";
-    const currentIndex = types.indexOf(currentTag);
+    let nextType = "Feature";
+    const currentIndex = types.findIndex(t => t.toLowerCase() === currentTag);
     if (currentIndex !== -1) {
       nextType = types[(currentIndex + 1) % types.length];
+    } else {
+      nextType = "Feature";
     }
 
-    onTagChange(nextType, index);
+    onTagChange(nextType, tagIdx);
+  };
+
+  const handlePriorityClick = (e) => {
+    e.stopPropagation();
+    if (!onPriorityChange) return;
+
+    const priorities = ["low", "medium", "high", "critical"];
+    let currentPrio = (priority || "").toLowerCase();
+    
+    if (currentPrio === "faible") currentPrio = "low";
+    else if (currentPrio === "moyenne") currentPrio = "medium";
+    else if (currentPrio === "élevée" || currentPrio === "elevee") currentPrio = "high";
+    else if (currentPrio === "critique") currentPrio = "critical";
+
+    let nextPrio = "low";
+    const currentIndex = priorities.indexOf(currentPrio);
+    if (currentIndex !== -1) {
+      nextPrio = priorities[(currentIndex + 1) % priorities.length];
+    } else {
+      nextPrio = "medium";
+    }
+
+    onPriorityChange(nextPrio);
   };
 
   return (
@@ -80,27 +103,48 @@ function StoryRow({ task, onTagChange, index, isDragDisabled = false, onClick })
           <span className="drag-handle" {...provided.dragHandleProps}>⠿</span>
           <div className={prio.dotClass} />
           <span className="story-id">{id}</span>
-          <span className={prio.badgeClass}>{prio.label}</span>
+          <span 
+            className={prio.badgeClass} 
+            onClick={handlePriorityClick} 
+            style={{ cursor: 'pointer' }}
+            title="Cliquez pour changer la priorité"
+          >
+            {prio.label}
+          </span>
           <span className="story-title">{title}</span>
 
           <div className="story-tags">
-            {tags.map((tag, tagIdx) => {
-              const t = TAG_CONFIG[tag.toLowerCase()] ?? {
-                className: "tag",
-                label: tag,
-              };
-              return (
-                <span
-                  key={`${tag}-${tagIdx}`}
-                  className={t.className}
-                  onClick={(e) => handleTagClick(tagIdx, e)}
-                  style={{ cursor: "pointer" }}
-                  title="Cliquez pour changer le tag"
-                >
-                  {t.label}
-                </span>
-              );
-            })}
+            {tags.length === 0 ? (
+              <span
+                className="tag t-feat"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onTagChange) onTagChange("Bug", 0);
+                }}
+                style={{ cursor: "pointer" }}
+                title="Cliquez pour changer le tag"
+              >
+                Feature
+              </span>
+            ) : (
+              tags.map((tag, tagIdx) => {
+                const t = TAG_CONFIG[tag.toLowerCase()] ?? {
+                  className: "tag",
+                  label: tag,
+                };
+                return (
+                  <span
+                    key={`${tag}-${tagIdx}`}
+                    className={t.className}
+                    onClick={(e) => handleTagClick(tagIdx, e)}
+                    style={{ cursor: "pointer" }}
+                    title="Cliquez pour changer le tag"
+                  >
+                    {t.label}
+                  </span>
+                );
+              })
+            )}
           </div>
 
           <span className={stat.className}>{stat.label}</span>
