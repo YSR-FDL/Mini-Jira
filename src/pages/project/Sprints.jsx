@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import ProjectLayout from '../../components/layout/ProjectLayout';
 import ActionBtn from '../../components/ui/ActionBtn';
@@ -6,13 +6,15 @@ import '../../styles/Board/BoardControlBar.css';
 import '../../styles/Project/Sprints.css';
 import StoryRow from '../../components/backlog/StoryRow';
 import { FiMoreHorizontal, FiCalendar, FiChevronDown, FiChevronRight } from 'react-icons/fi';
-import { initialBacklogIssues, initialActiveSprint, initialUpcomingSprints, initialCompletedSprints } from '../../data/projectsMockData';
+import { taskService } from '../../services/taskService';
+import { sprintService } from '../../services/sprintService';
+import CreateSprintModal from '../../components/sprints/CreateSprintModal';
 
 // --- HELPER COMPONENTS ---
 const ProgressBar = ({ issues }) => {
   const total = issues.length || 1;
   const todoCount = issues.filter(i => i.status === 'todo').length;
-  const progressCount = issues.filter(i => i.status === 'progress' || i.status === 'review').length;
+  const progressCount = issues.filter(i => i.status === 'progress' || i.status === 'review' || i.status === 'in-progress').length;
   const doneCount = issues.filter(i => i.status === 'done').length;
 
   return (
@@ -35,111 +37,128 @@ const ProgressBar = ({ issues }) => {
 // --- MAIN PAGE ---
 export default function Sprints() {
   const [activeTab, setActiveTab] = useState('sprints');
-  const [filter, setFilter] = useState('all'); 
+  const [filter, setFilter] = useState('all');
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(true);
 
   // Lists state
-  const [backlogIssues, setBacklogIssues] = useState(initialBacklogIssues);
-  const [activeSprint, setActiveSprint] = useState(initialActiveSprint);
-  const [upcomingSprints, setUpcomingSprints] = useState(initialUpcomingSprints);
-  const [completedSprints, setCompletedSprints] = useState(initialCompletedSprints);
+  const [backlogIssues, setBacklogIssues] = useState([]);
+  const [activeSprint, setActiveSprint] = useState(null);
+  const [upcomingSprints, setUpcomingSprints] = useState([]);
+  const [completedSprints, setCompletedSprints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
 
-  // Create sprint form state
-  const [newSprint, setNewSprint] = useState({ name: '', startDate: '', endDate: '', goal: '' });
-
   // Terminate sprint state
   const [moveToDest, setMoveToDest] = useState('backlog');
 
-  const onDragEnd = (result) => {
-    const { source, destination } = result;
-
-    if (!destination) return; 
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-    const getList = (id) => {
-      if (id === 'backlog') return backlogIssues;
-      if (id === 'active-sprint') return activeSprint ? activeSprint.issues : [];
-      if (id.startsWith('upcoming-')) {
-        const sprintId = id.split('upcoming-')[1];
-        return upcomingSprints.find(s => s.id === sprintId)?.issues || [];
-      }
-      return [];
-    };
-
-    const sourceList = getList(source.droppableId);
-    const destList = getList(destination.droppableId);
-
-    const sourceClone = Array.from(sourceList);
-    const destClone = source.droppableId === destination.droppableId ? sourceClone : Array.from(destList);
+  const loadData = async () => {
+    const rawId = localStorage.getItem('selectedProjectId');
+    const projectId = (rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1;
+    setLoading(true);
     
-    const [removed] = sourceClone.splice(source.index, 1);
-    destClone.splice(destination.index, 0, removed);
+    try {
+      const fetchedSprints = await sprintService.getAll(projectId);
+      const fetchedTasks = await taskService.getProjectTasks(projectId);
 
-    const updateList = (id, newIssues) => {
-      if (id === 'backlog') setBacklogIssues(newIssues);
-      else if (id === 'active-sprint') setActiveSprint({ ...activeSprint, issues: newIssues });
-      else if (id.startsWith('upcoming-')) {
-        const sprintId = id.split('upcoming-')[1];
-        setUpcomingSprints(prev => prev.map(s => s.id === sprintId ? { ...s, issues: newIssues } : s));
+      // Partition sprints
+      const active = fetchedSprints.find(s => s.status === 'active' || s.status === 'actif');
+      const upcoming = fetchedSprints.filter(s => s.status === 'planned' || s.status === 'upcoming' || s.status === 'a venir');
+      const completed = fetchedSprints.filter(s => s.status === 'completed' || s.status === 'archive' || s.status === 'terminee' || s.status === 'terminé');
+
+      // Populate issues for active sprint
+      if (active) {
+        active.issues = fetchedTasks.filter(t => t.sprintId === active.id);
       }
-    };
 
-    if (source.droppableId === destination.droppableId) {
-      updateList(source.droppableId, sourceClone);
-    } else {
-      updateList(source.droppableId, sourceClone);
-      updateList(destination.droppableId, destClone);
+      // Populate issues for upcoming sprints
+      upcoming.forEach(s => {
+        s.issues = fetchedTasks.filter(t => t.sprintId === s.id);
+      });
+
+      // Populate issues for completed sprints
+      completed.forEach(s => {
+        s.issues = fetchedTasks.filter(t => t.sprintId === s.id);
+        s.completedIssuesCount = s.issues.filter(i => i.status === 'done').length;
+        s.totalPoints = s.issues.filter(i => i.status === 'done').reduce((acc, i) => acc + (i.points || 0), 0);
+      });
+
+      // Backlog tasks
+      const backlog = fetchedTasks.filter(t => !t.sprintId || t.sprintId === 'backlog');
+
+      setBacklogIssues(backlog);
+      setActiveSprint(active || null);
+      setUpcomingSprints(upcoming);
+      setCompletedSprints(completed);
+    } catch (err) {
+      console.error("Error loading sprints data:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreateSprint = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const onDragEnd = (result) => {
+    const { source, destination, draggableId } = result;
+
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+
+    let destSprintId = 'backlog';
+    if (destination.droppableId === 'active-sprint') {
+      if (activeSprint) destSprintId = activeSprint.id;
+    } else if (destination.droppableId.startsWith('upcoming-')) {
+      destSprintId = destination.droppableId.split('upcoming-')[1];
+    }
+
+    // Call API to move task
+    taskService.moveTask(draggableId, destSprintId, destination.index).then(() => {
+      loadData();
+    }).catch(err => {
+      console.error("Error dragging/moving task:", err);
+    });
+  };
+
+  const handleCreateSprint = (sprintData) => {
+    const rawId = localStorage.getItem('selectedProjectId');
     const sprintToCreate = {
-      id: `sprint-${Date.now()}`,
-      name: newSprint.name || `Sprint ${upcomingSprints.length + 5}`,
-      startDate: newSprint.startDate,
-      endDate: newSprint.endDate,
-      goal: newSprint.goal,
-      issues: []
+      ...sprintData,
+      status: 'a venir',
+      idProject: (rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1
     };
-    setUpcomingSprints([...upcomingSprints, sprintToCreate]);
-    setIsCreateModalOpen(false);
-    setNewSprint({ name: '', startDate: '', endDate: '', goal: '' });
+
+    sprintService.create(sprintToCreate).then(() => {
+      setIsCreateModalOpen(false);
+      loadData();
+    }).catch(err => {
+      console.error("Error creating sprint:", err);
+    });
   };
 
   const handleTerminateSprint = (e) => {
     e.preventDefault();
     if (!activeSprint) return;
 
-    const doneIssues = activeSprint.issues.filter(i => i.status === 'done');
-    const incompleteIssues = activeSprint.issues.filter(i => i.status !== 'done');
+    sprintService.updateStatus(activeSprint.id, 'completed').then(() => {
+      const incompleteIssues = activeSprint.issues.filter(i => i.status !== 'done');
+      const destSprintId = moveToDest === 'backlog' ? 'backlog' : moveToDest.split('upcoming-')[1];
 
-    // Mettre à jour le backlog ou le prochain sprint
-    if (moveToDest === 'backlog') {
-      setBacklogIssues([...backlogIssues, ...incompleteIssues]);
-    } else if (moveToDest.startsWith('upcoming-')) {
-      const targetSprintId = moveToDest.split('upcoming-')[1];
-      setUpcomingSprints(prev => prev.map(s => 
-        s.id === targetSprintId ? { ...s, issues: [...s.issues, ...incompleteIssues] } : s
-      ));
-    }
+      const promises = incompleteIssues.map(issue => {
+        return taskService.moveTask(issue.id, destSprintId);
+      });
 
-    // Ajouter le sprint aux complétés
-    const totalPoints = doneIssues.reduce((acc, i) => acc + (i.points || 0), 0);
-    const completedSprint = {
-      ...activeSprint,
-      completedIssuesCount: doneIssues.length,
-      totalPoints,
-      issues: [] // On ne garde pas les issues complètes en mémoire pour cette démo
-    };
-
-    setCompletedSprints([completedSprint, ...completedSprints]);
-    setActiveSprint(null);
-    setIsTerminateModalOpen(false);
+      Promise.all(promises).then(() => {
+        setIsTerminateModalOpen(false);
+        loadData();
+      });
+    }).catch(err => {
+      console.error("Error terminating sprint:", err);
+    });
   };
 
   const startUpcomingSprint = (sprintId) => {
@@ -147,9 +166,11 @@ export default function Sprints() {
       alert("Impossible de démarrer, un sprint est déjà actif.");
       return;
     }
-    const sprintToStart = upcomingSprints.find(s => s.id === sprintId);
-    setActiveSprint(sprintToStart);
-    setUpcomingSprints(upcomingSprints.filter(s => s.id !== sprintId));
+    sprintService.updateStatus(sprintId, 'active').then(() => {
+      loadData();
+    }).catch(err => {
+      console.error("Error starting sprint:", err);
+    });
   };
 
 
@@ -157,7 +178,7 @@ export default function Sprints() {
     <ProjectLayout activeTab={activeTab} onTabChange={setActiveTab} projectName="Mini-Jira">
       <DragDropContext onDragEnd={onDragEnd}>
         <div className="sprints-page-container scroll">
-          
+
           <div className="sprints-header">
             <h1 className="sprints-title">Sprints</h1>
             <ActionBtn variant="primary" onClick={() => setIsCreateModalOpen(true)}>Créer un sprint</ActionBtn>
@@ -165,8 +186,8 @@ export default function Sprints() {
 
           <div className="filter-bar" style={{ marginBottom: '32px' }}>
             {['all', 'active', 'upcoming', 'completed'].map(f => (
-              <span 
-                key={f} 
+              <span
+                key={f}
                 className={`filter-chip ${filter === f ? 'active' : ''}`}
                 onClick={() => setFilter(f)}
               >
@@ -179,7 +200,7 @@ export default function Sprints() {
           {(filter === 'all' || filter === 'active') && activeSprint && (
             <div className="sprints-section">
               <h2 className="section-heading">Sprint Actif <span className="badge">1</span></h2>
-              
+
               <div className="sprint-card active-sprint">
                 <div className="sprint-card-header">
                   <div className="sprint-info" style={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}>
@@ -200,7 +221,7 @@ export default function Sprints() {
 
                 <Droppable droppableId="active-sprint">
                   {(provided, snapshot) => (
-                    <div 
+                    <div
                       className={`sprint-issues-container ${snapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -222,7 +243,7 @@ export default function Sprints() {
           {(filter === 'all' || filter === 'upcoming') && upcomingSprints.length > 0 && (
             <div className="sprints-section">
               <h2 className="section-heading">Sprints à venir <span className="badge">{upcomingSprints.length}</span></h2>
-              
+
               {upcomingSprints.map(sprint => (
                 <div key={sprint.id} className="sprint-card">
                   <div className="sprint-card-header">
@@ -234,9 +255,9 @@ export default function Sprints() {
                     </div>
                   </div>
                     <div className="sprint-actions">
-                      <ActionBtn 
-                        variant="secondary" 
-                        onClick={() => startUpcomingSprint(sprint.id)} 
+                      <ActionBtn
+                        variant="secondary"
+                        onClick={() => startUpcomingSprint(sprint.id)}
                         style={activeSprint ? {opacity: 0.6} : {}}
                       >
                         Démarrer
@@ -247,7 +268,7 @@ export default function Sprints() {
 
                   <Droppable droppableId={`upcoming-${sprint.id}`}>
                     {(provided, snapshot) => (
-                      <div 
+                      <div
                         className={`sprint-issues-container ${snapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                         ref={provided.innerRef}
                         {...provided.droppableProps}
@@ -270,10 +291,10 @@ export default function Sprints() {
           {(filter === 'all' || filter === 'active' || filter === 'upcoming') && (
             <div className="sprints-section" style={{marginTop: '48px'}}>
               <h2 className="section-heading">Backlog (Non planifié) <span className="badge">{backlogIssues.length}</span></h2>
-              
+
               <Droppable droppableId="backlog">
                 {(provided, snapshot) => (
-                  <div 
+                  <div
                     className={`sprint-issues-container ${snapshot.isDraggingOver ? 'is-dragging-over' : ''}`}
                     ref={provided.innerRef}
                     {...provided.droppableProps}
@@ -294,15 +315,15 @@ export default function Sprints() {
           {/* COMPLETED SPRINTS */}
           {(filter === 'all' || filter === 'completed') && completedSprints.length > 0 && (
             <div className="sprints-section" style={{marginTop: '48px', opacity: 0.8}}>
-              <h2 
-                className="section-heading" 
-                style={{cursor: 'pointer'}} 
+              <h2
+                className="section-heading"
+                style={{cursor: 'pointer'}}
                 onClick={() => setIsCompletedCollapsed(!isCompletedCollapsed)}
               >
                 {isCompletedCollapsed ? <FiChevronRight /> : <FiChevronDown />}
                 Sprints terminés <span className="badge">{completedSprints.length}</span>
               </h2>
-              
+
               {!isCompletedCollapsed && completedSprints.map(sprint => (
                 <div key={sprint.id} className="sprint-card" style={{padding: '16px 24px'}}>
                   <div className="sprint-card-header" style={{margin: 0}}>
@@ -325,65 +346,10 @@ export default function Sprints() {
 
       {/* CREATE SPRINT MODAL */}
       {isCreateModalOpen && (
-        <div className="sprints-modal-overlay" onClick={() => setIsCreateModalOpen(false)}>
-          <div className="sprints-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="sprints-modal-header">
-              Créer un sprint
-            </div>
-            <form onSubmit={handleCreateSprint}>
-              <div className="sprints-modal-body">
-                <div className="form-group-sprint">
-                  <label>Nom du sprint</label>
-                  <input 
-                    type="text" 
-                    className="ui-input"
-                    value={newSprint.name} 
-                    onChange={e => setNewSprint({...newSprint, name: e.target.value})} 
-                    placeholder="Sprint 5" 
-                    required 
-                  />
-                </div>
-                <div style={{display: 'flex', gap: '16px'}}>
-                  <div className="form-group-sprint" style={{flex: 1}}>
-                    <label>Date de début</label>
-                    <input 
-                      type="date" 
-                      className="ui-input"
-                      value={newSprint.startDate} 
-                      onChange={e => setNewSprint({...newSprint, startDate: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                  <div className="form-group-sprint" style={{flex: 1}}>
-                    <label>Date de fin</label>
-                    <input 
-                      type="date" 
-                      className="ui-input"
-                      value={newSprint.endDate} 
-                      onChange={e => setNewSprint({...newSprint, endDate: e.target.value})} 
-                      required 
-                    />
-                  </div>
-                </div>
-                <div className="form-group-sprint">
-                  <label>Objectif du sprint</label>
-                  <textarea 
-                    className="ui-input"
-                    value={newSprint.goal} 
-                    onChange={e => setNewSprint({...newSprint, goal: e.target.value})} 
-                    placeholder="Qu'essayons-nous d'accomplir ?" 
-                    rows={3} 
-                    style={{ resize: 'vertical' }}
-                  />
-                </div>
-              </div>
-              <div className="sprints-modal-footer">
-                <ActionBtn variant="secondary" onClick={() => setIsCreateModalOpen(false)}>Annuler</ActionBtn>
-                <ActionBtn variant="primary" type="submit">Créer</ActionBtn>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateSprintModal 
+          onClose={() => setIsCreateModalOpen(false)} 
+          onSave={handleCreateSprint} 
+        />
       )}
 
       {/* TERMINATE SPRINT MODAL */}

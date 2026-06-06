@@ -1,14 +1,102 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import ProjectLayout from "../../components/layout/ProjectLayout";
 import { Link } from "react-router-dom";
-import { metrics, activeSprintSummary, taskBreakdown, recentActivity } from "../../data/mockOverviewData";
+import { dashboardService } from "../../services/dashboardService";
 import "../../styles/Project/Overview.css";
 import ActionBtn from "../../components/ui/ActionBtn";
+import axios from 'axios';
+import { projectService } from '../../services/projectService';
+
+// Static fallback for members and activities to keep visual richness
+const fallbackMembers = [
+  { id: 1, name: "Yassir Rachidi", role: "Product Owner", initials: "YR", bgColor: "#ef9f27" },
+  { id: 2, name: "Yasser Rachidi", role: "Scrum Master", initials: "YR", bgColor: "#185fa5" },
+  { id: 3, name: "Khalid", role: "Développeur", initials: "KL", bgColor: "#ef9f27" }
+];
+
+const fallbackActivity = [
+  { id: 1, name: "Yassir Rachidi", initials: "YR", bgColor: "#ef9f27", action: "a créé la tâche", issueName: "Intégration du CSS unifié", time: "Il y a 2 heures" },
+  { id: 2, name: "Yasser Rachidi", initials: "YR", bgColor: "#185fa5", action: "a déplacé la tâche", issueName: "Configurer la base de données SQLite", targetState: "Terminé", time: "Il y a 4 heures" }
+];
 
 export default function Overview() {
-  // Helpers
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [members, setMembers] = useState([]);
+
+  useEffect(() => {
+    const rawId = localStorage.getItem('selectedProjectId');
+    const projectId = (rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1;
+    
+    const fetchMetrics = dashboardService.getMetrics(projectId);
+    
+    const fetchMembers = async () => {
+      try {
+        const projectData = await projectService.getProjectById(projectId);
+        if (projectData && projectData.idTeam) {
+          const response = await axios.get(`http://localhost:8080/Backend_PFA/GetTeam?id=${projectData.idTeam}`);
+          if (response.data && response.data.membres) {
+            setMembers(response.data.membres.map(m => {
+              const nom = m.nom || '';
+              const prenom = m.prenom || '';
+              const initials = ((nom[0] || '') + (prenom[0] || '')).toUpperCase() || 'U';
+              return {
+                id: m.id,
+                name: nom + ' ' + prenom,
+                role: m.type_utilisateur || "Membre",
+                initials: initials,
+                bgColor: "#185fa5"
+              };
+            }));
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching members", e);
+      }
+    };
+
+    Promise.all([fetchMetrics, fetchMembers()]).then(([res]) => {
+      setData(res);
+      setLoading(false);
+    }).catch(err => {
+      console.error("Error fetching overview metrics:", err);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading || !data) {
+    return (
+      <ProjectLayout activeTab="overview">
+        <div className="overview-container scroll" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+          <p style={{ color: 'var(--color-text-secondary)' }}>Chargement des données du tableau de bord...</p>
+        </div>
+      </ProjectLayout>
+    );
+  }
+
+  // Extract metrics
+  const metrics = {
+    totalIssues: data.totalIssues || 0,
+    completed: data.completed || 0,
+    inProgress: data.inProgress || 0,
+    overdue: data.overdue || 0
+  };
+
+  const activeSprintSummary = data.activeSprintSummary || {
+    sprintName: "Aucun sprint actif",
+    startDate: "N/A",
+    endDate: "N/A",
+    daysRemaining: 0,
+    totalCompleted: 0,
+    totalIssues: 0,
+    distribution: { todo: 0, inProgress: 0, review: 0, done: 0 }
+  };
+
   const { sprintName, startDate, endDate, daysRemaining, distribution, totalCompleted, totalIssues } = activeSprintSummary;
   const progressPercent = totalIssues === 0 ? 0 : Math.round((totalCompleted / totalIssues) * 100);
+
+  const byType = data.byType || [];
+  const byPriority = data.byPriority || [];
 
   return (
     <ProjectLayout activeTab="overview">
@@ -24,7 +112,7 @@ export default function Overview() {
             <h3 className="metric-title">Terminées</h3>
             <p className="metric-value">{metrics.completed}</p>
             <span className="metric-subtitle">
-              {Math.round((metrics.completed / metrics.totalIssues) * 100)}% du total
+              {metrics.totalIssues > 0 ? Math.round((metrics.completed / metrics.totalIssues) * 100) : 0}% du total
             </span>
           </div>
           <div className="metric-card">
@@ -55,7 +143,6 @@ export default function Overview() {
               <span className="stat-text">Progression</span>
               <span className="stat-ratio">{totalCompleted} / {totalIssues} issues terminées</span>
             </div>
-            {/* Same progress bar structure as in Sprints */}
             <div className="pbar-wrap overview-pbar">
                 <div className="pbar-bg">
                     <div className="pbar-fill" style={{ width: `${progressPercent}%` }}></div>
@@ -81,30 +168,38 @@ export default function Overview() {
           <div className="breakdown-card">
             <h2 className="section-title">Répartition par type</h2>
             <div className="breakdown-list">
-              {taskBreakdown.byType.map((item, idx) => (
-                <div key={idx} className="breakdown-row">
-                  <span className="breakdown-label">{item.type}</span>
-                  <div className="breakdown-bar-wrap">
-                    <div className="breakdown-bar" style={{ width: `${(item.count / metrics.totalIssues) * 100}%`, backgroundColor: item.color }}></div>
+              {byType.length === 0 ? (
+                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Aucun ticket existant</p>
+              ) : (
+                byType.map((item, idx) => (
+                  <div key={idx} className="breakdown-row">
+                    <span className="breakdown-label">{item.type}</span>
+                    <div className="breakdown-bar-wrap">
+                      <div className="breakdown-bar" style={{ width: `${metrics.totalIssues > 0 ? (item.count / metrics.totalIssues) * 100 : 0}%`, backgroundColor: item.color }}></div>
+                    </div>
+                    <span className="breakdown-count">{item.count}</span>
                   </div>
-                  <span className="breakdown-count">{item.count}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
           <div className="breakdown-card">
             <h2 className="section-title">Répartition par priorité</h2>
             <div className="breakdown-list">
-              {taskBreakdown.byPriority.map((item, idx) => (
-                <div key={idx} className="breakdown-row">
-                  <span className="breakdown-label">{item.priority}</span>
-                  <div className="breakdown-bar-wrap">
-                    <div className="breakdown-bar" style={{ width: `${(item.count / metrics.totalIssues) * 100}%`, backgroundColor: item.color }}></div>
+              {byPriority.length === 0 ? (
+                <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>Aucun ticket existant</p>
+              ) : (
+                byPriority.map((item, idx) => (
+                  <div key={idx} className="breakdown-row">
+                    <span className="breakdown-label">{item.priority}</span>
+                    <div className="breakdown-bar-wrap">
+                      <div className="breakdown-bar" style={{ width: `${metrics.totalIssues > 0 ? (item.count / metrics.totalIssues) * 100 : 0}%`, backgroundColor: item.color }}></div>
+                    </div>
+                    <span className="breakdown-count">{item.count}</span>
                   </div>
-                  <span className="breakdown-count">{item.count}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </section>
@@ -115,7 +210,7 @@ export default function Overview() {
           <section className="overview-section activity-section">
             <h2 className="section-title">Activité récente</h2>
             <div className="activity-timeline">
-              {recentActivity.map((event) => (
+              {fallbackActivity.map((event) => (
                 <div key={event.id} className="timeline-item">
                   <div className="timeline-avatar" style={{ backgroundColor: event.bgColor }}>
                     {event.initials}
@@ -141,8 +236,7 @@ export default function Overview() {
               </Link>
             </div>
             <div className="members-grid">
-              {/* projectInfo members imported above are handled in ProjectHeader, but we can reuse members here */}
-              {require("../../data/mockOverviewData").members.map((m) => (
+              {(members.length > 0 ? members : fallbackMembers).map((m) => (
                 <div key={m.id} className="member-card">
                   <div className="member-card-avatar" style={{ backgroundColor: m.bgColor }}>
                     {m.initials}

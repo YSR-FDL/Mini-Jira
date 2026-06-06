@@ -29,6 +29,7 @@ function App() {
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/ProfileUpdate" element={<ProfileUpdate />} />
             <Route path="/teams" element={<TeamsPage />} />
+            <Route path="/overview" element={<Overview />} />
             <Route path="/overview/:id" element={<Overview />} />
             <Route path="/backlog" element={<Backlog />} />
             <Route path="/board" element={<Board />} />

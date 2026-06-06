@@ -1,57 +1,97 @@
+import axios from 'axios';
 
+const API_BASE_URL = 'http://localhost:8080/Backend_PFA';
+
+const axiosInstance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
 
 export const taskService = {
-    createTask: async (sprintId, title) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                const newTask = {
-                    id: `MJ-${Math.floor(Math.random() * 900) + 100}`,
-                    title: title,
-                    tags: ['Feature'],
-                    priority: 'medium',
-                    status: 'todo',
-                    sprintId: sprintId,
-                    points: 0,
-                    assignee: null
-                };
-                resolve(newTask);
-            }, 500);
-        });
+    // --- READ ---
+    getProjectTasks: async (projectId) => {
+        try {
+            const response = await axiosInstance.get(`/GetProjectTasks?projectId=${projectId}`);
+            return response.data.map(t => ({
+                id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
+                status: t.statut, priority: t.priorite, points: t.storyPoints,
+                tags: t.tags || [], assignee: t.assignee, sprintId: t.idSprint !== undefined ? t.idSprint : null
+            }));
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+            return [];
+        }
     },
 
-    updateTaskTag: async (taskId, newTag, tagIndex = 0) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[API] Tag mis à jour pour la tâche ${taskId}: ${newTag}`);
-                resolve(true);
-            }, 300);
-        });
+    getSprintTasksAndColumns: async (sprintId, projectId) => {
+        try {
+            const response = await axiosInstance.get(`/GetSprintTasks?sprintId=${sprintId}&projectId=${projectId}`);
+            const formattedTasks = response.data.tasks.map(t => ({
+                id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
+                status: t.statut, priority: t.priorite, points: t.storyPoints,
+                tags: t.tags || [], assignee: t.assignee, sprintId: sprintId !== undefined ? sprintId : null
+            }));
+            return { tasks: formattedTasks, columns: response.data.columns };
+        } catch (error) {
+            console.error("Error fetching sprint board data:", error);
+            return { tasks: [], columns: [] };
+        }
     },
 
-    moveTask: async (taskId, newSprintId, newIndex) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[API] Tâche ${taskId} déplacée vers sprint ${newSprintId} à l'index ${newIndex}`);
-                resolve(true);
-            }, 300);
-        });
+    // --- CREATE ---
+    createTask: async (sprintId, title, projectId = null) => {
+        const rawId = localStorage.getItem('selectedProjectId');
+        const currentProjectId = projectId || ((rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1);
+        const parsedSprintId = (sprintId === 'null' || sprintId === null) ? null : parseInt(sprintId, 10);
+        const payload = { titre: title, idSprint: sprintId, idProject: currentProjectId, statut: 'todo', priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
+        const response = await axiosInstance.post('/CreateTask', payload);
+        if (response.data.message === 'success') {
+            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: 'todo', sprintId: sprintId, points: 0, assignee: null };
+        }
+        throw new Error("Failed to create task");
     },
 
-    updateTaskStatus: async (taskId, newStatus, newIndex) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[API] Statut de la tâche ${taskId} mis à jour : ${newStatus} à l'index ${newIndex}`);
-                resolve(true);
-            }, 300);
-        });
+    createDetailedTask: async (taskData) => {
+        const rawSprintId = (taskData.sprintId === 'null' || taskData.sprintId === null) ? null : parseInt(taskData.sprintId, 10);
+        const payload = {
+            titre: taskData.title || 'Nouvelle tâche',
+            description: taskData.description || '',
+            idSprint: rawSprintId,
+            idProject: taskData.projectId || ((localStorage.getItem('selectedProjectId') && localStorage.getItem('selectedProjectId') !== 'undefined' && localStorage.getItem('selectedProjectId') !== 'null') ? parseInt(localStorage.getItem('selectedProjectId'), 10) : 1),
+            statut: taskData.status || 'todo',
+            priorite: taskData.priority || 'medium',
+            typeTache: taskData.tags && taskData.tags.length > 0 ? taskData.tags[0] : 'Feature',
+            storyPoints: taskData.points || 0
+        };
+        const response = await axiosInstance.post('/CreateTask', payload);
+        return response.data.message === 'success';
+    },
+
+    // --- UPDATE ---
+    updateTaskStatus: async (taskId, newStatus) => {
+        const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const response = await axiosInstance.post('/MoveTask', { taskId: rawId, newStatus: newStatus });
+        return response.data.message === 'success';
     },
 
     updateTask: async (taskId, updatedData) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[API] Détails de la tâche ${taskId} mis à jour :`, updatedData);
-                resolve(true);
-            }, 400);
-        });
+        const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const payload = { idTask: rawId, titre: updatedData.title, description: updatedData.description, statut: updatedData.status, priorite: updatedData.priority, typeTache: updatedData.tags ? updatedData.tags[0] : 'Feature', storyPoints: updatedData.points };
+        const response = await axiosInstance.post('/UpdateTask', payload);
+        return response.data.message === 'success';
+    },
+
+    moveTask: async (taskId, newSprintId) => {
+        const rawTaskId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const targetSprint = (newSprintId === null || newSprintId === 'null') ? null : parseInt(newSprintId, 10);
+        const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint });
+        return response.data.message === 'success';
+    },
+
+    updateTaskTag: async (taskId, newTag, tagIndex = 0) => {
+        console.warn("[API] Tags are updated via full updateTask now.");
+        return Promise.resolve(true);
     }
 };

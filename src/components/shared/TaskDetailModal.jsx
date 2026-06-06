@@ -117,8 +117,15 @@ const TaskDetailModal = ({ task, onClose, onSave, columns = [] }) => {
     if (historyMessage) {
       addActivity('history', historyMessage);
     }
-    if (onSave) {
+    // Only auto-save if it's an existing task
+    if (task.id !== 'NEW' && onSave) {
       onSave(updatedTask);
+    }
+  };
+
+  const handleCreateNewTask = () => {
+    if (onSave) {
+      onSave(editedTask);
     }
   };
 
@@ -450,6 +457,14 @@ const TaskDetailModal = ({ task, onClose, onSave, columns = [] }) => {
             
           </div>
         </div>
+
+        {/* FOOTER FOR NEW TASK */}
+        {task.id === 'NEW' && (
+          <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border-secondary)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <ActionBtn variant="secondary" onClick={requestClose}>Annuler</ActionBtn>
+            <ActionBtn variant="primary" onClick={handleCreateNewTask}>Créer le ticket</ActionBtn>
+          </div>
+        )}
 
       </div>
     </div>

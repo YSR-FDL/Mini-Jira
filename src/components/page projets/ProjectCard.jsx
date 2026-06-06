@@ -52,7 +52,10 @@ export default function ProjectCard({ project }) {
         {project.archived ? (
           <button className={`${styles.openBtn} ${styles.projectCardBtnArchived}`} disabled> Archivé</button>
         ) : (
-          <button className={styles.openBtn} onClick={() => {navigate(`/overview/${project.idProject}`)}}>Consulter le projet</button>
+          <button className={styles.openBtn} onClick={() => {
+            localStorage.setItem('selectedProjectId', project.idProject);
+            navigate(`/overview/${project.idProject}`);
+          }}>Consulter le projet</button>
         )}
       </div>
     </div>
