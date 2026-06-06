@@ -14,7 +14,7 @@ public class ProjectDAO {
 	public int addProject(Project project) {
 	    int nb = 0;
 	    DBInteraction.connect();
-	    String sql = "insert into projects(nom_projet, cle, etats, idCreateur) VALUES (?, ?, ?, ?)";
+	    String sql = "insert into projects(nom_projet, cle, etats, idCreateur, idSM, idPO) VALUES (?, ?, ?, ?, ?, ?)";
 	    try {
 	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
 	        String etatsString = String.join(",", project.getEtats());
@@ -22,6 +22,8 @@ public class ProjectDAO {
 	        ps.setString(2, project.getCle());
 	        ps.setString(3, etatsString);
 	        ps.setInt(4, project.getIdCreateur());
+	        ps.setInt(5, project.getIdSM() > 0 ? project.getIdSM() : project.getIdCreateur());
+	        ps.setInt(6, project.getIdPO() > 0 ? project.getIdPO() : project.getIdCreateur());
 	        nb = ps.executeUpdate();
 	        ps.close();
 	    }
@@ -48,6 +50,9 @@ public class ProjectDAO {
 	            project.setDateCreation(rs.getDate("date_creation").toString());
 	            project.setIdCreateur(rs.getInt("idCreateur"));
 	            project.setArchived(rs.getBoolean("isArchived"));
+	            project.setIdTeam(rs.getInt("idTeam"));
+	            project.setIdSM(rs.getInt("idSM"));
+	            project.setIdPO(rs.getInt("idPO"));
 	            String etatsString = rs.getString("etats");
 	            if(etatsString != null && !etatsString.isEmpty()) {
 	                project.setEtats(
@@ -83,6 +88,8 @@ public class ProjectDAO {
 				project.setIdCreateur(rs.getInt("idCreateur"));
 				project.setArchived(rs.getBoolean("isArchived"));
 				project.setIdTeam(rs.getInt("idTeam"));
+				project.setIdSM(rs.getInt("idSM"));
+				project.setIdPO(rs.getInt("idPO"));
 				String etatsString = rs.getString("etats");
 				if (etatsString != null && !etatsString.isEmpty()) {
 					project.setEtats(java.util.Arrays.asList(etatsString.split(",")));
