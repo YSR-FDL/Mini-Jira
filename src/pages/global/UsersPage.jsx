@@ -1,21 +1,18 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Search, UserPlus, Users, Shield, Code2, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import Layout from '../../components/layout/Layout'
 import s from '../../styles/Administrateur/UsersPage.module.css'
 import axios from 'axios'
 
-const INITIAL_USERS = [
-  { id: 1, name: 'Alexandre Dupont', email: 'alex.dupont@minijira.io',     initials: 'AD', color: '#2563EB', role: 'DÉVELOPPEUR',   projets: 4, equipes: 2, statut: 'actif'   },
-  { id: 2, name: 'Sophie Laurent',   email: 's.laurent@minijira.io',       initials: 'SL', color: '#7C3AED', role: 'DÉVELOPPEUR',   projets: 1, equipes: 1, statut: 'actif'   },
-  { id: 3, name: 'Marc Chen',        email: 'm.chen@minijira.io',          initials: 'MC', color: '#059669', role: 'PRODUCT OWNER', projets: 0, equipes: 0, statut: 'inactif' },
-  { id: 4, name: 'Lucas Martin',     email: 'l.martin@minijira.io',        initials: 'LM', color: '#D97706', role: 'SCRUM MASTER',  projets: 2, equipes: 3, statut: 'actif'   },
-  { id: 5, name: 'Emma Moreau',      email: 'e.moreau@minijira.io',        initials: 'EM', color: '#DC2626', role: 'DÉVELOPPEUR',   projets: 3, equipes: 2, statut: 'actif'   },
-  { id: 6, name: 'Thomas Bernard',   email: 't.bernard@minijira.io',       initials: 'TB', color: '#0891B2', role: 'SCRUM MASTER',  projets: 1, equipes: 1, statut: 'inactif' },
-  { id: 7, name: 'Yasmine Idrissi',  email: 'y.idrissi@minijira.io',       initials: 'YI', color: '#BE185D', role: 'PRODUCT OWNER', projets: 2, equipes: 2, statut: 'actif'   },
-  { id: 8, name: 'Khalid Lamachi',   email: 'khalidlamachi2005@gmail.com', initials: 'KL', color: '#1D4ED8', role: 'ADMIN',         projets: 5, equipes: 4, statut: 'actif'   },
-]
+const rolesLabels = {
+  scrum: "Scrum Master",
+  po: "Product Owner",
+  dev: "Développeur",
+  designer: "Designer",
+  tester: "Testeur"
+}
 
-const ROLES = ['Tous', 'DÉVELOPPEUR', 'SCRUM MASTER', 'PRODUCT OWNER', 'ADMIN']
+const ROLES = [  'Tous','scrum','po','dev','designer','tester']
 const emptyForm = {
   prenom: '',
   nom: '',
@@ -25,15 +22,9 @@ const emptyForm = {
   type_utilisateur: 'MEMBRE'
 }
 
-function roleBadgeClass(role) {
-  if (role === 'SCRUM MASTER')  return s.roleSM
-  if (role === 'PRODUCT OWNER') return s.rolePO
-  if (role === 'ADMIN')         return s.roleAdmin
-  return s.roleDev
-}
 
 export default function UsersPage() {
-  const [users, setUsers]               = useState(INITIAL_USERS)
+  const [users, setUsers]               = useState([])
   const [search, setSearch]             = useState('')
   const [roleFilter, setRoleFilter]     = useState('Tous')
   const [sortBy, setSortBy]             = useState('recent')
@@ -47,13 +38,47 @@ export default function UsersPage() {
   const [form, setForm]                       = useState(emptyForm)
 
   const totalUsers    = users.length
-  const scrumMasters  = users.filter(u => u.role === 'SCRUM MASTER').length
-  const productOwners = users.filter(u => u.role === 'PRODUCT OWNER').length
+  const scrumMasters  = users.filter(u => u.experiences?.includes('scrum')).length
+  const productOwners = users.filter(u => u.experiences?.includes('po')).length
+  const [toast, setToast] = useState("");
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => {setToast("");}, 2800);
+  };
+
+
+  useEffect(() => {loadUsers()}, [])
+  const loadUsers = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:8080/Backend_PFA/GetAllUsers"
+      )
+      const formattedUsers = response.data.map(user => ({
+        id: user.id,
+        name: `${user.prenom} ${user.nom}`,
+        prenom: user.prenom,
+        nom: user.nom,
+        email: user.email,
+        experiences: user.experiences || [],
+        type_utilisateur: user.type_utilisateur,
+        initials: `${user.prenom?.charAt(0) || ''}${user.nom?.charAt(0) || ''}`,
+        color: '#2563EB',
+        projets: 0,
+        equipes: 0,
+      }))
+
+      setUsers(formattedUsers)
+
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const displayed = useMemo(() => {
     let list = [...users]
     if (search.trim())         list = list.filter(u => u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()))
-    if (roleFilter !== 'Tous') list = list.filter(u => u.role === roleFilter)
+    if (roleFilter !== 'Tous') list = list.filter( u => u.experiences?.includes(roleFilter))
     if (sortBy === 'recent')   list.sort((a, b) => b.id - a.id)
     if (sortBy === 'az')       list.sort((a, b) => a.name.localeCompare(b.name))
     if (sortBy === 'projets')  list.sort((a, b) => b.projets - a.projets)
@@ -76,24 +101,82 @@ const confirmAdd = async () => {
       }
     );
     console.log(response.data);
+    await loadUsers();
+    showToast("Utilisateur ajouté avec succès!");
     setShowAddModal(false);
     setForm(emptyForm);
   } catch (error) {
     console.error(error);
+    showToast("Erreur lors de l'ajout de l'utilisateur!");
   }
 }
 
-  const openEdit = (user) => { setSelectedUser(user); setForm({ name: user.name, email: user.email, role: user.role, statut: user.statut }); setShowEditModal(true) }
+  const openEdit = (user) => {
+    setSelectedUser(user)
+    setEditNoChange(false)
+    setForm({
+      prenom: user.prenom,
+      nom: user.nom,
+      email: user.email,
+      experiences: user.experiences || [],
+      password: ''
+    })
+    setShowEditModal(true)
+  }
 
-  const confirmEdit = () => {
-    setUsers(prev => prev.map(u => u.id === selectedUser.id
-      ? { ...u, name: form.name, email: form.email, role: form.role, statut: form.statut, initials: form.name.split(' ').map(w => w[0]?.toUpperCase() || '').join('').slice(0, 2) }
-      : u))
-    setShowEditModal(false)
+  const [editNoChange, setEditNoChange] = useState(false)
+
+  const hasChanged = selectedUser && (
+    form.prenom !== (selectedUser.prenom || '') ||
+    form.nom    !== (selectedUser.nom    || '') ||
+    form.email  !== (selectedUser.email  || '') ||
+    form.password !== '' ||
+    JSON.stringify([...form.experiences].sort()) !== JSON.stringify([...(selectedUser.experiences || [])].sort())
+  )
+
+  const confirmEdit = async () => {
+    if (!hasChanged) {
+      setEditNoChange(true)
+      return
+    }
+    setEditNoChange(false)
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/UpdateUser",
+        {
+          id: selectedUser.id,
+          nom: form.nom,
+          prenom: form.prenom,
+          email: form.email,
+          experiences: form.experiences
+        }
+      )
+      await loadUsers()
+      showToast("Modifications enregistrées avec succès!")
+      setShowEditModal(false)
+    } catch (error) {
+      console.error(error)
+      showToast("Erreur lors de la modifications!")
+    }
   }
 
   const openDelete = (user) => { setSelectedUser(user); setShowDeleteModal(true) }
-  const confirmDelete = () => { setUsers(prev => prev.filter(u => u.id !== selectedUser.id)); setShowDeleteModal(false) }
+  const confirmDelete = async () => {
+    try {
+      await axios.post(
+        "http://localhost:8080/Backend_PFA/DeleteAccount",
+        {
+          id: selectedUser.id
+        }
+      )
+      await loadUsers()
+      showToast("Utilisateur supprimé avec succès!")
+      setShowDeleteModal(false)
+    } catch (error) {
+      console.error(error)
+      showToast("Erreur lors de la suppression!")
+    }
+  }
   const openView = (user) => { setSelectedUser(user); setShowViewModal(true) }
 
   const dropStyle = (right = false) => ({
@@ -176,9 +259,14 @@ const confirmAdd = async () => {
             </button>
             {showRoleMenu && (
               <div style={dropStyle()}>
-                {ROLES.map(r => (
-                  <button key={r} style={dropItemStyle(roleFilter === r)} onClick={() => { setRoleFilter(r); setShowRoleMenu(false) }}>{r}</button>
-                ))}
+              {ROLES.map(r => (
+                <button key={r} style={dropItemStyle(roleFilter === r)} onClick={() => {
+                    setRoleFilter(r)
+                    setShowRoleMenu(false)
+                  }}>
+                  {r === 'Tous' ? 'Tous' : rolesLabels[r]}
+                </button>
+              ))}
               </div>
             )}
           </div>
@@ -203,7 +291,7 @@ const confirmAdd = async () => {
             <thead>
               <tr>
                 <th>Nom</th>
-                <th>Rôle</th>
+                <th>Expériences</th>
                 <th>Nombre de projets</th>
                 <th>Nombre d'équipes</th>
                 <th className={s.thActions}>Actions</th>
@@ -225,7 +313,7 @@ const confirmAdd = async () => {
                     </div>
                   </td>
                   <td>
-                    <span className={`${s.roleBadge} ${roleBadgeClass(user.role)}`}>{user.role}</span>
+                    {user.experiences?.length > 0 ? user.experiences.map(exp => rolesLabels[exp] || exp).join(", ") : "Aucune expérience"}
                   </td>
                   <td className={s.countCell}>{user.projets} projet{user.projets !== 1 ? 's' : ''}</td>
                   <td className={s.countCell}>{user.equipes} équipe{user.equipes !== 1 ? 's' : ''}</td>
@@ -245,31 +333,50 @@ const confirmAdd = async () => {
 
       {/* Modal: Consulter */}
       {showViewModal && selectedUser && (
-          <div className={s.modalOverlay} onClick={() => setShowViewModal(false)}>
-            <div className={s.modal} onClick={e => e.stopPropagation()}>
-              <h3 className={s.modalTitle}>Profil utilisateur</h3>
-              <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20, padding:'16px', background:'var(--surface)', borderRadius:'var(--radius-md)', border:'1px solid var(--border)' }}>
-                <div className={s.avatar} style={{ background: selectedUser.color, width:52, height:52, fontSize:17 }}>{selectedUser.initials}</div>
-                <div>
-                  <div style={{ fontSize:16, fontWeight:700, color:'var(--text-dark)' }}>{selectedUser.name}</div>
-                  <div style={{ fontSize:12.5, color:'var(--text-mid)', marginTop:2 }}>{selectedUser.email}</div>
-                  <span className={`${s.roleBadge} ${roleBadgeClass(selectedUser.role)}`} style={{ marginTop:6, display:'inline-flex' }}>{selectedUser.role}</span>
-                </div>
+        <div className={s.modalOverlay} onClick={() => setShowViewModal(false)}>
+          <div className={s.modal} onClick={e => e.stopPropagation()}>
+
+            {/* Header identité */}
+            <div className={s.viewHeader}>
+              <div className={s.viewAvatar} style={{ background: selectedUser.color }}>
+                {selectedUser.initials}
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                {[['Projets', `${selectedUser.projets} projet${selectedUser.projets !== 1 ? 's' : ''}`], ['Équipes', `${selectedUser.equipes} équipe${selectedUser.equipes !== 1 ? 's' : ''}`], ['Statut', selectedUser.statut === 'actif' ? '🟢 Actif' : '⚪ Inactif']].map(([label, val]) => (
-                  <div key={label} style={{ padding:'12px', background:'var(--surface)', borderRadius:'var(--radius-md)', border:'1px solid var(--border)' }}>
-                    <div style={{ fontSize:11, color:'var(--text-light)', fontWeight:600, textTransform:'uppercase', marginBottom:4 }}>{label}</div>
-                    <div style={{ fontSize:14, fontWeight:600, color:'var(--text-dark)' }}>{val}</div>
-                  </div>
-                ))}
-              </div>
-              <div className={s.modalActions}>
-                <button className={s.btnCancel} onClick={() => setShowViewModal(false)}>Fermer</button>
-                <button className={s.btnSave}   onClick={() => { setShowViewModal(false); openEdit(selectedUser) }}>Modifier</button>
+              <div className={s.viewIdentity}>
+                <div className={s.viewName}>{selectedUser.name}</div>
+                <div className={s.viewEmail}>{selectedUser.email}</div>
+                <div className={s.viewTypeBadge}>{selectedUser.type_utilisateur === 'ADMIN' ? 'Administrateur' : 'Membre'}</div>
               </div>
             </div>
+
+            {/* Expériences */}
+            <div className={s.viewSection}>
+              <div className={s.viewSectionLabel}>Expériences</div>
+              <div className={s.viewChips}>
+                {selectedUser.experiences?.length > 0
+                  ? selectedUser.experiences.map(exp => (
+                      <span key={exp} className={s.viewChip}>{rolesLabels[exp] || exp}</span>
+                    ))
+                  : <span className={s.viewEmpty}>Aucune expérience renseignée</span>
+                }
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className={s.viewStats}>
+              {[['Projets', selectedUser.projets, 'projet'], ['Équipes', selectedUser.equipes, 'équipe']].map(([label, val, unit]) => (
+                <div key={label} className={s.viewStatCard}>
+                  <div className={s.viewStatValue}>{val}</div>
+                  <div className={s.viewStatLabel}>{val !== 1 ? unit + 's' : unit}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className={s.modalActions}>
+              <button className={s.btnCancel} onClick={() => setShowViewModal(false)}>Fermer</button>
+              <button className={s.btnSave} onClick={() => { setShowViewModal(false); openEdit(selectedUser) }}>Modifier</button>
+            </div>
           </div>
+        </div>
       )}
 
       {/* Modal: Ajouter */}
@@ -299,6 +406,28 @@ const confirmAdd = async () => {
               </div>
 
               <div className={`${s.formGroup} ${s.formFull}`}>
+                <label className={s.formLabel}>Expériences</label>
+                <div className={s.checkGrid}>
+                  {Object.entries(rolesLabels).map(([value, label]) => (
+                    <label key={value} className={s.checkRow}>
+                      <input
+                        type="checkbox"
+                        className={s.checkInput}
+                        checked={form.experiences.includes(value)}
+                        onChange={(e) => setForm({
+                          ...form,
+                          experiences: e.target.checked
+                            ? [...form.experiences, value]
+                            : form.experiences.filter(exp => exp !== value)
+                        })}
+                      />
+                      <span className={s.checkLabel}>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`${s.formGroup} ${s.formFull}`}>
                 <label className={s.formLabel}>Type utilisateur</label>
                 <select className={s.formSelect} value={form.type_utilisateur} onChange={e => setForm({...form, type_utilisateur: e.target.value})}>
                   <option value="MEMBRE">Membre</option>
@@ -318,10 +447,19 @@ const confirmAdd = async () => {
 {showEditModal && selectedUser && (
   <div className={s.modalOverlay} onClick={() => setShowEditModal(false)}>
     <div className={s.modal} onClick={e => e.stopPropagation()}>
-      <h3 className={s.modalTitle}>Modifier l'utilisateur</h3>
+
+      {/* Header identité */}
+      <div className={s.editHeader}>
+        <div className={s.avatar} style={{ background: selectedUser.color, width:40, height:40, fontSize:14 }}>
+          {selectedUser.initials}
+        </div>
+        <div>
+          <h3 className={s.modalTitle} style={{ marginBottom:2 }}>Modifier l'utilisateur</h3>
+          <div style={{ fontSize:12.5, color:'var(--text-mid)' }}>{selectedUser.email}</div>
+        </div>
+      </div>
 
       <div className={s.formGrid}>
-
         <div className={s.formGroup}>
           <label className={s.formLabel}>Prénom</label>
           <input className={s.formInput} value={form.prenom} placeholder='Nouveau prénom' onChange={e => setForm({ ...form, prenom: e.target.value })} />
@@ -339,16 +477,41 @@ const confirmAdd = async () => {
 
         <div className={`${s.formGroup} ${s.formFull}`}>
           <label className={s.formLabel}>Mot de passe</label>
-          <input className={s.formInput} type="password" value={form.password || ''} placeholder='Donner le nouveau password' onChange={e => setForm({ ...form, password: e.target.value })} />
+          <input className={s.formInput} type="password" value={form.password || ''} placeholder='Laisser vide pour ne pas changer' onChange={e => setForm({ ...form, password: e.target.value })} />
         </div>
 
+        <div className={`${s.formGroup} ${s.formFull}`}>
+          <label className={s.formLabel}>Expériences</label>
+          <div className={s.checkGrid}>
+            {Object.entries(rolesLabels).map(([value, label]) => (
+              <label key={value} className={s.checkRow}>
+                <input
+                  type="checkbox"
+                  className={s.checkInput}
+                  checked={form.experiences.includes(value)}
+                  onChange={(e) => setForm({
+                    ...form,
+                    experiences: e.target.checked
+                      ? [...form.experiences, value]
+                      : form.experiences.filter(exp => exp !== value)
+                  })}
+                />
+                <span className={s.checkLabel}>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
+      {editNoChange && (
+        <div className={s.noChangeMsg}>
+          Aucune modification détectée.
+        </div>
+      )}
       <div className={s.modalActions}>
         <button className={s.btnCancel} onClick={() => setShowEditModal(false)}>Annuler</button>
         <button className={s.btnSave} onClick={confirmEdit}>Enregistrer</button>
       </div>
-
     </div>
   </div>
 )}
@@ -368,6 +531,12 @@ const confirmAdd = async () => {
             </div>
           </div>
         </div>
+      )}
+      {toast && (
+          <div className={`${s.toast} ${toast === "Erreur lors de l'ajout de l'utilisateur!" || 
+          toast === "Erreur lors de la modifications!" || toast === "Erreur lors de la suppression!" ? s.toastError : ""}`}>
+            {toast}
+          </div>
       )}
     </Layout>
   )
