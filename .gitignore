@@ -13,6 +13,7 @@ out/
 # Build
 build/
 target/
+src/main/webapp/WEB-INF/classes/
 
 # Java
 *.class
@@ -23,3 +24,8 @@ target/
 # OS
 .DS_Store
 Thumbs.db
+
+# Tomcat Runner
+TomcatRunner.java
+tomcat.8080/
+jakarta.servlet-api.jar
