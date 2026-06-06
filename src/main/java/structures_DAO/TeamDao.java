@@ -196,4 +196,42 @@ public class TeamDao {
 	    DBInteraction.disconnect();
 	    return nb;
 	}
+	
+	public int addMembersToTeam(int idTeam, List<Integer> members) {
+	    int nb = 0;
+	    DBInteraction.connect();
+	    try {
+	        String sql = "insert into appartenance_equipe(id_equipe, id_utilisateur) values (?, ?)";
+	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+	        for(Integer idUser : members) {
+	            ps.setInt(1, idTeam);
+	            ps.setInt(2, idUser);
+	            nb += ps.executeUpdate();
+	        }
+	        ps.close();
+	    }
+	    catch(SQLException e) {
+	        e.printStackTrace();
+	    }
+	    DBInteraction.disconnect();
+	    return nb;
+	}
+
+	public int removeMemberFromTeam(int idTeam, int idUser) {
+	    int nb = 0;
+	    DBInteraction.connect();
+        String sql = "delete from appartenance_equipe where id_equipe=? and id_utilisateur=?";
+	    try {
+	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+	        ps.setInt(1, idTeam);
+	        ps.setInt(2, idUser);
+	        nb = ps.executeUpdate();
+	        ps.close();
+	    }
+	    catch(SQLException e) {
+	        e.printStackTrace();
+	    }
+	    DBInteraction.disconnect();
+	    return nb;
+	}
 }
