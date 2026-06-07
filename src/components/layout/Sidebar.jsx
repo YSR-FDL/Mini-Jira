@@ -35,6 +35,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "tâches") navigate("/tasks");
     if (id === "reports") navigate("/reports");
     if (id === "users") navigate("/users");
+    if (id === "dashboard") navigate("/dashboard");
   };
 
   return (
