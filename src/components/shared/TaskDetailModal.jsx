@@ -65,7 +65,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
   const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/GetAllUsers")
+    fetch("http://localhost:8080/Backend_PFA/GetAllUsers")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {

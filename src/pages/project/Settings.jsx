@@ -43,13 +43,13 @@ export default function Settings() {
       setProject(projData);
 
       // Fetch all users
-      const usersRes = await axios.get("http://localhost:8080/GetAllUsers");
+      const usersRes = await axios.get("http://localhost:8080/Backend_PFA/GetAllUsers");
       setUsers(usersRes.data);
 
       // Fetch team if assigned
       if (projData.idTeam > 0) {
         const teamRes = await axios.get(
-          `http://localhost:8080/GetTeam?id=${projData.idTeam}`,
+          `http://localhost:8080/Backend_PFA/GetTeam?id=${projData.idTeam}`,
         );
         setTeam(teamRes.data);
       } else {

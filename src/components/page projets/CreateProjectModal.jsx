@@ -23,7 +23,7 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
 
     useEffect(() => {
         if (isOpen && user) {
-            axios.post("http://localhost:8080/GetUserTeams", user)
+            axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", user)
                 .then(res => {
                     setTeams(res.data || []);
                     setSelectedTeamId("");

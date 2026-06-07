@@ -28,7 +28,7 @@ export default function ProjectHeader() {
         setProject(data);
         if (data.idTeam > 0) {
           const teamRes = await axios.get(
-            `http://localhost:8080/GetTeam?id=${data.idTeam}`,
+            `http://localhost:8080/Backend_PFA/GetTeam?id=${data.idTeam}`,
           );
           setTeam(teamRes.data);
         } else {
@@ -48,7 +48,7 @@ export default function ProjectHeader() {
 
   const fetchUserTeams = async () => {
     try {
-      const response = await axios.post("http://localhost:8080/GetUserTeams", {
+      const response = await axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", {
         id: loggedInUser.id,
         type_utilisateur: loggedInUser.type_utilisateur,
       });
