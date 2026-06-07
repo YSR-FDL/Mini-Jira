@@ -44,6 +44,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "équipes") navigate("/teams");
     if (id === "tâches") navigate("/tasks");
     if (id === "users") navigate("/users");
+    if (id === "dashboard") navigate("/dashboard");
   };
 
   return (
