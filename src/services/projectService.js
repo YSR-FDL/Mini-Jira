@@ -20,12 +20,13 @@ export const projectService = {
         }
     },
     updateProject: async (projectData) => {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log(`[API] Projet mis à jour avec les données :`, projectData);
-                resolve({ success: true, data: projectData });
-            }, 500);
-        });
+        try {
+            const response = await axiosInstance.post('/UpdateProject', projectData);
+            return response.data;
+        } catch (error) {
+            console.error("Error updating project:", error);
+            return null;
+        }
     },
     updateProjectStates: async (projectId, states) => {
         try {
@@ -36,6 +37,41 @@ export const projectService = {
             return response.data;
         } catch (error) {
             console.error("Error updating project states:", error);
+            return null;
+        }
+    },
+    archiveProject: async (projectId, isArchived) => {
+        try {
+            const response = await axiosInstance.post('/ArchiveProject', {
+                projectId: projectId,
+                isArchived: isArchived
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error archiving project:", error);
+            return null;
+        }
+    },
+    deleteProject: async (projectId) => {
+        try {
+            const response = await axiosInstance.post('/DeleteProject', {
+                projectId: projectId
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            return null;
+        }
+    },
+    assignTeamToProject: async (projectId, idTeam) => {
+        try {
+            const response = await axiosInstance.post('/AssignTeamToProject', {
+                projectId: projectId,
+                idTeam: idTeam
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Error assigning team to project:", error);
             return null;
         }
     }

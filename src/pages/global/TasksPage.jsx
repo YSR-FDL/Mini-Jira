@@ -2,14 +2,20 @@ import React, { useState } from "react";
 import Layout from "../../components/layout/Layout";
 import { myProjectsWithTasks } from "../../data/tasksMockData";
 import styles from "../../styles/Tasks/TasksPage.module.css";
-import {User} from "lucide-react";
+import { User } from "lucide-react";
 import TaskCard from "../../components/tasks/TaskCard";
 import ProjectSection from "../../components/tasks/ProjectSection";
 
 export default function TasksPage() {
   const [filter, setFilter] = useState("Toutes");
-  const totalTasks = myProjectsWithTasks.reduce( (acc, p) => acc + p.tasks.length,0);
-  const doneTasks = myProjectsWithTasks.reduce( (acc, p) => acc + p.tasks.filter((t) => t.status === "TERMINÉ").length,0);
+  const totalTasks = myProjectsWithTasks.reduce(
+    (acc, p) => acc + p.tasks.length,
+    0,
+  );
+  const doneTasks = myProjectsWithTasks.reduce(
+    (acc, p) => acc + p.tasks.filter((t) => t.status === "TERMINÉ").length,
+    0,
+  );
 
   const filteredProjects = myProjectsWithTasks
     .map((project) => {
@@ -22,11 +28,13 @@ export default function TasksPage() {
   return (
     <Layout activeNav="tâches" pageTitle="Mes Tâches">
       <div className={styles.page}>
-
         <div className={styles.pageHeader}>
           <div className={styles.pageHeaderLeft}>
             <h1 className={styles.pageTitle}>Mes Tâches</h1>
-            <p className={styles.pageSubtitle}> Toutes vos tâches assignées, regroupées par projet. </p>
+            <p className={styles.pageSubtitle}>
+              {" "}
+              Toutes vos tâches assignées, regroupées par projet.{" "}
+            </p>
           </div>
 
           <div className={styles.userSummary}>
@@ -36,7 +44,10 @@ export default function TasksPage() {
             </div>
             <div className={styles.taskCounterDivider} />
             <div className={styles.taskCounter}>
-              <span className={styles.taskCounterValue} style={{ color: "var(--green)" }}>
+              <span
+                className={styles.taskCounterValue}
+                style={{ color: "var(--green)" }}
+              >
                 {doneTasks}
               </span>
               <span className={styles.taskCounterLabel}>terminées</span>
@@ -46,8 +57,18 @@ export default function TasksPage() {
 
         <div className={styles.filterBar}>
           {["Toutes", "EN COURS", "À FAIRE", "TERMINÉ"].map((f) => (
-            <button key={f} className={`${styles.filterBtn} ${filter === f ? styles.filterBtnActive : ""}`} onClick={() => setFilter(f)}>
-              {f === "Toutes" ? "Toutes les tâches" : f === "EN COURS" ? "En cours" : f === "À FAIRE" ? "À faire" : "Terminées"}
+            <button
+              key={f}
+              className={`${styles.filterBtn} ${filter === f ? styles.filterBtnActive : ""}`}
+              onClick={() => setFilter(f)}
+            >
+              {f === "Toutes"
+                ? "Toutes les tâches"
+                : f === "EN COURS"
+                  ? "En cours"
+                  : f === "À FAIRE"
+                    ? "À faire"
+                    : "Terminées"}
             </button>
           ))}
         </div>
@@ -64,7 +85,6 @@ export default function TasksPage() {
             ))
           )}
         </div>
-
       </div>
     </Layout>
   );

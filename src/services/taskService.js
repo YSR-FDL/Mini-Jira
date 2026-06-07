@@ -17,7 +17,7 @@ export const taskService = {
             return response.data.map(t => ({
                 id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
-                tags: t.tags || [], assignee: t.assignee, sprintId: t.idSprint !== undefined ? t.idSprint : null
+                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee, sprintId: t.idSprint !== undefined ? t.idSprint : null
             }));
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -31,7 +31,7 @@ export const taskService = {
             const formattedTasks = response.data.tasks.map(t => ({
                 id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
-                tags: t.tags || [], assignee: t.assignee, sprintId: sprintId !== undefined ? sprintId : null
+                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee, sprintId: sprintId !== undefined ? sprintId : null
             }));
             return { tasks: formattedTasks, columns: response.data.columns };
         } catch (error) {
@@ -41,14 +41,14 @@ export const taskService = {
     },
 
     // --- CREATE ---
-    createTask: async (sprintId, title, projectId = null) => {
+    createTask: async (sprintId, title, projectId = null, status = 'todo') => {
         const rawId = localStorage.getItem('selectedProjectId');
         const currentProjectId = projectId || ((rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1);
         const parsedSprintId = (sprintId === 'null' || sprintId === null) ? null : parseInt(sprintId, 10);
-        const payload = { titre: title, idSprint: sprintId, idProject: currentProjectId, statut: 'todo', priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
+        const payload = { titre: title, idSprint: sprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
         const response = await axiosInstance.post('/CreateTask', payload);
         if (response.data.message === 'success') {
-            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: 'todo', sprintId: sprintId, points: 0, assignee: null };
+            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: sprintId, points: 0, assignee: null };
         }
         throw new Error("Failed to create task");
     },
@@ -78,7 +78,29 @@ export const taskService = {
 
     updateTask: async (taskId, updatedData) => {
         const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
-        const payload = { idTask: rawId, titre: updatedData.title, description: updatedData.description, statut: updatedData.status, priorite: updatedData.priority, typeTache: updatedData.tags ? updatedData.tags[0] : 'Feature', storyPoints: updatedData.points };
+        
+        let idAssignee = null;
+        if (updatedData.assignee) {
+            if (typeof updatedData.assignee === 'object' && updatedData.assignee.id) {
+                idAssignee = parseInt(updatedData.assignee.id, 10);
+            } else if (typeof updatedData.assignee === 'number') {
+                idAssignee = updatedData.assignee;
+            } else if (typeof updatedData.assignee === 'string') {
+                idAssignee = parseInt(updatedData.assignee, 10);
+            }
+        }
+
+        const payload = { 
+            idTask: rawId, 
+            titre: updatedData.title, 
+            description: updatedData.description, 
+            statut: updatedData.status, 
+            priorite: updatedData.priority, 
+            typeTache: updatedData.tags ? updatedData.tags[0] : 'Feature', 
+            storyPoints: updatedData.points,
+            idSprint: (updatedData.sprintId !== undefined && updatedData.sprintId !== null && updatedData.sprintId !== 'null') ? parseInt(updatedData.sprintId, 10) : null,
+            idAssignee: idAssignee
+        };
         const response = await axiosInstance.post('/UpdateTask', payload);
         return response.data.message === 'success';
     },
@@ -93,5 +115,16 @@ export const taskService = {
     updateTaskTag: async (taskId, newTag, tagIndex = 0) => {
         console.warn("[API] Tags are updated via full updateTask now.");
         return Promise.resolve(true);
+    },
+
+    deleteTask: async (taskId) => {
+        try {
+            const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+            const response = await axiosInstance.post('/DeleteTask', { taskId: rawId });
+            return response.data.message === 'success';
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            return false;
+        }
     }
 };
