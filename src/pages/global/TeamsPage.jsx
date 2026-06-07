@@ -23,7 +23,7 @@ export default function TeamsPage() {
     const fetchTeams = async () => {
       try {
         const response = await axios.post(
-          "http://localhost:8080/GetUserTeams",
+          "http://localhost:8080/Backend_PFA/GetUserTeams",
           {
             id: user.id,
             type_utilisateur: user.type_utilisateur
@@ -42,7 +42,7 @@ export default function TeamsPage() {
   const handleCreate = async ({ name, description, members }) => {
     try {
       const response = await axios.post(
-        "http://localhost:8080/CreateTeam",
+        "http://localhost:8080/Backend_PFA/CreateTeam",
         {
           nom: name,
           objectif: description,
@@ -63,7 +63,7 @@ export default function TeamsPage() {
   const handleUpdateTeam = async (id, nom, objectif) => {
     try {
       const response = await axios.post(
-        "http://localhost:8080/UpdateTeam",
+        "http://localhost:8080/Backend_PFA/UpdateTeam",
         {
           id,
           nom,
@@ -83,7 +83,7 @@ export default function TeamsPage() {
   const handleArchiveTeam = async (idTeam) => {
     try {
       await axios.post(
-        "http://localhost:8080/ArchiveTeam",
+        "http://localhost:8080/Backend_PFA/ArchiveTeam",
         {
           id: idTeam
         }
@@ -100,7 +100,7 @@ export default function TeamsPage() {
   const handleDeleteTeam = async (idTeam) => {
     try {
       await axios.post(
-        "http://localhost:8080/DeleteTeam",
+        "http://localhost:8080/Backend_PFA/DeleteTeam",
         { id: idTeam }
       );
       setTeams(prev => prev.filter(team => team.id !== idTeam));

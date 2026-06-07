@@ -65,7 +65,7 @@ export default function UsersPage() {
 const confirmAdd = async () => {
   try {
     const response = await axios.post(
-      "http://localhost:8080/AddUser",
+      "http://localhost:8080/Backend_PFA/AddUser",
       {
         nom: form.nom,
         prenom: form.prenom,

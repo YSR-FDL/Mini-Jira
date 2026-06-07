@@ -81,7 +81,7 @@ export default function RegisterPage() {
     }
     setErrors({})
     try {
-      const response = await axios.post("http://localhost:8080/AddUser",
+      const response = await axios.post("http://localhost:8080/Backend_PFA/AddUser",
         {
           nom: lastName,
           prenom: firstName,

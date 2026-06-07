@@ -16,7 +16,7 @@ export default function CreateTeamModal({onClose,onCreate}) {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:8080/GetAllUsers"
+          "http://localhost:8080/Backend_PFA/GetAllUsers"
         );
         setUsers(response.data);
         console.log(users);
