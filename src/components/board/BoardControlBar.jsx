@@ -74,8 +74,8 @@ function BoardControlBar({
           </div>
         )}
         {isSM && (
-          <ActionBtn variant="secondary" onClick={onCompleteSprint}>
-            Clôturer le sprint
+          <ActionBtn variant="danger" onClick={onCompleteSprint}>
+            Terminer le sprint
           </ActionBtn>
         )}
       </div>

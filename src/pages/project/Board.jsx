@@ -8,6 +8,7 @@ import { taskService } from "../../services/taskService";
 import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
 import ActionBtn from "../../components/ui/ActionBtn";
+import axios from "axios";
 import "../../styles/Board/Board.css";
 
 export default function Board() {
@@ -27,6 +28,13 @@ export default function Board() {
   // RBAC State
   const [isSM, setIsSM] = useState(false);
   const [isPO, setIsPO] = useState(false);
+  const [project, setProject] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
+
+  const loggedInUser = JSON.parse(localStorage.getItem("user"));
+  const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
+  const isDev = currentUserId && !isSM && !isPO;
+  const canDragOnBoard = isSM || isPO || isDev;
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -46,14 +54,27 @@ export default function Board() {
           ? parseInt(loggedInUser.id, 10)
           : null;
         if (projectData && currentUserId) {
-          setIsSM(
-            projectData.idSM === currentUserId ||
-              projectData.idCreateur === currentUserId,
-          );
-          setIsPO(
-            projectData.idPO === currentUserId ||
-              projectData.idCreateur === currentUserId,
-          );
+          setIsSM(parseInt(projectData.idSM, 10) === currentUserId);
+          setIsPO(parseInt(projectData.idPO, 10) === currentUserId);
+        } else {
+          setIsSM(false);
+          setIsPO(false);
+        }
+        setProject(projectData);
+
+        // Fetch team members
+        if (projectData && projectData.idTeam > 0) {
+          try {
+            const teamRes = await axios.get(
+              `http://localhost:8080/Backend_PFA/GetTeam?id=${projectData.idTeam}`,
+            );
+            setTeamMembers(teamRes.data?.membres || []);
+          } catch (err) {
+            console.error("Error loading team members in Board:", err);
+            setTeamMembers([]);
+          }
+        } else {
+          setTeamMembers([]);
         }
 
         let colIds = [];
@@ -97,6 +118,18 @@ export default function Board() {
 
   const handleDragEnd = (result) => {
     const { source, destination, draggableId } = result;
+    if (!canDragOnBoard) return;
+
+    // Developer can only transition tasks assigned to themselves
+    if (isDev) {
+      const draggedTask = tasks.find((t) => t.id === draggableId);
+      const isAssignedToMe = draggedTask && draggedTask.assignee && parseInt(draggedTask.assignee.id, 10) === currentUserId;
+      if (!isAssignedToMe) {
+        alert("Vous ne pouvez déplacer que les tickets qui vous sont assignés.");
+        return;
+      }
+    }
+
     if (
       !destination ||
       (destination.droppableId === source.droppableId &&
@@ -350,28 +383,10 @@ export default function Board() {
         isSM={isSM}
       />
       {/* NOUVEAU BOUTON DE CRÉATION SUR LE BOARD */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "15px",
-          paddingRight: "10px",
-        }}
-      >
-        {isPO && (
-          <ActionBtn
-            size="sm"
-            variant="secondary"
-            onClick={() => setSelectedTaskId("NEW")}
-          >
-            + Créer un ticket détaillé
-          </ActionBtn>
-        )}
-      </div>
       <div className="kanban-board-container scroll">
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="kanban-board">
-            {columns.map((col) => (
+             {columns.map((col) => (
               <KanbanColumn
                 key={col.id}
                 title={col.title}
@@ -380,66 +395,70 @@ export default function Board() {
                 onAddTask={handleAddTask}
                 onTaskClick={setSelectedTaskId}
                 isPO={isPO}
+                isSM={isSM}
+                isDragDisabled={!canDragOnBoard}
                 onDeleteColumn={handleDeleteColumn}
               />
             ))}
-            <div className="kanban-column-container add-column-wrapper">
-              {isAddingColumn ? (
-                <div className="add-column-form">
-                  <input
-                    type="text"
-                    className="ui-input new-column-title-input"
-                    placeholder="Nom du statut..."
-                    value={newColumnTitle}
-                    onChange={(e) => setNewColumnTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleAddColumn();
-                      else if (e.key === "Escape") setIsAddingColumn(false);
-                    }}
-                    autoFocus
-                  />
-                  <div className="add-column-actions">
-                    <button
-                      onClick={handleAddColumn}
-                      className="add-column-save-btn"
-                    >
-                      Ajouter
-                    </button>
-                    <button
-                      onClick={() => setIsAddingColumn(false)}
-                      className="add-column-cancel-btn"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="add-column-trigger-btn"
-                  onClick={() => setIsAddingColumn(true)}
-                >
-                  <svg
-                    className="kanban-add-icon"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ marginRight: "6px" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 4v16m8-8H4"
+             {isSM && (
+              <div className="kanban-column-container add-column-wrapper">
+                {isAddingColumn ? (
+                  <div className="add-column-form">
+                    <input
+                      type="text"
+                      className="ui-input new-column-title-input"
+                      placeholder="Nom du statut..."
+                      value={newColumnTitle}
+                      onChange={(e) => setNewColumnTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddColumn();
+                        else if (e.key === "Escape") setIsAddingColumn(false);
+                      }}
+                      autoFocus
                     />
-                  </svg>
-                  Ajouter un statut
-                </button>
-              )}
-            </div>
+                    <div className="add-column-actions">
+                      <button
+                        onClick={handleAddColumn}
+                        className="add-column-save-btn"
+                      >
+                        Ajouter
+                      </button>
+                      <button
+                        onClick={() => setIsAddingColumn(false)}
+                        className="add-column-cancel-btn"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="add-column-trigger-btn"
+                    onClick={() => setIsAddingColumn(true)}
+                  >
+                    <svg
+                      className="kanban-add-icon"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      style={{ marginRight: "6px" }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Ajouter un statut
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </DragDropContext>
       </div>
-      {selectedTaskId && (
+       {selectedTaskId && (
         <TaskDetailModal
           task={
             selectedTaskId === "NEW"
@@ -450,7 +469,7 @@ export default function Board() {
                   status: columns.length > 0 ? columns[0].id : "todo",
                   priority: "medium",
                   tags: ["Feature"],
-                  sprintId: activeSprint.id,
+                  sprintId: activeSprint ? activeSprint.id : null,
                 }
               : tasks.find((t) => t.id === selectedTaskId)
           }
@@ -467,6 +486,9 @@ export default function Board() {
           }
           onDelete={handleDeleteTask}
           columns={columns}
+          project={project}
+          teamMembers={teamMembers}
+          sprints={activeSprint ? [activeSprint] : []}
         />
       )}
     </ProjectLayout>

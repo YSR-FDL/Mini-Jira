@@ -10,6 +10,7 @@ import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
 import CreateSprintModal from "../../components/sprints/CreateSprintModal";
 import { FiChevronRight, FiChevronDown } from "react-icons/fi";
+import axios from "axios";
 import "../../styles/Backlog/Backlog.css";
 import "../../styles/Project/Sprints.css";
 
@@ -32,6 +33,9 @@ export default function Backlog() {
 
   // RBAC & Sprint States
   const [isSM, setIsSM] = useState(false);
+  const [isPO, setIsPO] = useState(false);
+  const [project, setProject] = useState(null);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState(true);
   const [activeSprint, setActiveSprint] = useState(null);
   const [completedSprints, setCompletedSprints] = useState([]);
@@ -51,18 +55,33 @@ export default function Backlog() {
       const projectData = await projectService.getProjectById(projectId);
 
       setTasks(tasksData);
+      setProject(projectData);
+
+      // Fetch team members
+      if (projectData && projectData.idTeam > 0) {
+        try {
+          const teamRes = await axios.get(
+            `http://localhost:8080/Backend_PFA/GetTeam?id=${projectData.idTeam}`,
+          );
+          setTeamMembers(teamRes.data?.membres || []);
+        } catch (err) {
+          console.error("Error loading team members in Backlog:", err);
+          setTeamMembers([]);
+        }
+      } else {
+        setTeamMembers([]);
+      }
 
       // Compute RBAC
       const userString = localStorage.getItem("user");
       const loggedInUser = userString ? JSON.parse(userString) : null;
       const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
       if (projectData && currentUserId) {
-        setIsSM(
-          projectData.idSM === currentUserId ||
-            projectData.idCreateur === currentUserId,
-        );
+        setIsSM(parseInt(projectData.idSM, 10) === currentUserId);
+        setIsPO(parseInt(projectData.idPO, 10) === currentUserId);
       } else {
         setIsSM(false);
+        setIsPO(false);
       }
 
       // Partition sprints
@@ -292,11 +311,26 @@ export default function Backlog() {
     )
       return;
 
+    // RBAC check:
+    if (isSM) {
+      // SM can move anything
+    } else if (isPO) {
+      // PO can only move unassigned tickets (droppableId is null, "null", or "backlog") and only within the backlog pool
+      const isSourceBacklog = source.droppableId === "null" || source.droppableId === "backlog";
+      const isDestBacklog = destination.droppableId === "null" || destination.droppableId === "backlog";
+      if (!isSourceBacklog || !isDestBacklog) {
+        return; // Prevent dragging
+      }
+    } else {
+      // Dev and Admin cannot drag at all in Backlog
+      return;
+    }
+
     // UI Optimiste
     const draggedTask = tasks.find((t) => t.id === draggableId);
     if (draggedTask)
       draggedTask.sprintId =
-        destination.droppableId === "null"
+        destination.droppableId === "null" || destination.droppableId === "backlog"
           ? null
           : parseInt(destination.droppableId);
 
@@ -364,13 +398,15 @@ export default function Backlog() {
           marginBottom: "16px",
         }}
       >
-        <ActionBtn
-          size="sm"
-          variant="secondary"
-          onClick={() => setSelectedTaskId("NEW")}
-        >
-          + Créer un ticket
-        </ActionBtn>
+        {isPO && (
+          <ActionBtn
+            size="sm"
+            variant="secondary"
+            onClick={() => setSelectedTaskId("NEW")}
+          >
+            + Créer un ticket
+          </ActionBtn>
+        )}
         {isSM && (
           <ActionBtn
             size="sm"
@@ -430,6 +466,7 @@ export default function Backlog() {
                 onPriorityChange={handlePriorityChange}
                 onTaskClick={setSelectedTaskId}
                 isSM={isSM}
+                isPO={isPO}
                 onStartClick={handleStartSprint}
                 onTerminateClick={handleOpenTerminateModal}
                 onDeleteClick={handleDeleteSprint}
@@ -546,6 +583,9 @@ export default function Backlog() {
           onSave={handleSaveDetailedTask}
           onDelete={handleDeleteTask}
           columns={columns}
+          project={project}
+          teamMembers={teamMembers}
+          sprints={sprints}
         />
       )}
 

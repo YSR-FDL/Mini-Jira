@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { projectService } from "../../services/projectService";
 import {
   LayoutDashboard,
   FolderKanban,
   CheckSquare,
   Users,
+  BarChart2,
   Settings,
   UserCircle,
   ChevronLeft,
@@ -20,6 +22,7 @@ export const navItems = [
   { id: "projets", label: "Projets", icon: "projects" },
   { id: "tâches", label: "Tâches", icon: "tasks" },
   { id: "équipes", label: "Équipes", icon: "teams" },
+  { id: "reports", label: "Bug Reports", icon: "reports" },
   { id: "paramètres", label: "Paramètres", icon: "settings" },
   { id: "profile", label: "Profil", icon: "profile" },
   { id: "users", label: "Gestion des utilisateurs", icon: "users" },
@@ -30,6 +33,7 @@ const ICONS = {
   projects: FolderKanban,
   tasks: CheckSquare,
   teams: Users,
+  reports: BarChart2,
   settings: Settings,
   profile: UserCircle,
   users: IdCard,
@@ -37,6 +41,34 @@ const ICONS = {
 
 export default function Sidebar({ activeNav, collapsed, onToggle }) {
   const navigate = useNavigate();
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const checkSettingsAccess = async () => {
+      const rawId = localStorage.getItem("selectedProjectId");
+      const projectId =
+        rawId && rawId !== "undefined" && rawId !== "null"
+          ? parseInt(rawId, 10)
+          : 1;
+      const userString = localStorage.getItem("user");
+      const loggedInUser = userString ? JSON.parse(userString) : null;
+
+      if (projectId && loggedInUser) {
+        try {
+          const project = await projectService.getProjectById(projectId);
+          if (project) {
+            const currentUserId = parseInt(loggedInUser.id, 10);
+            const isCreator = parseInt(project.idCreateur, 10) === currentUserId;
+            const isSM = parseInt(project.idSM, 10) === currentUserId;
+            setShowSettings(isCreator || isSM);
+          }
+        } catch (err) {
+          console.error("Error checking settings access in sidebar:", err);
+        }
+      }
+    };
+    checkSettingsAccess();
+  }, []);
 
   const handleClick = (id) => {
     if (id === "profile") navigate("/profile");
@@ -45,7 +77,16 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
     if (id === "tâches") navigate("/tasks");
     if (id === "users") navigate("/users");
     if (id === "dashboard") navigate("/dashboard");
+    if (id === "paramètres") navigate("/settings");
+    if (id === "reports") navigate("/reports");
   };
+
+  const filteredNavItems = navItems.filter((item) => {
+    if (item.id === "paramètres") {
+      return showSettings;
+    }
+    return true;
+  });
 
   return (
     <aside className={`${s.sidebar}${collapsed ? " " + s.collapsed : ""}`}>
@@ -69,7 +110,7 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
       </div>
 
       <nav className={s.nav}>
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const Icon = ICONS[item.icon] || UserCircle;
           return (
             <button

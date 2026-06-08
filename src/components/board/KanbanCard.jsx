@@ -9,7 +9,7 @@ const PRIORITY_CONFIG = {
   low: 'low',
 };
 
-function KanbanCard({ task, index, onClick }) {
+function KanbanCard({ task, index, onClick, isDragDisabled }) {
   if (!task) return null;
 
   const { id, title, priority, status, tags = [], points, assignee } = task;
@@ -21,7 +21,7 @@ function KanbanCard({ task, index, onClick }) {
   const getInitials = (name) => (name ? name.substring(0, 2).toUpperCase() : '—');
 
   return (
-    <Draggable draggableId={id} index={index}>
+    <Draggable draggableId={id} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
         <div
           className={`kanban-card kanban-card-${prio} ${isDone ? 'done' : ''}`}

@@ -20,6 +20,7 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
     const [selectedSMId, setSelectedSMId] = useState("");
     const [selectedPOId, setSelectedPOId] = useState("");
     const [teamMembers, setTeamMembers] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
 
     useEffect(() => {
         if (isOpen && user) {
@@ -32,6 +33,12 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
                     setTeamMembers([]);
                 })
                 .catch(err => console.error("Error fetching teams:", err));
+
+            axios.get("http://localhost:8080/Backend_PFA/GetAllUsers")
+                .then(res => {
+                    setAllUsers(res.data || []);
+                })
+                .catch(err => console.error("Error fetching all users:", err));
         }
     }, [isOpen]);
 
@@ -136,11 +143,10 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
                             className={styles.input} 
                             value={selectedSMId} 
                             onChange={(e) => setSelectedSMId(e.target.value)}
-                            disabled={!selectedTeamId}
                             required
                         >
                             <option value="">Sélectionner un Scrum Master</option>
-                            {teamMembers.map(m => (
+                            {allUsers.map(m => (
                                 <option key={m.id} value={m.id}>{m.prenom} {m.nom} ({m.login})</option>
                             ))}
                         </select>

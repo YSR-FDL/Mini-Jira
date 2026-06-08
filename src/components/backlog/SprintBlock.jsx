@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import StoryRow from './StoryRow';
 
-export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, onStartClick, onTerminateClick, onDeleteClick }) {
+export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -111,7 +111,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
 
             {/* LISTE DES TICKETS INTERNES */}
             {isExpanded && (
-                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig}>
+                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}>
                     {(provided, snapshot) => (
                         <div 
                             className="sprint-content"
@@ -129,7 +129,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                         key={task.id} 
                                         task={task} 
                                         index={index}
-                                        isDragDisabled={!!sortConfig}
+                                        isDragDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}
                                         onTagChange={(newTag, tagIndex) => onTagChange && onTagChange(task.id, newTag, tagIndex)}
                                         onPriorityChange={(newPriority) => onPriorityChange && onPriorityChange(task.id, newPriority)}
                                         onClick={() => onTaskClick && onTaskClick(task.id)}
@@ -161,9 +161,11 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                             />
                         </div>
                     ) : (
-                        <div className="add-story" onClick={() => setIsCreatingTask(true)}>
-                            <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> Créer un ticket
-                        </div>
+                        isPO && (
+                            <div className="add-story" onClick={() => setIsCreatingTask(true)}>
+                                <span style={{ fontSize: '14px', fontWeight: 'bold' }}>+</span> Créer un ticket
+                            </div>
+                        )
                     )}
                         </div>
                     )}

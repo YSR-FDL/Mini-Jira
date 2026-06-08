@@ -30,7 +30,7 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Critique" },
 ];
 
-const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
+const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], project, teamMembers = [], sprints = [] }) => {
   const statusOptions =
     columns.length > 0
       ? columns.map((col) => {
@@ -63,6 +63,34 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
   });
   const [isClosing, setIsClosing] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
+
+  const loggedInUser = JSON.parse(localStorage.getItem("user"));
+  const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
+
+  const isPO = project && currentUserId && parseInt(project.idPO, 10) === currentUserId;
+  const isSM = project && currentUserId && parseInt(project.idSM, 10) === currentUserId;
+  const isDev = currentUserId && !isSM && !isPO;
+  const isAssignedToSelf = editedTask.assignee && currentUserId && parseInt(editedTask.assignee.id, 10) === currentUserId;
+
+  const canEditTitle = isPO || isSM;
+  const canEditType = isPO || isSM || (isDev && isAssignedToSelf);
+  const canEditPriority = isPO || isSM || (isDev && isAssignedToSelf);
+  const canDelete = isSM;
+
+  const canEditStatus = isSM || (isDev && isAssignedToSelf);
+  const canEditDescription = isPO || isSM || (isDev && isAssignedToSelf);
+  const canEditPoints = isSM || (isDev && isAssignedToSelf);
+
+  const assigneeOptions = (() => {
+    if (isPO) {
+      return allUsers.filter(u => teamMembers.some(m => parseInt(m.id, 10) === parseInt(u.id, 10)));
+    } else if (isDev) {
+      const selfUser = allUsers.find(u => parseInt(u.id, 10) === currentUserId);
+      return selfUser ? [selfUser] : [];
+    }
+    return [];
+  })();
+  const canEditAssignee = isPO || isDev;
 
   useEffect(() => {
     fetch("http://localhost:8080/Backend_PFA/GetAllUsers")
@@ -232,7 +260,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
             className="header-actions"
             style={{ display: "flex", gap: "8px", alignItems: "center" }}
           >
-            {editedTask.id !== "NEW" && onDelete && (
+            {editedTask.id !== "NEW" && onDelete && canDelete && (
               <ActionBtn variant="danger" onClick={handleDeleteTask}>
                 Supprimer
               </ActionBtn>
@@ -254,28 +282,44 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
             <div className="left-column">
               {/* TITLE */}
               <div style={{ marginBottom: "32px" }}>
-                {isEditingTitle ? (
-                  <input
-                    ref={titleInputRef}
-                    className="title-input"
-                    value={editedTask.title}
-                    onChange={(e) =>
-                      setEditedTask({ ...editedTask, title: e.target.value })
-                    }
-                    onBlur={stopEditingTitle}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === "Escape") {
-                        stopEditingTitle();
+                {task.id === "NEW" ? (
+                  <div className="form-group-task" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <label style={{ fontSize: "12px", fontWeight: "bold", color: "var(--color-text-secondary)" }}>TITRE</label>
+                    <input
+                      className="ui-input"
+                      style={{ fontSize: "16px", fontWeight: "600", width: "100%", padding: "8px 12px" }}
+                      value={editedTask.title}
+                      placeholder="Saisir le titre du ticket..."
+                      onChange={(e) =>
+                        setEditedTask({ ...editedTask, title: e.target.value })
                       }
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="inline-edit-container task-title"
-                    onClick={() => setIsEditingTitle(true)}
-                  >
-                    {editedTask.title || "Ticket sans titre"}
+                    />
                   </div>
+                ) : (
+                  isEditingTitle && canEditTitle ? (
+                    <input
+                      ref={titleInputRef}
+                      className="title-input"
+                      value={editedTask.title}
+                      onChange={(e) =>
+                        setEditedTask({ ...editedTask, title: e.target.value })
+                      }
+                      onBlur={stopEditingTitle}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === "Escape") {
+                          stopEditingTitle();
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="inline-edit-container task-title"
+                      onClick={() => { if (canEditTitle) setIsEditingTitle(true); }}
+                      style={{ cursor: canEditTitle ? "pointer" : "default" }}
+                    >
+                      {editedTask.title || "Ticket sans titre"}
+                    </div>
+                  )
                 )}
               </div>
 
@@ -284,56 +328,72 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
                 <h3 className="section-title">
                   <FiAlignLeft style={{ marginRight: "8px" }} /> Description
                 </h3>
-                {isEditingDesc ? (
-                  <div>
-                    <textarea
-                      ref={descInputRef}
-                      className="description-textarea scroll"
-                      value={editedTask.description || ""}
-                      onChange={(e) =>
-                        setEditedTask({
-                          ...editedTask,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder="Ajoutez une description détaillée..."
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") {
-                          stopEditingDesc();
-                        }
-                      }}
-                    />
-                    <div className="edit-actions">
-                      <ActionBtn variant="primary" onClick={stopEditingDesc}>
-                        Enregistrer
-                      </ActionBtn>
-                      <ActionBtn
-                        variant="secondary"
-                        onClick={() => {
+                {task.id === "NEW" ? (
+                  <textarea
+                    className="ui-input scroll"
+                    style={{ width: "100%", minHeight: "120px", padding: "10px", resize: "vertical" }}
+                    value={editedTask.description || ""}
+                    placeholder="Ajoutez une description détaillée..."
+                    onChange={(e) =>
+                      setEditedTask({
+                        ...editedTask,
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                ) : (
+                  isEditingDesc && canEditDescription ? (
+                    <div>
+                      <textarea
+                        ref={descInputRef}
+                        className="description-textarea scroll"
+                        value={editedTask.description || ""}
+                        onChange={(e) =>
                           setEditedTask({
                             ...editedTask,
-                            description: task.description,
-                          }); // revert
-                          setIsEditingDesc(false);
+                            description: e.target.value,
+                          })
+                        }
+                        placeholder="Ajoutez une description détaillée..."
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            stopEditingDesc();
+                          }
                         }}
-                      >
-                        Annuler
-                      </ActionBtn>
+                      />
+                      <div className="edit-actions">
+                        <ActionBtn variant="primary" onClick={stopEditingDesc}>
+                          Enregistrer
+                        </ActionBtn>
+                        <ActionBtn
+                          variant="secondary"
+                          onClick={() => {
+                            setEditedTask({
+                              ...editedTask,
+                              description: task.description,
+                            }); // revert
+                            setIsEditingDesc(false);
+                          }}
+                        >
+                          Annuler
+                        </ActionBtn>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div
-                    className="inline-edit-container description-text"
-                    onClick={() => setIsEditingDesc(true)}
-                  >
-                    {editedTask.description ? (
-                      editedTask.description
-                    ) : (
-                      <span className="description-placeholder">
-                        Ajouter une description...
-                      </span>
-                    )}
-                  </div>
+                  ) : (
+                    <div
+                      className="inline-edit-container description-text"
+                      onClick={() => { if (canEditDescription) setIsEditingDesc(true); }}
+                      style={{ cursor: canEditDescription ? "pointer" : "default" }}
+                    >
+                      {editedTask.description ? (
+                        editedTask.description
+                      ) : (
+                        <span className="description-placeholder">
+                          Ajouter une description...
+                        </span>
+                      )}
+                    </div>
+                  )
                 )}
               </div>
             </div>
@@ -342,37 +402,42 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
             <div className="right-column">
               <div className="metadata-panel">
                 {/* STATUT */}
-                <div className="metadata-group" style={{ marginBottom: "8px" }}>
-                  <div className="metadata-label">STATUT</div>
-                  <div
-                    className="metadata-value no-hover"
-                    style={{ margin: 0, padding: 0 }}
-                  >
-                    <StatusDropdown
-                      options={statusOptions}
-                      value={editedTask.status}
-                      onChange={(val) => handleFieldChange("status", val)}
-                    />
+                {task.id !== "NEW" && (
+                  <div className="metadata-group" style={{ marginBottom: "8px" }}>
+                    <div className="metadata-label">STATUT</div>
+                    <div
+                      className="metadata-value no-hover"
+                      style={{ margin: 0, padding: 0 }}
+                    >
+                      <StatusDropdown
+                        options={statusOptions}
+                        value={editedTask.status}
+                        onChange={(val) => handleFieldChange("status", val)}
+                        disabled={!canEditStatus}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* DÉTAILS */}
                 <div
                   style={{
-                    borderTop: "1px solid var(--color-border-secondary)",
-                    paddingTop: "16px",
+                    borderTop: task.id === "NEW" ? "none" : "1px solid var(--color-border-secondary)",
+                    paddingTop: task.id === "NEW" ? "0" : "16px",
                   }}
                 >
-                  <h4
-                    style={{
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      marginBottom: "16px",
-                      color: "var(--color-text-primary)",
-                    }}
-                  >
-                    Détails
-                  </h4>
+                  {task.id !== "NEW" && (
+                    <h4
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        marginBottom: "16px",
+                        color: "var(--color-text-primary)",
+                      }}
+                    >
+                      Détails
+                    </h4>
+                  )}
 
                   <div className="metadata-group">
                     <div className="metadata-label">Type</div>
@@ -381,6 +446,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
                         className="ui-input"
                         style={{ height: "32px", padding: "0 8px" }}
                         value={editedTask.type || "Feature"}
+                        disabled={!canEditType}
                         onChange={(e) =>
                           handleFieldChange("type", e.target.value)
                         }
@@ -401,6 +467,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
                         className="ui-input"
                         style={{ height: "32px", padding: "0 8px" }}
                         value={editedTask.priority || "medium"}
+                        disabled={!canEditPriority}
                         onChange={(e) =>
                           handleFieldChange("priority", e.target.value)
                         }
@@ -414,79 +481,92 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [] }) => {
                     </div>
                   </div>
 
-                  <div className="metadata-group">
-                    <div className="metadata-label">Assigné à</div>
-                    <div className="metadata-value no-hover">
-                      <select
-                        className="ui-input"
-                        style={{
-                          height: "32px",
-                          padding: "0 8px",
-                          width: "100%",
-                        }}
-                        value={
-                          editedTask.assignee
-                            ? editedTask.assignee.id || ""
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val === "") {
-                            handleFieldChange("assignee", null);
-                          } else {
-                            const selectedUser = allUsers.find(
-                              (u) => String(u.id) === val,
-                            );
-                            handleFieldChange("assignee", selectedUser || null);
-                          }
-                        }}
-                      >
-                        <option value="">Non assigné</option>
-                        {allUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
+                  {task.id !== "NEW" && (
+                    <>
+                      {!isPO && (
+                        <div className="metadata-group">
+                          <div className="metadata-label">Assigné à</div>
+                          <div className="metadata-value">
+                            <select
+                              className="ui-input"
+                              style={{
+                                height: "32px",
+                                padding: "0 8px",
+                                width: "100%",
+                              }}
+                              value={
+                                editedTask.assignee
+                                  ? editedTask.assignee.id || ""
+                                  : ""
+                              }
+                              disabled={!canEditAssignee}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === "") {
+                                  handleFieldChange("assignee", null);
+                                } else {
+                                  const selectedUser = allUsers.find(
+                                    (u) => String(u.id) === val,
+                                  );
+                                  handleFieldChange("assignee", selectedUser || null);
+                                }
+                              }}
+                            >
+                              <option value="">Non assigné</option>
+                              {assigneeOptions.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                  {u.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
 
-                  <div className="metadata-group">
-                    <div className="metadata-label">Sprint</div>
-                    <div
-                      className="metadata-value"
-                      style={{ color: "var(--color-primary-blue)" }}
-                    >
-                      {editedTask.sprintId
-                        ? `Sprint ${editedTask.sprintId}`
-                        : "Backlog"}
-                    </div>
-                  </div>
+                      <div className="metadata-group">
+                        <div className="metadata-label">Sprint</div>
+                        <div
+                          className="metadata-value"
+                          style={{ color: "var(--color-primary-blue)" }}
+                        >
+                          {editedTask.sprintId
+                            ? (() => {
+                                const spr = sprints.find(s => String(s.id) === String(editedTask.sprintId));
+                                return spr ? spr.name : `Sprint ${editedTask.sprintId}`;
+                              })()
+                            : "Backlog"}
+                        </div>
+                      </div>
 
-                  <div className="metadata-group">
-                    <div className="metadata-label">Story points</div>
-                    <div className="metadata-value no-hover">
-                      <input
-                        type="number"
-                        min="0"
-                        className="ui-input"
-                        style={{
-                          minHeight: "auto",
-                          height: "32px",
-                          width: "60px",
-                          padding: "4px 8px",
-                          margin: 0,
-                        }}
-                        value={editedTask.points || 0}
-                        onChange={(e) =>
-                          handleFieldChange(
-                            "points",
-                            Math.max(0, parseInt(e.target.value) || 0),
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
+                      {!isPO && (
+                        <div className="metadata-group">
+                          <div className="metadata-label">Story points</div>
+                          <div className="metadata-value no-hover">
+                            <input
+                              type="number"
+                              min="0"
+                              className="ui-input"
+                              style={{
+                                minHeight: "auto",
+                                height: "32px",
+                                width: "60px",
+                                padding: "4px 8px",
+                                margin: 0,
+                              }}
+                              value={editedTask.points || 0}
+                              disabled={!canEditPoints}
+                              onChange={(e) =>
+                                handleFieldChange(
+                                  "points",
+                                  Math.max(0, parseInt(e.target.value) || 0),
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

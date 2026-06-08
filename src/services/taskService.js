@@ -45,10 +45,10 @@ export const taskService = {
         const rawId = localStorage.getItem('selectedProjectId');
         const currentProjectId = projectId || ((rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1);
         const parsedSprintId = (sprintId === 'null' || sprintId === null) ? null : parseInt(sprintId, 10);
-        const payload = { titre: title, idSprint: sprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
+        const payload = { titre: title, idSprint: parsedSprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
         const response = await axiosInstance.post('/CreateTask', payload);
         if (response.data.message === 'success') {
-            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: sprintId, points: 0, assignee: null };
+            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: parsedSprintId, points: 0, assignee: null };
         }
         throw new Error("Failed to create task");
     },

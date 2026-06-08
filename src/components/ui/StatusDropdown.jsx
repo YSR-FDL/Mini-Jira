@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../../styles/Ui/StatusDropdown.css';
 
-const StatusDropdown = ({ options, value, onChange }) => {
+const StatusDropdown = ({ options, value, onChange, disabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -22,8 +22,10 @@ const StatusDropdown = ({ options, value, onChange }) => {
     <div className="dropdown-container" ref={dropdownRef}>
       <button 
         className="dropdown-trigger" 
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
         type="button"
+        disabled={disabled}
+        style={{ cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.7 : 1 }}
       >
         <span>
             <span className={`status-dot ${selectedOption?.colorClass}`}></span>

@@ -10,7 +10,9 @@ function KanbanColumn({
   onAddTask,
   onTaskClick,
   isPO,
+  isSM,
   onDeleteColumn,
+  isDragDisabled,
 }) {
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -44,7 +46,7 @@ function KanbanColumn({
           <h3>{title}</h3>
           <span className="kanban-column-counter">{tasks.length}</span>
         </div>
-        {isPO && onDeleteColumn && (
+        {isSM && onDeleteColumn && (
           <div style={{ position: "relative" }}>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -151,6 +153,7 @@ function KanbanColumn({
                 key={task.id}
                 task={task}
                 index={index}
+                isDragDisabled={isDragDisabled}
                 onClick={() => onTaskClick && onTaskClick(task.id)}
               />
             ))}
@@ -187,7 +190,7 @@ function KanbanColumn({
       </Droppable>
 
       {/* Pied de la colonne pour ajouter une tâche */}
-      {status !== "done" && onAddTask && !isCreatingTask && (
+      {status !== "done" && onAddTask && !isCreatingTask && isPO && (
         <div className="add-task-footer">
           <button
             className="add-task-btn"
