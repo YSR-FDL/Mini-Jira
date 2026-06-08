@@ -10,16 +10,8 @@ import java.util.Map;
 
 import connexion_BD.DBInteraction;
 
-/**
- * DAO for aggregated metrics queries.
- * Returns computed Maps instead of raw model objects — ready for JSON serialization.
- */
 public class MetricsDAO {
 
-    /**
-     * Returns high-level project metrics:
-     * { totalIssues, completed, inProgress, overdue }
-     */
     public Map<String, Object> getProjectMetrics(int projectId) {
         Map<String, Object> metrics = new HashMap<>();
         DBInteraction.connect();
@@ -44,7 +36,7 @@ public class MetricsDAO {
                 int review = rs.getInt("review");
                 int todo = total - completed - inProgress - review;
                 metrics.put("todo", todo);
-                metrics.put("overdue", 0); // Would need a deadline column for real overdue tracking
+                metrics.put("overdue", 0); 
             }
             rs.close();
             ps.close();
@@ -55,10 +47,6 @@ public class MetricsDAO {
         return metrics;
     }
 
-    /**
-     * Returns sprint progress data:
-     * { total, completed, totalPoints, completedPoints, distribution { todo, inProgress, review, done } }
-     */
     public Map<String, Object> getSprintProgress(int sprintId) {
         Map<String, Object> progress = new HashMap<>();
         DBInteraction.connect();
@@ -97,9 +85,6 @@ public class MetricsDAO {
         return progress;
     }
 
-    /**
-     * Returns task type breakdown: [{ type, count }, ...]
-     */
     public List<Map<String, Object>> getTypeBreakdown(int projectId) {
         List<Map<String, Object>> breakdown = new ArrayList<>();
         DBInteraction.connect();
@@ -125,9 +110,6 @@ public class MetricsDAO {
         return breakdown;
     }
 
-    /**
-     * Returns priority breakdown: [{ priority, count }, ...]
-     */
     public List<Map<String, Object>> getPriorityBreakdown(int projectId) {
         List<Map<String, Object>> breakdown = new ArrayList<>();
         DBInteraction.connect();
@@ -153,9 +135,6 @@ public class MetricsDAO {
         return breakdown;
     }
 
-    /**
-     * Returns workload per assignee: [{ name, taskCount }, ...]
-     */
     public List<Map<String, Object>> getAssigneeWorkload(int projectId) {
         List<Map<String, Object>> workload = new ArrayList<>();
         DBInteraction.connect();
@@ -181,8 +160,6 @@ public class MetricsDAO {
         DBInteraction.disconnect();
         return workload;
     }
-
-    // ========================= COLOR HELPERS =========================
 
     private String getTypeColor(String type) {
         if (type == null) return "#3b82f6";

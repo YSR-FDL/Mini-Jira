@@ -14,10 +14,6 @@ import utils.AssigneeHelper;
 
 public class TaskDAO {
 
-    /**
-     * Builds a Task object from a ResultSet row.
-     * Expects the query to include a LEFT JOIN on utilisateurs for assignee data.
-     */
     private Task buildTaskFromRS(ResultSet rs) throws SQLException {
         Task task = new Task();
         task.setIdTask(rs.getInt("id_task"));
@@ -39,10 +35,6 @@ public class TaskDAO {
         return task;
     }
 
-    /**
-     * Builds a JSON-friendly map for a task, including computed assignee details.
-     * This is the shape the frontend expects.
-     */
     private Map<String, Object> buildTaskMap(ResultSet rs) throws SQLException {
         Map<String, Object> map = new HashMap<>();
         map.put("idTask", rs.getInt("id_task"));
@@ -78,14 +70,9 @@ public class TaskDAO {
         return map;
     }
 
-    /**
-     * Base query with LEFT JOIN for assignee enrichment.
-     */
     private static final String TASK_SELECT = 
         "SELECT t.*, u.nom AS nom_assignee, u.prenom AS prenom_assignee " +
         "FROM tasks t LEFT JOIN utilisateurs u ON t.id_assignee = u.id ";
-
-    // ========================= CREATE =========================
 
     public int addTask(Task task) {
         int nb = 0;
@@ -119,13 +106,6 @@ public class TaskDAO {
         DBInteraction.disconnect();
         return nb;
     }
-
-    // ========================= READ =========================
-
-    /**
-     * Gets backlog tasks (tasks not assigned to any sprint) for a project.
-     * Returns enriched maps ready for JSON serialization.
-     */
     public List<Map<String, Object>> getBacklogTasks(int projectId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
@@ -146,10 +126,6 @@ public class TaskDAO {
         return tasks;
     }
 
-    /**
-     * Gets all tasks assigned to a specific sprint.
-     * Used for the Board view and sprint detail.
-     */
     public List<Map<String, Object>> getSprintTasks(int sprintId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
@@ -170,10 +146,6 @@ public class TaskDAO {
         return tasks;
     }
 
-    /**
-     * Gets ALL tasks for a project (both backlog and sprint-assigned).
-     * Used for project-wide metrics and overview.
-     */
     public List<Map<String, Object>> getProjectTasks(int projectId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
@@ -194,12 +166,6 @@ public class TaskDAO {
         return tasks;
     }
 
-    // ========================= UPDATE =========================
-
-    /**
-     * Updates only the status of a task. Used for Board drag-and-drop.
-     * This is the fastest possible endpoint for real-time D&D.
-     */
     public int updateTaskStatus(int taskId, String newStatus) {
         int nb = 0;
         DBInteraction.connect();
@@ -217,9 +183,6 @@ public class TaskDAO {
         return nb;
     }
 
-    /**
-     * Full task update — title, description, status, priority, points, sprint, assignee, type.
-     */
     public Task getTaskById(int taskId) {
         Task task = null;
         DBInteraction.connect();
@@ -269,9 +232,6 @@ public class TaskDAO {
         return nb;
     }
 
-    /**
-     * Full task update — title, description, status, priority, points, sprint, assignee, type.
-     */
     public int updateTask(Task task) {
         Task existing = getTaskById(task.getIdTask());
         if (existing == null) return 0;
@@ -283,9 +243,6 @@ public class TaskDAO {
         if (task.getPriorite() == null) task.setPriorite(existing.getPriorite());
         if (task.getStoryPoints() == 0) task.setStoryPoints(existing.getStoryPoints());
         if (task.getTypeTache() == null) task.setTypeTache(existing.getTypeTache());
-        // For foreign keys, GSON uses null if absent, but we should only merge if the field was absent.
-        // If we want to allow setting idSprint/idAssignee to null, we can check. Since full updates pass all fields,
-        // we can safely keep them if they are null but the title is also null, otherwise use incoming value.
 
         int nb = 0;
         DBInteraction.connect();
@@ -319,9 +276,6 @@ public class TaskDAO {
         return nb;
     }
 
-    /**
-     * Assigns a task to a sprint (moves from backlog into sprint).
-     */
     public int assignTaskToSprint(int taskId, int sprintId) {
         int nb = 0;
         DBInteraction.connect();
@@ -339,9 +293,6 @@ public class TaskDAO {
         return nb;
     }
 
-    /**
-     * Unassigns a task from its sprint (moves back to backlog).
-     */
     public int unassignTaskFromSprint(int taskId) {
         int nb = 0;
         DBInteraction.connect();
@@ -357,8 +308,6 @@ public class TaskDAO {
         DBInteraction.disconnect();
         return nb;
     }
-
-    // ========================= DELETE =========================
 
     public int deleteTask(int taskId) {
         int nb = 0;

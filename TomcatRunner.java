@@ -8,7 +8,7 @@ public class TomcatRunner {
         tomcat.getConnector(); // trigger connector creation
 
         String webappDirLocation = "src/main/webapp";
-        tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
+        tomcat.addWebapp("/Backend_PFA", new File(webappDirLocation).getAbsolutePath());
 
         System.out.println("Starting embedded Tomcat on port 8080...");
         tomcat.start();
