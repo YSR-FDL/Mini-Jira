@@ -111,8 +111,7 @@ export default function ProjectHeader() {
 
   const isSM =
     loggedInUser &&
-    (loggedInUser.id === project.idSM ||
-      loggedInUser.id === project.idCreateur);
+    parseInt(loggedInUser.id, 10) === parseInt(project.idSM, 10);
   const membersList = team && team.membres ? team.membres : [];
 
   return (

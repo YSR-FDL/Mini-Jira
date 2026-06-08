@@ -18,10 +18,12 @@ export default function Settings() {
   const [project, setProject] = useState(null);
   const [users, setUsers] = useState([]);
   const [team, setTeam] = useState(null);
+  const [availableTeams, setAvailableTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [activeSettingsTab, setActiveSettingsTab] = useState("general");
 
   const rawId = localStorage.getItem("selectedProjectId");
   const projectId =
@@ -55,6 +57,15 @@ export default function Settings() {
       } else {
         setTeam(null);
       }
+
+      // Fetch available teams
+      if (loggedInUser) {
+        const teamsRes = await axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", {
+          id: loggedInUser.id,
+          type_utilisateur: loggedInUser.type_utilisateur,
+        });
+        setAvailableTeams(teamsRes.data || []);
+      }
     } catch (err) {
       console.error("Error loading settings data:", err);
       setErrorMsg("Erreur de chargement des données.");
@@ -66,6 +77,16 @@ export default function Settings() {
   useEffect(() => {
     loadData();
   }, [projectId]);
+
+  useEffect(() => {
+    if (project && loggedInUser) {
+      const currentUserId = parseInt(loggedInUser.id, 10);
+      const creator = parseInt(project.idCreateur, 10) === currentUserId;
+      if (!creator) {
+        setActiveSettingsTab("acces");
+      }
+    }
+  }, [project]);
 
   if (loading) {
     return (
@@ -95,7 +116,33 @@ export default function Settings() {
     );
   }
 
-  const isCreator = loggedInUser && loggedInUser.id === project.idCreateur;
+  const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
+  const isCreator = loggedInUser && parseInt(project.idCreateur, 10) === currentUserId;
+  const isSM = loggedInUser && parseInt(project.idSM, 10) === currentUserId;
+
+  if (!isCreator && !isSM) {
+    return (
+      <ProjectLayout activeTab="settings" projectName="Accès Refusé">
+        <div
+          style={{
+            padding: "48px",
+            textAlign: "center",
+            color: "var(--red)",
+            fontWeight: "bold",
+            fontSize: "16px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px",
+          }}
+        >
+          <FiAlertTriangle size={48} color="var(--red)" />
+          <span>Accès refusé : Seuls l'administrateur (créateur) et le Scrum Master peuvent accéder aux paramètres de ce projet.</span>
+        </div>
+      </ProjectLayout>
+    );
+  }
+
   const creatorUser = users.find((u) => u.id === project.idCreateur);
   const creatorName = creatorUser
     ? `${creatorUser.nom} ${creatorUser.prenom} (${creatorUser.email})`
@@ -103,8 +150,8 @@ export default function Settings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!isCreator) {
-      setErrorMsg("Seul le créateur du projet peut modifier les paramètres.");
+    if (!isCreator && !isSM) {
+      setErrorMsg("Vous n'avez pas l'autorisation de modifier les paramètres.");
       return;
     }
     setIsSaving(true);
@@ -173,12 +220,13 @@ export default function Settings() {
       alert("Seul le créateur du projet peut supprimer le projet.");
       return;
     }
-    if (
-      !window.confirm(
-        "Attention: Cette action est irréversible et supprimera définitivement le projet ainsi que ses sprints et tâches associées. Confirmer ?",
-      )
-    )
+    const confirmation = window.prompt(
+      `Attention: Cette action est irréversible et supprimera définitivement le projet. Pour confirmer, veuillez saisir le nom exact du projet : "${project.nomProjet}"`
+    );
+    if (confirmation !== project.nomProjet) {
+      alert("Le nom saisi ne correspond pas. Suppression annulée.");
       return;
+    }
 
     try {
       const success = await projectService.deleteProject(project.idProject);
@@ -201,251 +249,369 @@ export default function Settings() {
           <div className="settings-header">
             <h2 className="settings-title">Paramètres du Projet</h2>
             <p className="settings-description">
-              Gérez les détails, l'accès, les rôles Scrum et l'équipe assignée à
+              Gerez les details, l'acces, les roles Scrum et l'equipe assignee a
               votre projet.
             </p>
           </div>
 
+          {/* Tab Switcher if user is both Admin (Creator) and Scrum Master (SM) */}
+          {isCreator && isSM && (
+            <div className="settings-tabs" style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "1px solid var(--border-light)", paddingBottom: "12px" }}>
+              <button
+                type="button"
+                className={`settings-tab-btn ${activeSettingsTab === "general" ? "active" : ""}`}
+                onClick={() => setActiveSettingsTab("general")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: activeSettingsTab === "general" ? "var(--color-primary-blue)" : "var(--color-text-secondary)",
+                  borderBottom: activeSettingsTab === "general" ? "2px solid var(--color-primary-blue)" : "none",
+                  cursor: "pointer"
+                }}
+              >
+                Général
+              </button>
+              <button
+                type="button"
+                className={`settings-tab-btn ${activeSettingsTab === "acces" ? "active" : ""}`}
+                onClick={() => setActiveSettingsTab("acces")}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: "8px 16px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: activeSettingsTab === "acces" ? "var(--color-primary-blue)" : "var(--color-text-secondary)",
+                  borderBottom: activeSettingsTab === "acces" ? "2px solid var(--color-primary-blue)" : "none",
+                  cursor: "pointer"
+                }}
+              >
+                Accès & membres
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSave} className="settings-content">
-            {/* 1. Informations Générales */}
-            <section className="settings-section">
-              <h3 className="settings-section-title">
-                <FiSettings /> Informations générales
-              </h3>
-              <p className="settings-section-subtitle">
-                Identité de base du projet.
-              </p>
+            {/* GENERAL TAB CONTENT (Visible to Admin/Creator only) */}
+            {activeSettingsTab === "general" && isCreator && (
+              <>
+                {/* 1. Informations Générales */}
+                <section className="settings-section">
+                  <h3 className="settings-section-title">
+                    <FiSettings /> Informations générales
+                  </h3>
+                  <p className="settings-section-subtitle">
+                    Identité de base du projet.
+                  </p>
 
-              <div className="form-grid">
-                <div className="form-group">
-                  <label className="form-label">Nom du projet</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={project.nomProjet}
-                    onChange={(e) =>
-                      setProject((prev) => ({
-                        ...prev,
-                        nomProjet: e.target.value,
-                      }))
-                    }
-                    required
-                    disabled={!isCreator}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Clé du projet</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={project.cle}
-                    onChange={(e) =>
-                      setProject((prev) => ({ ...prev, cle: e.target.value }))
-                    }
-                    required
-                    maxLength={10}
-                    disabled={!isCreator}
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* 2. Accès & Rôles Clés */}
-            <section className="settings-section">
-              <h3 className="settings-section-title">
-                <FiUsers /> Rôles & Responsabilités
-              </h3>
-              <p className="settings-section-subtitle">
-                Définissez les rôles Scrum pour l'organisation du projet.
-              </p>
-
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label className="form-label">
-                    Chef de projet (Créateur)
-                  </label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={creatorName}
-                    disabled
-                    style={{
-                      backgroundColor: "var(--border-light)",
-                      cursor: "not-allowed",
-                    }}
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Product Owner (PO)</label>
-                  <select
-                    className="form-select"
-                    value={project.idPO || project.idCreateur}
-                    onChange={(e) =>
-                      setProject((prev) => ({
-                        ...prev,
-                        idPO: parseInt(e.target.value, 10),
-                      }))
-                    }
-                    disabled={!isCreator}
-                  >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nom} {u.prenom} ({u.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Scrum Master (SM)</label>
-                  <select
-                    className="form-select"
-                    value={project.idSM || project.idCreateur}
-                    onChange={(e) =>
-                      setProject((prev) => ({
-                        ...prev,
-                        idSM: parseInt(e.target.value, 10),
-                      }))
-                    }
-                    disabled={!isCreator}
-                  >
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.nom} {u.prenom} ({u.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </section>
-
-            {/* 3. L'Équipe */}
-            <section className="settings-section">
-              <h3 className="settings-section-title">
-                <FiUsers /> Équipe & Collaborateurs
-              </h3>
-              <p className="settings-section-subtitle">
-                Liste des membres de l'équipe assignée à ce projet.
-              </p>
-
-              {team ? (
-                <div className="members-list">
-                  <div
-                    style={{
-                      marginBottom: "12px",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Équipe :{" "}
-                    <span style={{ color: "var(--blue)" }}>{team.nom}</span> (
-                    {team.objectif || "Pas d'objectif spécifié"})
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label className="form-label">Nom du projet</label>
+                      <input
+                        className="form-input"
+                        type="text"
+                        value={project.nomProjet}
+                        onChange={(e) =>
+                          setProject((prev) => ({
+                            ...prev,
+                            nomProjet: e.target.value,
+                          }))
+                        }
+                        required
+                        disabled={!isCreator}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Clé du projet</label>
+                      <input
+                        className="form-input"
+                        type="text"
+                        value={project.cle}
+                        onChange={(e) =>
+                          setProject((prev) => ({ ...prev, cle: e.target.value }))
+                        }
+                        required
+                        maxLength={10}
+                        disabled={!isCreator}
+                      />
+                    </div>
                   </div>
-                  {team.membres && team.membres.length > 0 ? (
-                    team.membres.map((member) => {
-                      const initials =
-                        `${member.nom[0] || ""}${member.prenom[0] || ""}`.toUpperCase();
+                </section>
 
-                      // Calculate role:
-                      let role = "Développeur";
-                      if (member.id === project.idSM) {
-                        role = "Scrum Master (SM)";
-                      } else if (member.id === project.idPO) {
-                        role = "Product Owner (PO)";
-                      } else if (member.id === project.idCreateur) {
-                        role = "Créateur / Chef de projet";
-                      }
+                {/* 2. Rôles Scrum Master */}
+                <section className="settings-section">
+                  <h3 className="settings-section-title">
+                    <FiUsers /> Rôles & Responsabilités
+                  </h3>
+                  <p className="settings-section-subtitle">
+                    Définissez le Scrum Master pour l'organisation du projet.
+                  </p>
 
-                      return (
-                        <div key={member.id} className="member-item">
-                          <div className="member-info">
-                            <div className="member-avatar">{initials}</div>
-                            <div>
-                              <div className="member-name">
-                                {member.nom} {member.prenom}
-                              </div>
-                              <div
-                                className="member-role"
-                                style={{
-                                  fontSize: "11px",
-                                  color: "var(--text-soft)",
-                                }}
-                              >
-                                {member.email}
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              fontWeight: "600",
-                              padding: "4px 10px",
-                              borderRadius: "4px",
-                              backgroundColor: role.includes("SM")
-                                ? "#E3FCEF"
-                                : role.includes("PO")
-                                  ? "#FFF3E0"
-                                  : "#EAF2FF",
-                              color: role.includes("SM")
-                                ? "#006644"
-                                : role.includes("PO")
-                                  ? "#B25000"
-                                  : "#0052CC",
-                            }}
-                          >
-                            {role}
-                          </span>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div
-                      style={{ fontSize: "14px", color: "var(--text-soft)" }}
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label className="form-label">
+                        Chef de projet (Créateur)
+                      </label>
+                      <input
+                        className="form-input"
+                        type="text"
+                        value={creatorName}
+                        disabled
+                        style={{
+                          backgroundColor: "var(--border-light)",
+                          cursor: "not-allowed",
+                        }}
+                      />
+                    </div>
+                    <div className="form-group full-width">
+                      <label className="form-label">Scrum Master (SM)</label>
+                      <select
+                        className="form-select"
+                        value={project.idSM || project.idCreateur}
+                        onChange={(e) =>
+                          setProject((prev) => ({
+                            ...prev,
+                            idSM: parseInt(e.target.value, 10),
+                          }))
+                        }
+                        disabled={!isCreator}
+                      >
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.nom} {u.prenom} ({u.email})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Save Footer for General Tab */}
+                <div className="settings-footer">
+                  {message && <span className="save-message">{message}</span>}
+                  {errorMsg && (
+                    <span
+                      className="save-message"
+                      style={{ color: "var(--red)" }}
                     >
-                      Cette équipe n'a pas encore de membres.
+                      {errorMsg}
+                    </span>
+                  )}
+                  <ActionBtn type="submit" variant="primary" disabled={isSaving}>
+                    {isSaving
+                      ? "Enregistrement..."
+                      : "Enregistrer les modifications"}
+                  </ActionBtn>
+                </div>
+              </>
+            )}
+
+            {/* ACCES & MEMBRES TAB CONTENT (Visible to SM only) */}
+            {activeSettingsTab === "acces" && isSM && (
+              <>
+                {/* 1. Rôles Product Owner */}
+                <section className="settings-section">
+                  <h3 className="settings-section-title">
+                    <FiUsers /> Rôles & Responsabilités
+                  </h3>
+                  <p className="settings-section-subtitle">
+                    Définissez le Product Owner du projet (issu de l'équipe associée).
+                  </p>
+
+                  <div className="form-grid">
+                    <div className="form-group full-width">
+                      <label className="form-label">Product Owner (PO)</label>
+                      <select
+                        className="form-select"
+                        value={project.idPO || ""}
+                        onChange={(e) =>
+                          setProject((prev) => ({
+                            ...prev,
+                            idPO: parseInt(e.target.value, 10),
+                          }))
+                        }
+                        disabled={!isSM}
+                      >
+                        <option value="">-- Choisir un Product Owner --</option>
+                        {team && team.membres ? (
+                          team.membres.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.nom} {u.prenom} ({u.email})
+                            </option>
+                          ))
+                        ) : (
+                          <option disabled value="">Associez d'abord une équipe</option>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                </section>
+
+                {/* 2. L'Équipe */}
+                <section className="settings-section">
+                  <h3 className="settings-section-title">
+                    <FiUsers /> Équipe & Collaborateurs
+                  </h3>
+                  <p className="settings-section-subtitle">
+                    Liste des membres de l'équipe assignée à ce projet.
+                  </p>
+
+                  {isSM && (
+                    <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "12px" }}>
+                      <label style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-mid)" }}>Associer/Changer d'équipe :</label>
+                      <select
+                        className="form-select"
+                        style={{ width: "auto", minWidth: "220px", padding: "6px 12px" }}
+                        value={project.idTeam || ""}
+                        onChange={async (e) => {
+                          const newTeamId = e.target.value ? parseInt(e.target.value, 10) : 0;
+                          try {
+                            const success = await projectService.assignTeamToProject(project.idProject, newTeamId);
+                            if (success) {
+                              setProject(prev => ({ ...prev, idTeam: newTeamId }));
+                              loadData();
+                            } else {
+                              alert("Erreur lors de l'association de l'équipe.");
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            alert("Erreur de communication avec le serveur.");
+                          }
+                        }}
+                      >
+                        <option value="">-- Choisir une équipe --</option>
+                        {availableTeams.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nom}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   )}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    padding: "16px",
-                    border: "1px dashed var(--border)",
-                    borderRadius: "8px",
-                    textAlign: "center",
-                    color: "var(--text-soft)",
-                  }}
-                >
-                  Aucune équipe assignée à ce projet. Associez une équipe en
-                  cliquant sur le bouton "+" dans l'en-tête du projet.
-                </div>
-              )}
-            </section>
 
-            {isCreator && (
-              <div className="settings-footer">
-                {message && <span className="save-message">{message}</span>}
-                {errorMsg && (
-                  <span
-                    className="save-message"
-                    style={{ color: "var(--red)" }}
-                  >
-                    {errorMsg}
-                  </span>
-                )}
-                <ActionBtn type="submit" variant="primary" disabled={isSaving}>
-                  {isSaving
-                    ? "Enregistrement..."
-                    : "Enregistrer les modifications"}
-                </ActionBtn>
-              </div>
+                  {team ? (
+                    <div className="members-list">
+                      <div
+                        style={{
+                          marginBottom: "12px",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Équipe :{" "}
+                        <span style={{ color: "var(--blue)" }}>{team.nom}</span> (
+                        {team.objectif || "Pas d'objectif spécifié"})
+                      </div>
+                      {team.membres && team.membres.length > 0 ? (
+                        team.membres.map((member) => {
+                          const initials =
+                            `${member.nom[0] || ""}${member.prenom[0] || ""}`.toUpperCase();
+
+                          // Calculate role:
+                          let role = "Développeur";
+                          if (member.id === project.idSM) {
+                            role = "Scrum Master (SM)";
+                          } else if (member.id === project.idPO) {
+                            role = "Product Owner (PO)";
+                          } else if (member.id === project.idCreateur) {
+                            role = "Créateur / Chef de projet";
+                          }
+
+                          return (
+                            <div key={member.id} className="member-item">
+                              <div className="member-info">
+                                <div className="member-avatar">{initials}</div>
+                                <div>
+                                  <div className="member-name">
+                                    {member.nom} {member.prenom}
+                                  </div>
+                                  <div
+                                    className="member-role"
+                                    style={{
+                                      fontSize: "11px",
+                                      color: "var(--text-soft)",
+                                    }}
+                                  >
+                                    {member.email}
+                                  </div>
+                                </div>
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  padding: "4px 10px",
+                                  borderRadius: "4px",
+                                  backgroundColor: role.includes("SM")
+                                    ? "#E3FCEF"
+                                    : role.includes("PO")
+                                      ? "#FFF3E0"
+                                      : "#EAF2FF",
+                                  color: role.includes("SM")
+                                    ? "#006644"
+                                    : role.includes("PO")
+                                      ? "#B25000"
+                                      : "#0052CC",
+                                }}
+                              >
+                                {role}
+                              </span>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div
+                          style={{ fontSize: "14px", color: "var(--text-soft)" }}
+                        >
+                          Cette équipe n'a pas encore de membres.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        padding: "16px",
+                        border: "1px dashed var(--border)",
+                        borderRadius: "8px",
+                        textAlign: "center",
+                        color: "var(--text-soft)",
+                      }}
+                    >
+                      Aucune équipe assignée à ce projet. Associez une équipe en
+                      cliquant sur le bouton "+" dans l'en-tête du projet.
+                    </div>
+                  )}
+                </section>
+
+                {/* Save Footer for Access Tab */}
+                <div className="settings-footer">
+                  {message && <span className="save-message">{message}</span>}
+                  {errorMsg && (
+                    <span
+                      className="save-message"
+                      style={{ color: "var(--red)" }}
+                    >
+                      {errorMsg}
+                    </span>
+                  )}
+                  <ActionBtn type="submit" variant="primary" disabled={isSaving}>
+                    {isSaving
+                      ? "Enregistrement..."
+                      : "Enregistrer les modifications"}
+                  </ActionBtn>
+                </div>
+              </>
             )}
           </form>
 
-          {/* 4. Danger zone */}
-          {isCreator && (
+          {/* DANGER ZONE (Visible to Creator only, rendered on general tab) */}
+          {activeSettingsTab === "general" && isCreator && (
             <section
               className="settings-section danger-zone"
-              style={{ marginTop: "-16px" }}
+              style={{ marginTop: "24px" }}
             >
               <h3 className="settings-section-title">
                 <FiAlertTriangle /> Danger Zone

@@ -1,9 +1,38 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { projectService } from "../../services/projectService";
 import "../../styles/Layout/ProjectNavigation.css";
 
 const ProjectNavigation = ({ activeTab, onTabChange }) => {
   const location = useLocation();
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const checkSettingsAccess = async () => {
+      const rawId = localStorage.getItem("selectedProjectId");
+      const projectId =
+        rawId && rawId !== "undefined" && rawId !== "null"
+          ? parseInt(rawId, 10)
+          : 1;
+      const userString = localStorage.getItem("user");
+      const loggedInUser = userString ? JSON.parse(userString) : null;
+
+      if (projectId && loggedInUser) {
+        try {
+          const project = await projectService.getProjectById(projectId);
+          if (project) {
+            const currentUserId = parseInt(loggedInUser.id, 10);
+            const isCreator = parseInt(project.idCreateur, 10) === currentUserId;
+            const isSM = parseInt(project.idSM, 10) === currentUserId;
+            setShowSettings(isCreator || isSM);
+          }
+        } catch (err) {
+          console.error("Error checking settings access in nav:", err);
+        }
+      }
+    };
+    checkSettingsAccess();
+  }, []);
 
   const navItems = [
     { id: "overview", label: "Overview", icon: "visibility" },
@@ -39,16 +68,18 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
       })}
 
       {/* L'onglet Settings est mis à part pour appliquer la classe nav-settings (margin-left: auto) */}
-      <Link
-        to="/settings"
-        className={`nav-link nav-settings ${location.pathname === "/settings" || activeTab === "settings" ? "active" : ""}`}
-        onClick={() => {
-          if (onTabChange) onTabChange("settings");
-        }}
-      >
-        <span className="nav-icon material-symbols-outlined">settings</span>
-        <span>Settings</span>
-      </Link>
+      {showSettings && (
+        <Link
+          to="/settings"
+          className={`nav-link nav-settings ${location.pathname === "/settings" || activeTab === "settings" ? "active" : ""}`}
+          onClick={() => {
+            if (onTabChange) onTabChange("settings");
+          }}
+        >
+          <span className="nav-icon material-symbols-outlined">settings</span>
+          <span>Settings</span>
+        </Link>
+      )}
     </nav>
   );
 };

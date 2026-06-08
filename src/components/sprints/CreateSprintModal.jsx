@@ -207,24 +207,6 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
             </div>
           </div>
 
-          {/* Capacité */}
-          <div className="csm-field">
-            <label className="csm-label">
-              <FiFileText size={13} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
-              Capacité de l'équipe
-              <span className="csm-hint"> (story points)</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              className={`csm-input csm-input-sm ${errors.capacity ? 'csm-input-error' : ''}`}
-              value={form.capacity}
-              onChange={(e) => handleChange('capacity', e.target.value)}
-              placeholder="ex: 40"
-            />
-            {errors.capacity && <span className="csm-error-msg">{errors.capacity}</span>}
-          </div>
-
         </div>
 
         {/* FOOTER */}
