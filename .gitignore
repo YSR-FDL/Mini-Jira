@@ -1,8 +1,7 @@
 # Eclipse
 .metadata/
 .settings/
-.classpath
-.project
+
 
 # IntelliJ IDEA
 .idea/
