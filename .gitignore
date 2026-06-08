@@ -30,6 +30,7 @@ Thumbs.db
 ehthumbs.db
 
 # Tomcat / Local Servers
+TomcatRunner.java
 TomcatRunner.class
 tomcat.8080/
 tomcat/
