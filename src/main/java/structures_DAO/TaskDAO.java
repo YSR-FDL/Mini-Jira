@@ -22,6 +22,7 @@ public class TaskDAO {
         task.setStatut(rs.getString("statut"));
         task.setPriorite(rs.getString("priorite"));
         task.setStoryPoints(rs.getInt("story_points"));
+        task.setPosition(rs.getInt("position"));
         task.setDateCreation(rs.getString("date_creation"));
         task.setIdProject(rs.getInt("id_project"));
 
@@ -30,6 +31,9 @@ public class TaskDAO {
 
         int assigneeId = rs.getInt("id_assignee");
         task.setIdAssignee(rs.wasNull() ? null : assigneeId);
+
+        int parentId = rs.getInt("id_parent");
+        task.setIdParent(rs.wasNull() ? null : parentId);
 
         task.setTypeTache(rs.getString("type_tache"));
         return task;
@@ -43,11 +47,15 @@ public class TaskDAO {
         map.put("statut", rs.getString("statut"));
         map.put("priorite", rs.getString("priorite"));
         map.put("storyPoints", rs.getInt("story_points"));
+        map.put("position", rs.getInt("position"));
         map.put("dateCreation", rs.getString("date_creation"));
         map.put("idProject", rs.getInt("id_project"));
 
         int sprintId = rs.getInt("id_sprint");
         map.put("idSprint", rs.wasNull() ? null : sprintId);
+
+        int parentId = rs.getInt("id_parent");
+        map.put("idParent", rs.wasNull() ? null : parentId);
 
         int assigneeId = rs.getInt("id_assignee");
         if (!rs.wasNull() && assigneeId > 0) {
@@ -77,28 +85,62 @@ public class TaskDAO {
     public int addTask(Task task) {
         int nb = 0;
         DBInteraction.connect();
-        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, id_project, id_sprint, id_assignee, type_tache) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        // Place the new task at the end of its container (project + sprint/backlog).
+        int nextPos = 0;
+        String posSql = "SELECT COALESCE(MAX(position), -1) + 1 AS np FROM tasks WHERE id_project = ? AND " +
+                        (task.getIdSprint() != null ? "id_sprint = ?" : "id_sprint IS NULL");
         try {
-            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            PreparedStatement pp = DBInteraction.getConn().prepareStatement(posSql);
+            pp.setInt(1, task.getIdProject());
+            if (task.getIdSprint() != null) {
+                pp.setInt(2, task.getIdSprint());
+            }
+            ResultSet prs = pp.executeQuery();
+            if (prs.next()) {
+                nextPos = prs.getInt("np");
+            }
+            prs.close();
+            pp.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, task.getTitre());
             ps.setString(2, task.getDescription());
             ps.setString(3, task.getStatut() != null ? task.getStatut() : "todo");
             ps.setString(4, task.getPriorite() != null ? task.getPriorite() : "medium");
             ps.setInt(5, task.getStoryPoints());
-            ps.setInt(6, task.getIdProject());
+            ps.setInt(6, nextPos);
+            ps.setInt(7, task.getIdProject());
             if (task.getIdSprint() != null) {
-                ps.setInt(7, task.getIdSprint());
-            } else {
-                ps.setNull(7, java.sql.Types.INTEGER);
-            }
-            if (task.getIdAssignee() != null) {
-                ps.setInt(8, task.getIdAssignee());
+                ps.setInt(8, task.getIdSprint());
             } else {
                 ps.setNull(8, java.sql.Types.INTEGER);
             }
-            ps.setString(9, task.getTypeTache() != null ? task.getTypeTache() : "Feature");
+            if (task.getIdAssignee() != null) {
+                ps.setInt(9, task.getIdAssignee());
+            } else {
+                ps.setNull(9, java.sql.Types.INTEGER);
+            }
+            if (task.getIdParent() != null) {
+                ps.setInt(10, task.getIdParent());
+            } else {
+                ps.setNull(10, java.sql.Types.INTEGER);
+            }
+            ps.setString(11, task.getTypeTache() != null ? task.getTypeTache() : "Feature");
             nb = ps.executeUpdate();
+            if (nb > 0) {
+                ResultSet keys = ps.getGeneratedKeys();
+                if (keys.next()) {
+                    task.setIdTask(keys.getInt(1));
+                }
+                keys.close();
+            }
             ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -109,7 +151,7 @@ public class TaskDAO {
     public List<Map<String, Object>> getBacklogTasks(int projectId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
-        String sql = TASK_SELECT + "WHERE t.id_project = ? AND t.id_sprint IS NULL ORDER BY t.date_creation DESC";
+        String sql = TASK_SELECT + "WHERE t.id_project = ? AND t.id_sprint IS NULL ORDER BY t.position ASC, t.date_creation DESC";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, projectId);
@@ -129,7 +171,7 @@ public class TaskDAO {
     public List<Map<String, Object>> getSprintTasks(int sprintId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
-        String sql = TASK_SELECT + "WHERE t.id_sprint = ? ORDER BY t.date_creation ASC";
+        String sql = TASK_SELECT + "WHERE t.id_sprint = ? ORDER BY t.position ASC, t.date_creation ASC";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, sprintId);
@@ -149,7 +191,7 @@ public class TaskDAO {
     public List<Map<String, Object>> getProjectTasks(int projectId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
-        String sql = TASK_SELECT + "WHERE t.id_project = ? ORDER BY t.date_creation DESC";
+        String sql = TASK_SELECT + "WHERE t.id_project = ? ORDER BY t.position ASC, t.date_creation DESC";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, projectId);
@@ -164,6 +206,85 @@ public class TaskDAO {
         }
         DBInteraction.disconnect();
         return tasks;
+    }
+
+    /** Considère une tâche comme terminée selon les libellés FR/EN possibles. */
+    private boolean isDoneStatus(String statut) {
+        if (statut == null) return false;
+        String s = statut.toLowerCase();
+        return s.contains("done") || s.contains("termin") || s.contains("released")
+                || s.contains("closed") || s.contains("ferm");
+    }
+
+    /** Tâches enfants d'un parent donné (stories d'un epic, ou subtasks d'une story). */
+    public List<Map<String, Object>> getChildren(int parentId) {
+        List<Map<String, Object>> children = new ArrayList<>();
+        DBInteraction.connect();
+        String sql = TASK_SELECT + "WHERE t.id_parent = ? ORDER BY t.position ASC, t.id_task ASC";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, parentId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                children.add(buildTaskMap(rs));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return children;
+    }
+
+    /**
+     * Retourne les epics d'un projet (type_tache = 'Epic') avec leurs stories
+     * enfants et un cumul (roll-up) : nombre d'enfants, enfants terminés, points
+     * totaux et points livrés. Permet à la page Epics d'afficher la progression
+     * sans recalcul côté client.
+     */
+    public List<Map<String, Object>> getEpics(int projectId) {
+        List<Map<String, Object>> epics = new ArrayList<>();
+        DBInteraction.connect();
+        String sql = TASK_SELECT + "WHERE t.id_project = ? AND t.type_tache = 'Epic' " +
+                     "ORDER BY t.position ASC, t.id_task ASC";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, projectId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                epics.add(buildTaskMap(rs));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+
+        // Attache les enfants et calcule le roll-up pour chaque epic.
+        for (Map<String, Object> epic : epics) {
+            int epicId = (int) epic.get("idTask");
+            List<Map<String, Object>> children = getChildren(epicId);
+            int childCount = children.size();
+            int doneCount = 0;
+            int totalPoints = 0;
+            int donePoints = 0;
+            for (Map<String, Object> child : children) {
+                int pts = child.get("storyPoints") != null ? (int) child.get("storyPoints") : 0;
+                totalPoints += pts;
+                if (isDoneStatus((String) child.get("statut"))) {
+                    doneCount++;
+                    donePoints += pts;
+                }
+            }
+            epic.put("children", children);
+            epic.put("childCount", childCount);
+            epic.put("doneCount", doneCount);
+            epic.put("totalPoints", totalPoints);
+            epic.put("donePoints", donePoints);
+        }
+        return epics;
     }
 
     public int updateTaskStatus(int taskId, String newStatus) {
@@ -204,6 +325,8 @@ public class TaskDAO {
                 task.setIdSprint(rs.wasNull() ? null : sprintId);
                 int assigneeId = rs.getInt("id_assignee");
                 task.setIdAssignee(rs.wasNull() ? null : assigneeId);
+                int parentId = rs.getInt("id_parent");
+                task.setIdParent(rs.wasNull() ? null : parentId);
                 task.setTypeTache(rs.getString("type_tache"));
             }
             rs.close();
@@ -233,21 +356,56 @@ public class TaskDAO {
     }
 
     public int updateTask(Task task) {
+        return updateTask(task, null);
+    }
+
+    /**
+     * Updates a task using presence-based partial semantics.
+     *
+     * {@code providedFields} holds the JSON keys that were actually present in
+     * the request body. Any field not present keeps its existing value, while a
+     * field present with a null value is applied as-is. This distinguishes
+     * "field omitted" (keep) from "field explicitly cleared" (e.g. unassign or
+     * move to backlog) and lets story points be set to 0.
+     *
+     * When {@code providedFields} is null the legacy "null means keep" behaviour
+     * is used for backward compatibility.
+     */
+    public int updateTask(Task task, java.util.Set<String> providedFields) {
         Task existing = getTaskById(task.getIdTask());
         if (existing == null) return 0;
 
-        // Merge fields if null in the incoming update payload
-        if (task.getTitre() == null) task.setTitre(existing.getTitre());
-        if (task.getDescription() == null) task.setDescription(existing.getDescription());
-        if (task.getStatut() == null) task.setStatut(existing.getStatut());
-        if (task.getPriorite() == null) task.setPriorite(existing.getPriorite());
-        if (task.getStoryPoints() == 0) task.setStoryPoints(existing.getStoryPoints());
-        if (task.getTypeTache() == null) task.setTypeTache(existing.getTypeTache());
+        boolean hasPresence = providedFields != null;
+
+        if (hasPresence ? !providedFields.contains("titre") : task.getTitre() == null)
+            task.setTitre(existing.getTitre());
+        if (hasPresence ? !providedFields.contains("description") : task.getDescription() == null)
+            task.setDescription(existing.getDescription());
+        if (hasPresence ? !providedFields.contains("statut") : task.getStatut() == null)
+            task.setStatut(existing.getStatut());
+        if (hasPresence ? !providedFields.contains("priorite") : task.getPriorite() == null)
+            task.setPriorite(existing.getPriorite());
+        if (hasPresence ? !providedFields.contains("storyPoints") : task.getStoryPoints() == 0)
+            task.setStoryPoints(existing.getStoryPoints());
+        if (hasPresence ? !providedFields.contains("typeTache") : task.getTypeTache() == null)
+            task.setTypeTache(existing.getTypeTache());
+
+        // idSprint / idAssignee: only merge when the key was omitted. A present
+        // null is an intentional "move to backlog" / "unassign".
+        if (hasPresence ? !providedFields.contains("idSprint") : task.getIdSprint() == null)
+            task.setIdSprint(existing.getIdSprint());
+        if (hasPresence ? !providedFields.contains("idAssignee") : task.getIdAssignee() == null)
+            task.setIdAssignee(existing.getIdAssignee());
+
+        // idParent: same presence semantics. A present null detaches the task
+        // from its epic/parent; an omitted key keeps the current parent.
+        if (hasPresence ? !providedFields.contains("idParent") : task.getIdParent() == null)
+            task.setIdParent(existing.getIdParent());
 
         int nb = 0;
         DBInteraction.connect();
         String sql = "UPDATE tasks SET titre = ?, description = ?, statut = ?, priorite = ?, " +
-                     "story_points = ?, id_sprint = ?, id_assignee = ?, type_tache = ? WHERE id_task = ?";
+                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ? WHERE id_task = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setString(1, task.getTitre());
@@ -265,8 +423,13 @@ public class TaskDAO {
             } else {
                 ps.setNull(7, java.sql.Types.INTEGER);
             }
-            ps.setString(8, task.getTypeTache());
-            ps.setInt(9, task.getIdTask());
+            if (task.getIdParent() != null) {
+                ps.setInt(8, task.getIdParent());
+            } else {
+                ps.setNull(8, java.sql.Types.INTEGER);
+            }
+            ps.setString(9, task.getTypeTache());
+            ps.setInt(10, task.getIdTask());
             nb = ps.executeUpdate();
             ps.close();
         } catch (SQLException e) {
@@ -323,5 +486,54 @@ public class TaskDAO {
         }
         DBInteraction.disconnect();
         return nb;
+    }
+
+    /**
+     * Persists the ordering of a container (backlog or sprint).
+     * For each id in {@code orderedTaskIds}, sets position = its index and
+     * id_sprint = {@code sprintId} (null = backlog). Both the new order and the
+     * container membership are written in a single transaction, so a drag that
+     * also moves a task between lists is handled in one call.
+     */
+    public int reorderTasks(java.util.List<Integer> orderedTaskIds, Integer sprintId) {
+        if (orderedTaskIds == null || orderedTaskIds.isEmpty()) return 0;
+        int updated = 0;
+        DBInteraction.connect();
+        String sql = "UPDATE tasks SET position = ?, id_sprint = ? WHERE id_task = ?";
+        try {
+            DBInteraction.getConn().setAutoCommit(false);
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            for (int i = 0; i < orderedTaskIds.size(); i++) {
+                ps.setInt(1, i);
+                if (sprintId != null) {
+                    ps.setInt(2, sprintId);
+                } else {
+                    ps.setNull(2, java.sql.Types.INTEGER);
+                }
+                ps.setInt(3, orderedTaskIds.get(i));
+                ps.addBatch();
+            }
+            int[] results = ps.executeBatch();
+            for (int r : results) {
+                if (r > 0 || r == PreparedStatement.SUCCESS_NO_INFO) updated++;
+            }
+            DBInteraction.getConn().commit();
+            ps.close();
+        } catch (SQLException e) {
+            try {
+                DBInteraction.getConn().rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                DBInteraction.getConn().setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        DBInteraction.disconnect();
+        return updated;
     }
 }

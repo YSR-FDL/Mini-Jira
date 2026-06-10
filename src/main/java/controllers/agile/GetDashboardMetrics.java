@@ -55,7 +55,25 @@ public class GetDashboardMetrics extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-        int projectId = Integer.parseInt(request.getParameter("projectId"));
+        String projectIdParam = request.getParameter("projectId");
+        if (projectIdParam == null || projectIdParam.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\":\"Missing required parameter: projectId\"}");
+            return;
+        }
+
+        int projectId;
+        try {
+            projectId = Integer.parseInt(projectIdParam);
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\":\"Invalid projectId format\"}");
+            return;
+        }
 
         // 1. Project-level metrics
         Map<String, Object> projectMetrics = metricsDAO.getProjectMetrics(projectId);

@@ -1,0 +1,338 @@
+package utils;
+
+import java.util.Set;
+
+import classes.Project;
+import classes.Task;
+import structures_DAO.TeamDao;
+
+/**
+ * Centralised Role-Based Access Control for a project workspace.
+ *
+ * Roles are derived per-project from the {@link Project} record and team
+ * membership:
+ *   - Administrateur : the project creator (idCreateur). Owns the workspace
+ *                      (create project, assign roles, archive/delete) but is
+ *                      explicitly forbidden from touching Sprints, Epics,
+ *                      Stories or Sub-tasks.
+ *   - Product Owner  : project idPO. Full CRUD on Epics; creates/defines and
+ *                      prioritises Stories; links Stories to Epics. Read-only
+ *                      on Sub-tasks; cannot assign, estimate or manage Sprints.
+ *   - Scrum Master   : project idSM. Manages Sprints, assigns Stories, sets
+ *                      story-point estimates, moves Stories between Sprints and
+ *                      the Backlog, deletes rogue Stories. Read-only on Epics
+ *                      and Sub-tasks.
+ *   - Développeur    : a team member who is none of the above. Full CRUD on
+ *                      Sub-tasks of stories they own, may self-assign unassigned
+ *                      Stories, and may move their own Stories/Sub-tasks on the
+ *                      board. Read-only on Epics; cannot create/delete Stories.
+ *
+ * Every decision method returns {@code null} when the action is allowed, or a
+ * human-readable reason string when it is denied (so controllers can return a
+ * 403 with a useful message).
+ */
+public final class Rbac {
+
+    private Rbac() {
+    }
+
+    /** Effective roles a user holds within a single project. */
+    public static final class Roles {
+        public final int userId;
+        public final boolean isAdmin; // project creator
+        public final boolean isSM;
+        public final boolean isPO;
+        public final boolean isDev;   // team member, not Admin/SM/PO
+        public final boolean isMember; // has any relationship with the project
+
+        private Roles(int userId, boolean isAdmin, boolean isSM, boolean isPO, boolean isDev) {
+            this.userId = userId;
+            this.isAdmin = isAdmin;
+            this.isSM = isSM;
+            this.isPO = isPO;
+            this.isDev = isDev;
+            this.isMember = isAdmin || isSM || isPO || isDev;
+        }
+    }
+
+    /**
+     * Resolves the roles a user holds for the given project. A pure team member
+     * (not creator/SM/PO) is treated as a Développeur. The Admin/SM/PO roles are
+     * mutually exclusive of the Dev role so that, e.g., a Scrum Master who also
+     * sits on the team does not inherit developer privileges.
+     */
+    public static Roles resolve(int userId, Project project, TeamDao teamDao) {
+        if (project == null || userId <= 0) {
+            return new Roles(userId, false, false, false, false);
+        }
+        boolean admin = project.getIdCreateur() == userId;
+        boolean sm = project.getIdSM() == userId;
+        boolean po = project.getIdPO() == userId;
+        boolean member = teamDao != null && teamDao.isTeamMember(project.getIdTeam(), userId);
+        boolean dev = member && !admin && !sm && !po;
+        return new Roles(userId, admin, sm, po, dev);
+    }
+
+    // ── Task type helpers ────────────────────────────────────────────────
+    public static boolean isEpic(Task t) {
+        return t != null && "Epic".equalsIgnoreCase(t.getTypeTache());
+    }
+
+    public static boolean isSubtask(Task t) {
+        return t != null && "Subtask".equalsIgnoreCase(t.getTypeTache());
+    }
+
+    /** A "Story" is any work item that is neither an Epic nor a Sub-task. */
+    public static boolean isStory(Task t) {
+        return t != null && !isEpic(t) && !isSubtask(t);
+    }
+
+    // ── Project workspace (Administrateur only) ──────────────────────────
+    public static String authorizeProjectAdmin(Roles roles, String action) {
+        if (roles != null && roles.isAdmin) {
+            return null;
+        }
+        return "Seul l'administrateur du projet peut " + action + ".";
+    }
+
+    // ── Sprints (Scrum Master only) ──────────────────────────────────────
+    public static String authorizeSprintManagement(Roles roles) {
+        if (roles != null && roles.isSM) {
+            return null;
+        }
+        return "Seul le Scrum Master peut gérer les sprints.";
+    }
+
+    // ── Backlog reordering ───────────────────────────────────────────────
+    /**
+     * Reordering: the Scrum Master may reorder any container; the Product Owner
+     * may reorder the Backlog only (sprintId == null).
+     */
+    public static String authorizeReorder(Roles roles, Integer sprintId) {
+        if (roles == null) {
+            return "Action non autorisée.";
+        }
+        if (roles.isSM) {
+            return null;
+        }
+        if (roles.isPO && sprintId == null) {
+            return null;
+        }
+        return "Seul le Scrum Master (ou le Product Owner dans le backlog) peut réordonner les tickets.";
+    }
+
+    // ── Task creation ────────────────────────────────────────────────────
+    /**
+     * @param newTask the task being created (type + intended assignee)
+     * @param parent  the parent task when creating a Sub-task (may be null)
+     */
+    public static String authorizeTaskCreate(Roles roles, Task newTask, Task parent) {
+        if (roles == null || !roles.isMember) {
+            return "Action non autorisée.";
+        }
+        if (isEpic(newTask)) {
+            return roles.isPO ? null : "Seul le Product Owner peut créer des Epics.";
+        }
+        if (isSubtask(newTask)) {
+            if (!roles.isDev) {
+                return "Seuls les développeurs peuvent créer des sous-tâches.";
+            }
+            // A developer may only add sub-tasks under a story assigned to them.
+            if (parent == null) {
+                return "Une sous-tâche doit être rattachée à une story.";
+            }
+            if (parent.getIdAssignee() == null || parent.getIdAssignee() != roles.userId) {
+                return "Vous ne pouvez ajouter des sous-tâches qu'aux stories qui vous sont assignées.";
+            }
+            return null;
+        }
+        // Standard Story
+        return roles.isPO ? null : "Seul le Product Owner peut créer des stories.";
+    }
+
+    // ── Task deletion ────────────────────────────────────────────────────
+    public static String authorizeTaskDelete(Roles roles, Task existing, Task parent) {
+        if (roles == null || existing == null || !roles.isMember) {
+            return "Action non autorisée.";
+        }
+        if (isEpic(existing)) {
+            return roles.isPO ? null : "Seul le Product Owner peut supprimer des Epics.";
+        }
+        if (isSubtask(existing)) {
+            // A developer may delete a sub-task of a story assigned to them
+            // (or one already assigned to them).
+            if (roles.isDev && ownsTaskOrParent(roles, existing, parent)) {
+                return null;
+            }
+            return "Seul le développeur propriétaire peut supprimer cette sous-tâche.";
+        }
+        // Story: the Scrum Master removes rogue/invalid stories; the Product
+        // Owner owns the story lifecycle.
+        if (roles.isSM || roles.isPO) {
+            return null;
+        }
+        return "Seul le Scrum Master ou le Product Owner peut supprimer une story.";
+    }
+
+    // ── Task update (field-level) ────────────────────────────────────────
+    /**
+     * Computes which task fields are *actually* being changed.
+     *
+     * The frontend often resends the whole task on every edit, so presence of a
+     * JSON key does not imply intent to change it. A field counts as changed
+     * only when it is present in the request body AND its value differs from the
+     * stored task. This keeps RBAC from rejecting a legitimate single-field edit
+     * just because unrelated fields were echoed back unchanged.
+     */
+    public static Set<String> computeChangedTaskFields(Set<String> presentKeys, Task existing, Task incoming) {
+        Set<String> changed = new java.util.HashSet<>();
+        if (presentKeys == null || existing == null || incoming == null) {
+            return changed;
+        }
+        if (presentKeys.contains("titre") && !eq(existing.getTitre(), incoming.getTitre()))
+            changed.add("titre");
+        if (presentKeys.contains("description") && !eq(existing.getDescription(), incoming.getDescription()))
+            changed.add("description");
+        if (presentKeys.contains("statut") && !eq(existing.getStatut(), incoming.getStatut()))
+            changed.add("statut");
+        if (presentKeys.contains("priorite") && !eq(existing.getPriorite(), incoming.getPriorite()))
+            changed.add("priorite");
+        if (presentKeys.contains("typeTache") && !eq(existing.getTypeTache(), incoming.getTypeTache()))
+            changed.add("typeTache");
+        if (presentKeys.contains("storyPoints") && existing.getStoryPoints() != incoming.getStoryPoints())
+            changed.add("storyPoints");
+        if (presentKeys.contains("idSprint") && !eq(existing.getIdSprint(), incoming.getIdSprint()))
+            changed.add("idSprint");
+        if (presentKeys.contains("idAssignee") && !eq(existing.getIdAssignee(), incoming.getIdAssignee()))
+            changed.add("idAssignee");
+        if (presentKeys.contains("idParent") && !eq(existing.getIdParent(), incoming.getIdParent()))
+            changed.add("idParent");
+        return changed;
+    }
+
+    private static boolean eq(Object a, Object b) {
+        return a == null ? b == null : a.equals(b);
+    }
+
+    /**
+     * Authorises a partial task update.
+     *
+     * @param roles         caller roles
+     * @param existing      the task as currently stored
+     * @param incoming      the task carrying the new values (for ownership/self-assign checks)
+     * @param changedFields the JSON keys actually present in the request (already
+     *                      stripped of {@code idTask}/{@code requesterId})
+     * @param parent        parent of {@code existing} when it is a Sub-task (may be null)
+     */
+    public static String authorizeTaskUpdate(Roles roles, Task existing, Task incoming,
+                                             Set<String> changedFields, Task parent) {
+        if (roles == null || existing == null || !roles.isMember) {
+            return "Action non autorisée.";
+        }
+        if (changedFields == null || changedFields.isEmpty()) {
+            return null; // nothing to change
+        }
+
+        if (isEpic(existing)) {
+            // Epics: Product Owner full control; everyone else read-only.
+            return roles.isPO ? null : "Les Epics sont en lecture seule pour votre rôle.";
+        }
+
+        if (isSubtask(existing)) {
+            if (!roles.isDev) {
+                return "Les sous-tâches sont en lecture seule pour votre rôle.";
+            }
+            if (!ownsTaskOrParent(roles, existing, parent)) {
+                return "Vous ne pouvez pas modifier une sous-tâche assignée à un autre développeur.";
+            }
+            // A developer cannot reassign a sub-task to someone else.
+            if (changedFields.contains("idAssignee")
+                    && incoming.getIdAssignee() != null
+                    && incoming.getIdAssignee() != roles.userId) {
+                return "Vous ne pouvez pas assigner une sous-tâche à un autre utilisateur.";
+            }
+            return null;
+        }
+
+        // ---- Standard Story ----
+        for (String field : changedFields) {
+            String denial = authorizeStoryField(roles, existing, incoming, field);
+            if (denial != null) {
+                return denial;
+            }
+        }
+        return null;
+    }
+
+    /** Per-field rule for editing a Story. Returns null if the field edit is allowed. */
+    private static String authorizeStoryField(Roles roles, Task existing, Task incoming, String field) {
+        switch (field) {
+            // Scope definition & prioritisation → Product Owner.
+            case "titre":
+            case "description":
+            case "priorite":
+            case "typeTache":
+            case "idParent":
+                return roles.isPO ? null
+                        : "Seul le Product Owner peut modifier la portée des stories.";
+
+            // Estimation & sprint planning → Scrum Master.
+            case "storyPoints":
+                return roles.isSM ? null
+                        : "Seul le Scrum Master peut estimer les story points.";
+            case "idSprint":
+                return roles.isSM ? null
+                        : "Seul le Scrum Master peut déplacer une story entre sprints et backlog.";
+
+            // Assignment → Scrum Master (any member) or Dev self-assignment on
+            // an unassigned story.
+            case "idAssignee": {
+                if (roles.isSM) {
+                    return null;
+                }
+                if (roles.isDev) {
+                    boolean currentlyUnassigned = existing.getIdAssignee() == null;
+                    boolean selfAssign = incoming.getIdAssignee() != null
+                            && incoming.getIdAssignee() == roles.userId;
+                    if (currentlyUnassigned && selfAssign) {
+                        return null;
+                    }
+                    return "Vous ne pouvez vous attribuer que des stories non assignées.";
+                }
+                return "Seul le Scrum Master peut assigner les stories.";
+            }
+
+            // Board movement (status) → Scrum Master, or the Dev who owns the story.
+            case "statut": {
+                if (roles.isSM) {
+                    return null;
+                }
+                if (roles.isDev) {
+                    boolean owns = existing.getIdAssignee() != null
+                            && existing.getIdAssignee() == roles.userId;
+                    return owns ? null
+                            : "Vous ne pouvez déplacer que les stories qui vous sont assignées.";
+                }
+                return "Vous n'êtes pas autorisé à déplacer cette story.";
+            }
+
+            default:
+                // Unknown / ignorable fields (e.g. position handled elsewhere).
+                return null;
+        }
+    }
+
+    /**
+     * True when a developer owns a sub-task directly (assigned to them) or owns
+     * the parent story it belongs to (covering an unassigned sub-task of their
+     * own story). A sub-task assigned to another developer is never owned.
+     */
+    private static boolean ownsTaskOrParent(Roles roles, Task task, Task parent) {
+        if (task.getIdAssignee() != null) {
+            return task.getIdAssignee() == roles.userId;
+        }
+        // Unassigned sub-task: ownership flows from the parent story.
+        return parent != null && parent.getIdAssignee() != null
+                && parent.getIdAssignee() == roles.userId;
+    }
+}

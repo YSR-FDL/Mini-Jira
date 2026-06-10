@@ -7,6 +7,7 @@ public class Sprint {
     private String dateDebut;
     private String dateFin;
     private String statut;
+    private Integer capacite;
     private int idProject;
 
     public Sprint() {
@@ -30,6 +31,9 @@ public class Sprint {
 
     public String getStatut() { return statut; }
     public void setStatut(String statut) { this.statut = statut; }
+
+    public Integer getCapacite() { return capacite; }
+    public void setCapacite(Integer capacite) { this.capacite = capacite; }
 
     public int getIdProject() { return idProject; }
     public void setIdProject(int idProject) { this.idProject = idProject; }

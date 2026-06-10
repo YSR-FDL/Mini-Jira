@@ -1,6 +1,10 @@
 # Eclipse
 .metadata/
 .settings/
+.classpath
+.project
+.factorypath
+.apt_generated/
 
 
 # IntelliJ IDEA
@@ -13,6 +17,7 @@ out/
 
 # Build
 build/
+classes/
 target/
 src/main/webapp/WEB-INF/classes/
 
@@ -29,8 +34,8 @@ Thumbs.db
 ehthumbs.db
 
 # Tomcat / Local Servers
-TomcatRunner.java
 TomcatRunner.class
+
 tomcat.8080/
 tomcat/
 jakarta.servlet-api.jar

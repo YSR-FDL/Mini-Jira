@@ -19,10 +19,12 @@ import classes.Sprint;
 public class CreateSprint extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private SprintDAO sprintDAO;
+    private structures_DAO.ProjectDAO projectDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         sprintDAO = new SprintDAO();
+        projectDAO = new structures_DAO.ProjectDAO();
     }
 
     @Override
@@ -31,6 +33,26 @@ public class CreateSprint extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
         response.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    /**
+     * Returns an error message if the date range is invalid, or null if valid.
+     * Requires both dates in ISO format (yyyy-MM-dd) with end strictly after start.
+     */
+    private String validateDates(String start, String end) {
+        if (start == null || start.trim().isEmpty() || end == null || end.trim().isEmpty()) {
+            return "Les dates de début et de fin sont requises.";
+        }
+        try {
+            java.time.LocalDate s = java.time.LocalDate.parse(start.trim());
+            java.time.LocalDate e = java.time.LocalDate.parse(end.trim());
+            if (!e.isAfter(s)) {
+                return "La date de fin doit être postérieure à la date de début.";
+            }
+        } catch (java.time.format.DateTimeParseException ex) {
+            return "Format de date invalide (attendu AAAA-MM-JJ).";
+        }
+        return null;
     }
 
     @Override
@@ -48,6 +70,31 @@ public class CreateSprint extends HttpServlet {
 
         Gson gson = new Gson();
         Sprint sprint = gson.fromJson(sb.toString(), Sprint.class);
+
+        // RBAC: only the Scrum Master may create sprints.
+        com.google.gson.JsonObject body = gson.fromJson(sb.toString(), com.google.gson.JsonObject.class);
+        Integer requesterId = utils.RequestUtils.getRequesterId(body);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(sprint.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
+        String denial = utils.Rbac.authorizeSprintManagement(roles);
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
+        String dateError = validateDates(sprint.getDateDebut(), sprint.getDateFin());
+        if (dateError != null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"message\":\"error\",\"error\":\"" + dateError + "\"}");
+            return;
+        }
+
         int nb = sprintDAO.addSprint(sprint);
 
         response.setContentType("application/json");

@@ -1,4 +1,4 @@
-package controllers.project;
+package controllers.comments;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -6,20 +6,23 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.ProjectDAO;
+import structures_DAO.CommentaireDAO;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-@WebServlet("/ArchiveProject")
-public class ArchiveProject extends HttpServlet {
+@WebServlet("/DeleteComment")
+public class DeleteComment extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private ProjectDAO PDAO;
+    private CommentaireDAO commentDAO;
 
+    @Override
     public void init(ServletConfig config) throws ServletException {
-        PDAO = new ProjectDAO();
+        commentDAO = new CommentaireDAO();
     }
 
     @Override
@@ -30,6 +33,7 @@ public class ArchiveProject extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
+    @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -42,31 +46,21 @@ public class ArchiveProject extends HttpServlet {
             sb.append(line);
         }
 
-        String json = sb.toString();
         Gson gson = new Gson();
-        JsonObject obj = gson.fromJson(json, JsonObject.class);
-        int projectId = obj.get("projectId").getAsInt();
-        boolean isArchived = obj.has("isArchived") ? obj.get("isArchived").getAsBoolean() : true;
+        JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
 
-        // RBAC: only the project creator (Administrateur) may archive a workspace.
-        Integer requesterId = utils.RequestUtils.getRequesterId(obj);
-        if (requesterId == null) {
-            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
-            return;
-        }
-        classes.Project project = PDAO.getProjectById(projectId);
-        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-        String denial = utils.Rbac.authorizeProjectAdmin(roles, "archiver le projet");
-        if (denial != null) {
-            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
-            return;
-        }
-
-        int nb = PDAO.archiveProject(projectId, isArchived);
-
-        response.setCharacterEncoding("UTF-8");
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
+
+        if (body == null || !body.has("commentId")) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"message\":\"error\",\"error\":\"commentId is required\"}");
+            return;
+        }
+
+        int commentId = body.get("commentId").getAsInt();
+        int nb = commentDAO.delete(commentId);
         if (nb > 0) {
             out.print("{\"message\":\"success\"}");
         } else {

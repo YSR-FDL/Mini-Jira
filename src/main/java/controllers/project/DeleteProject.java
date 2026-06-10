@@ -47,6 +47,20 @@ public class DeleteProject extends HttpServlet {
         JsonObject obj = gson.fromJson(json, JsonObject.class);
         int projectId = obj.get("projectId").getAsInt();
 
+        // RBAC: only the project creator (Administrateur) may delete a workspace.
+        Integer requesterId = utils.RequestUtils.getRequesterId(obj);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Project project = PDAO.getProjectById(projectId);
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
+        String denial = utils.Rbac.authorizeProjectAdmin(roles, "supprimer le projet");
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
         int nb = PDAO.deleteProject(projectId);
 
         response.setCharacterEncoding("UTF-8");

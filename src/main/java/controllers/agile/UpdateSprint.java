@@ -13,10 +13,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import classes.Sprint;
 
-@WebServlet("/UpdateSprintStatus")
-public class UpdateSprintStatus extends HttpServlet {
+/**
+ * UpdateSprint — Edit sprint details (name, goal, dates).
+ * Does NOT change status (use UpdateSprintStatus for that).
+ */
+@WebServlet("/UpdateSprint")
+public class UpdateSprint extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private SprintDAO sprintDAO;
     private structures_DAO.ProjectDAO projectDAO;
@@ -35,6 +39,26 @@ public class UpdateSprintStatus extends HttpServlet {
         response.setStatus(HttpServletResponse.SC_OK);
     }
 
+    /**
+     * Returns an error message if the date range is invalid, or null if valid.
+     * Requires both dates in ISO format (yyyy-MM-dd) with end strictly after start.
+     */
+    private String validateDates(String start, String end) {
+        if (start == null || start.trim().isEmpty() || end == null || end.trim().isEmpty()) {
+            return "Les dates de début et de fin sont requises.";
+        }
+        try {
+            java.time.LocalDate s = java.time.LocalDate.parse(start.trim());
+            java.time.LocalDate e = java.time.LocalDate.parse(end.trim());
+            if (!e.isAfter(s)) {
+                return "La date de fin doit être postérieure à la date de début.";
+            }
+        } catch (java.time.format.DateTimeParseException ex) {
+            return "Format de date invalide (attendu AAAA-MM-JJ).";
+        }
+        return null;
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setHeader("Access-Control-Allow-Origin", "*");
@@ -49,35 +73,27 @@ public class UpdateSprintStatus extends HttpServlet {
         }
 
         Gson gson = new Gson();
-        JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
+        Sprint sprint = gson.fromJson(sb.toString(), Sprint.class);
 
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        PrintWriter out = response.getWriter();
-
-        if (body == null || !body.has("sprintId") || body.get("sprintId").isJsonNull()
-                || !body.has("status") || body.get("status").isJsonNull()) {
+        if (sprint.getIdSprint() == 0) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Missing sprintId or status\"}");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"message\":\"error\",\"error\":\"Missing sprint ID\"}");
             return;
         }
 
-        int sprintId;
-        try {
-            sprintId = body.get("sprintId").getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Invalid sprintId\"}");
-            return;
-        }
-
-        // RBAC: starting/closing a sprint is a Scrum Master action.
+        // RBAC: only the Scrum Master may edit sprints.
+        com.google.gson.JsonObject body = gson.fromJson(sb.toString(), com.google.gson.JsonObject.class);
         Integer requesterId = utils.RequestUtils.getRequesterId(body);
         if (requesterId == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
             return;
         }
-        classes.Project project = projectDAO.getProjectById(sprintDAO.getProjectIdBySprint(sprintId));
+        int projectId = sprint.getIdProject() > 0
+                ? sprint.getIdProject()
+                : sprintDAO.getProjectIdBySprint(sprint.getIdSprint());
+        classes.Project project = projectDAO.getProjectById(projectId);
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
         String denial = utils.Rbac.authorizeSprintManagement(roles);
         if (denial != null) {
@@ -85,38 +101,22 @@ public class UpdateSprintStatus extends HttpServlet {
             return;
         }
 
-        String rawStatus = body.get("status").getAsString();
-
-        // Normalize sprint status to consistent DB values
-        String status;
-        switch (rawStatus.toLowerCase()) {
-            case "active":
-            case "actif":
-                status = "actif";
-                break;
-            case "completed":
-            case "done":
-            case "terminee":
-            case "terminé":
-                status = "terminee";
-                break;
-            case "planned":
-            case "upcoming":
-            case "a venir":
-            case "future":
-                status = "a venir";
-                break;
-            default:
-                status = rawStatus;
+        String dateError = validateDates(sprint.getDateDebut(), sprint.getDateFin());
+        if (dateError != null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"message\":\"error\",\"error\":\"" + dateError + "\"}");
+            return;
         }
 
-        int nb = sprintDAO.updateSprintStatus(sprintId, status);
+        int nb = sprintDAO.updateSprint(sprint);
 
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
         if (nb > 0) {
             out.print("{\"message\":\"success\"}");
-        } else if (nb == -1) {
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
-            out.print("{\"message\":\"error\",\"error\":\"Un sprint est déjà actif pour ce projet.\"}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"message\":\"error\"}");

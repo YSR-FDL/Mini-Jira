@@ -13,16 +13,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import classes.Task;
 
 @WebServlet("/UpdateTask")
 public class UpdateTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
+    private structures_DAO.ProjectDAO projectDAO;
+    private structures_DAO.TeamDao teamDao;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
+        projectDAO = new structures_DAO.ProjectDAO();
+        teamDao = new structures_DAO.TeamDao();
     }
 
     @Override
@@ -47,7 +52,8 @@ public class UpdateTask extends HttpServlet {
         }
 
         Gson gson = new Gson();
-        Task task = gson.fromJson(sb.toString(), Task.class);
+        JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
+        Task task = gson.fromJson(body, Task.class);
 
         if (task.getTitre() != null && task.getTitre().trim().isEmpty()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -58,11 +64,39 @@ public class UpdateTask extends HttpServlet {
             return;
         }
 
+        // RBAC: field-level enforcement based on the caller's role and task type.
+        Integer requesterId = utils.RequestUtils.getRequesterId(body);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Task existing = taskDAO.getTaskById(task.getIdTask());
+        if (existing == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(existing.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
+        // Only fields whose value actually differs from the stored task count as
+        // changes (the frontend may echo the whole task back on every edit).
+        java.util.Set<String> presentKeys = new java.util.HashSet<>(body.keySet());
+        presentKeys.remove("idTask");
+        presentKeys.remove("requesterId");
+        java.util.Set<String> changedFields = utils.Rbac.computeChangedTaskFields(presentKeys, existing, task);
+        classes.Task parent = utils.Rbac.isSubtask(existing) && existing.getIdParent() != null
+                ? taskDAO.getTaskById(existing.getIdParent()) : null;
+        String denial = utils.Rbac.authorizeTaskUpdate(roles, existing, task, changedFields, parent);
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
         int nb;
-        if (task.getTitre() == null && task.getTypeTache() != null) {
+        // Type-only quick update (no title sent, only the type field).
+        if (!body.has("titre") && body.has("typeTache")) {
             nb = taskDAO.updateTaskType(task.getIdTask(), task.getTypeTache());
         } else {
-            nb = taskDAO.updateTask(task);
+            nb = taskDAO.updateTask(task, body.keySet());
         }
 
         response.setContentType("application/json");

@@ -38,7 +38,15 @@ public class GetUserProjects extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-        int idUser = Integer.parseInt(request.getParameter("idUser"));
+        Integer idUser = utils.RequestUtils.parseIntOrNull(request.getParameter("idUser"));
+        if (idUser == null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\": \"Missing or invalid idUser\"}");
+            return;
+        }
+
         List<Project> projects = PDAO.getUserProjects(idUser);
         Gson gson = new Gson();
         String json = gson.toJson(projects);

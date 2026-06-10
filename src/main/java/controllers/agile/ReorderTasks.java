@@ -6,25 +6,37 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.SprintDAO;
+import structures_DAO.TaskDAO;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-@WebServlet("/UpdateSprintStatus")
-public class UpdateSprintStatus extends HttpServlet {
+/**
+ * ReorderTasks — Persists the ordering of a backlog or sprint container.
+ * Expects: { "taskIds": [3, 1, 2], "sprintId": 5 }
+ * If sprintId is null or missing, the tasks belong to the backlog.
+ * Each task gets position = its index in the array, and its sprint set to
+ * the target container (so a drag that also changes lists is handled here).
+ */
+@WebServlet("/ReorderTasks")
+public class ReorderTasks extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private SprintDAO sprintDAO;
+    private TaskDAO taskDAO;
     private structures_DAO.ProjectDAO projectDAO;
+    private structures_DAO.TeamDao teamDao;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        sprintDAO = new SprintDAO();
+        taskDAO = new TaskDAO();
         projectDAO = new structures_DAO.ProjectDAO();
+        teamDao = new structures_DAO.TeamDao();
     }
 
     @Override
@@ -55,68 +67,46 @@ public class UpdateSprintStatus extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        if (body == null || !body.has("sprintId") || body.get("sprintId").isJsonNull()
-                || !body.has("status") || body.get("status").isJsonNull()) {
+        JsonArray taskIdsArray = (body != null && body.has("taskIds") && !body.get("taskIds").isJsonNull())
+                ? body.getAsJsonArray("taskIds") : null;
+        if (taskIdsArray == null || taskIdsArray.size() == 0) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Missing sprintId or status\"}");
+            out.print("{\"message\":\"error\",\"error\":\"No task IDs provided\"}");
             return;
         }
 
-        int sprintId;
-        try {
-            sprintId = body.get("sprintId").getAsInt();
-        } catch (NumberFormatException | UnsupportedOperationException e) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Invalid sprintId\"}");
-            return;
+        Integer sprintId = (body.has("sprintId") && !body.get("sprintId").isJsonNull())
+                ? body.get("sprintId").getAsInt() : null;
+
+        List<Integer> orderedIds = new ArrayList<>();
+        for (int i = 0; i < taskIdsArray.size(); i++) {
+            orderedIds.add(taskIdsArray.get(i).getAsInt());
         }
 
-        // RBAC: starting/closing a sprint is a Scrum Master action.
+        // RBAC: Scrum Master may reorder any container; Product Owner may reorder
+        // the backlog only (sprintId == null).
         Integer requesterId = utils.RequestUtils.getRequesterId(body);
         if (requesterId == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
             return;
         }
-        classes.Project project = projectDAO.getProjectById(sprintDAO.getProjectIdBySprint(sprintId));
-        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-        String denial = utils.Rbac.authorizeSprintManagement(roles);
+        classes.Task firstTask = taskDAO.getTaskById(orderedIds.get(0));
+        if (firstTask == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(firstTask.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
+        String denial = utils.Rbac.authorizeReorder(roles, sprintId);
         if (denial != null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
             return;
         }
 
-        String rawStatus = body.get("status").getAsString();
+        int updated = taskDAO.reorderTasks(orderedIds, sprintId);
 
-        // Normalize sprint status to consistent DB values
-        String status;
-        switch (rawStatus.toLowerCase()) {
-            case "active":
-            case "actif":
-                status = "actif";
-                break;
-            case "completed":
-            case "done":
-            case "terminee":
-            case "terminé":
-                status = "terminee";
-                break;
-            case "planned":
-            case "upcoming":
-            case "a venir":
-            case "future":
-                status = "a venir";
-                break;
-            default:
-                status = rawStatus;
-        }
-
-        int nb = sprintDAO.updateSprintStatus(sprintId, status);
-
-        if (nb > 0) {
-            out.print("{\"message\":\"success\"}");
-        } else if (nb == -1) {
-            response.setStatus(HttpServletResponse.SC_CONFLICT);
-            out.print("{\"message\":\"error\",\"error\":\"Un sprint est déjà actif pour ce projet.\"}");
+        if (updated > 0) {
+            out.print("{\"message\":\"success\",\"updated\":" + updated + "}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"message\":\"error\"}");

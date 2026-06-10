@@ -19,10 +19,14 @@ import classes.Task;
 public class CreateTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
+    private structures_DAO.ProjectDAO projectDAO;
+    private structures_DAO.TeamDao teamDao;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
+        projectDAO = new structures_DAO.ProjectDAO();
+        teamDao = new structures_DAO.TeamDao();
     }
 
     @Override
@@ -58,13 +62,30 @@ public class CreateTask extends HttpServlet {
             return;
         }
 
+        // RBAC: Epics → Product Owner, Stories → Product Owner,
+        // Sub-tasks → Développeur (only under a story assigned to them).
+        com.google.gson.JsonObject body = gson.fromJson(sb.toString(), com.google.gson.JsonObject.class);
+        Integer requesterId = utils.RequestUtils.getRequesterId(body);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(task.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
+        classes.Task parent = (task.getIdParent() != null) ? taskDAO.getTaskById(task.getIdParent()) : null;
+        String denial = utils.Rbac.authorizeTaskCreate(roles, task, parent);
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
         int nb = taskDAO.addTask(task);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
         if (nb > 0) {
-            out.print("{\"message\":\"success\"}");
+            out.print("{\"message\":\"success\",\"idTask\":" + task.getIdTask() + "}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             out.print("{\"message\":\"error\"}");
