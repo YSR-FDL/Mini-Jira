@@ -12,6 +12,8 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import TeamsPage from "./pages/global/TeamsPage.jsx";
 import ProjectsPage from "./pages/global/ProjectsPage.jsx";
 import Overview from "./pages/project/Overview.jsx";
+import ProjectReports from "./pages/project/Reports.jsx";
+import Epics from "./pages/project/Epics.jsx";
 import TeamDetailsPage from './pages/global/TeamDetailsPage.jsx'
 import TasksPage from "./pages/global/TasksPage.jsx"
 import ReportsPage from "./pages/global/ReportsPage.jsx"
@@ -33,12 +35,14 @@ function App() {
             <Route path="/overview/:id" element={<Overview />} />
             <Route path="/backlog" element={<Backlog />} />
             <Route path="/board" element={<Board />} />
+            <Route path="/epics" element={<Epics />} />
             <Route path="/sprints" element={<Navigate to="/backlog" replace />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/tasks" element={<TasksPage/>} />
             <Route path="/detailsTeam/:id" element={<TeamDetailsPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/project-reports" element={<ProjectReports />} />
             <Route path="/users" element={<UsersPage/>} />
             <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>

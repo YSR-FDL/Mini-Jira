@@ -172,7 +172,7 @@ export default function Overview() {
     daysRemaining: 0,
     totalCompleted: 0,
     totalIssues: 0,
-    distribution: { todo: 0, inProgress: 0, review: 0, done: 0 },
+    distribution: {},
   };
 
   const {
@@ -186,6 +186,9 @@ export default function Overview() {
   } = activeSprintSummary;
   const progressPercent =
     totalIssues === 0 ? 0 : Math.round((totalCompleted / totalIssues) * 100);
+
+  // Build distribution display from dynamic keys
+  const distributionEntries = distribution ? Object.entries(distribution) : [];
 
   const byType = data.byType || [];
   const byPriority = data.byPriority || [];
@@ -214,12 +217,13 @@ export default function Overview() {
             <p className="metric-value">{metrics.inProgress}</p>
           </div>
           <div className="metric-card">
-            <h3 className="metric-title">En retard</h3>
-            <p
-              className={`metric-value ${metrics.overdue > 0 ? "text-danger" : ""}`}
-            >
-              {metrics.overdue}
+            <h3 className="metric-title">Restantes</h3>
+            <p className="metric-value">
+              {metrics.totalIssues - metrics.completed}
             </p>
+            <span className="metric-subtitle">
+              non terminées
+            </span>
           </div>
         </section>
 
@@ -252,22 +256,25 @@ export default function Overview() {
               </div>
             </div>
             <div className="sprint-distribution">
-              <span className="dist-item">
-                <span className="dot dot-todo"></span> À faire (
-                {distribution.todo})
-              </span>
-              <span className="dist-item">
-                <span className="dot dot-in-progress"></span> En cours (
-                {distribution.inProgress})
-              </span>
-              <span className="dist-item">
-                <span className="dot dot-review"></span> En revue (
-                {distribution.review})
-              </span>
-              <span className="dist-item">
-                <span className="dot dot-done"></span> Terminé (
-                {distribution.done})
-              </span>
+              {distributionEntries.length > 0 ? (
+                distributionEntries.map(([status, count], idx) => (
+                  <span key={status} className="dist-item">
+                    <span className={`dot dot-status-${idx}`} style={{
+                      backgroundColor: idx === distributionEntries.length - 1 ? '#10b981' : 
+                        idx === 0 ? '#3b82f6' : '#f59e0b'
+                    }}></span> {status} ({count})
+                  </span>
+                ))
+              ) : (
+                <>
+                  <span className="dist-item">
+                    <span className="dot dot-todo"></span> À faire (0)
+                  </span>
+                  <span className="dist-item">
+                    <span className="dot dot-done"></span> Terminé (0)
+                  </span>
+                </>
+              )}
             </div>
           </div>
 

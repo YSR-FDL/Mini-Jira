@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { DragDropContext } from "@hello-pangea/dnd";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import ProjectLayout from "../../components/layout/ProjectLayout";
 import KanbanColumn from "../../components/board/KanbanColumn";
 import BoardControlBar from "../../components/board/BoardControlBar";
@@ -8,6 +8,7 @@ import { taskService } from "../../services/taskService";
 import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
 import ActionBtn from "../../components/ui/ActionBtn";
+import { resolveRoles } from "../../services/roles";
 import axios from "axios";
 import "../../styles/Board/Board.css";
 
@@ -33,8 +34,11 @@ export default function Board() {
 
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
-  const isDev = currentUserId && !isSM && !isPO;
-  const canDragOnBoard = isSM || isPO || isDev;
+  // Dev status requires actual team membership; the board is moved by the SM
+  // (any card) or the Dev who owns the card. The PO does not move board cards.
+  const boardRoles = resolveRoles(project, teamMembers, currentUserId);
+  const isDev = boardRoles.isDev;
+  const canDragOnBoard = boardRoles.isSM || boardRoles.isDev;
 
   useEffect(() => {
     const loadBoard = async () => {
@@ -90,12 +94,16 @@ export default function Board() {
         );
         setActiveSprint(active || null);
 
-        // 3. Load tasks for the active sprint
+        // 3. Load tasks for the active sprint using the optimized endpoint
         if (active) {
-          const allTasks = await taskService.getProjectTasks(projectId);
-          const sprintTasks = allTasks.filter(
-            (t) => String(t.sprintId) === String(active.id),
-          );
+          const { tasks: sprintTasks, columns: sprintColumns } =
+            await taskService.getSprintTasksAndColumns(active.id, projectId);
+
+          // Use columns from project etats if available, otherwise from endpoint
+          if (colIds.length === 0 && sprintColumns && sprintColumns.length > 0) {
+            colIds = sprintColumns.map((c) => c.id);
+            setColumns(sprintColumns);
+          }
 
           // Map tasks to ensure their status matches one of the columns
           const defaultCol = colIds.length > 0 ? colIds[0] : "todo";
@@ -117,6 +125,30 @@ export default function Board() {
   }, []);
 
   const handleDragEnd = (result) => {
+    // Workflow state (column) reordering — SM only.
+    if (result.type === "COLUMN") {
+      if (!isSM) return;
+      const { source, destination } = result;
+      if (!destination || source.index === destination.index) return;
+
+      const newCols = Array.from(columns);
+      const [moved] = newCols.splice(source.index, 1);
+      newCols.splice(destination.index, 0, moved);
+      setColumns(newCols);
+
+      const rawId = localStorage.getItem("selectedProjectId");
+      const projectId =
+        rawId && rawId !== "undefined" && rawId !== "null"
+          ? parseInt(rawId, 10)
+          : 1;
+      const etats = newCols.map((c) => c.title);
+      projectService.updateProjectStates(projectId, etats).catch((err) => {
+        console.error("Error reordering columns:", err);
+        window.location.reload();
+      });
+      return;
+    }
+
     const { source, destination, draggableId } = result;
     if (!canDragOnBoard) return;
 
@@ -184,10 +216,11 @@ export default function Board() {
   };
 
   const handleUpdateTask = (updatedTask) => {
+    // Auto-save: persist and reflect locally, but keep the modal open.
+    // The modal is only dismissed via its explicit close (X / overlay).
     setTasks((prev) =>
       prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
     );
-    setSelectedTaskId(null);
     taskService.updateTask(updatedTask.id, updatedTask);
   };
 
@@ -385,77 +418,105 @@ export default function Board() {
       {/* NOUVEAU BOUTON DE CRÉATION SUR LE BOARD */}
       <div className="kanban-board-container scroll">
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="kanban-board">
-             {columns.map((col) => (
-              <KanbanColumn
-                key={col.id}
-                title={col.title}
-                status={col.id}
-                tasks={activeTasks.filter((t) => t.status === col.id)}
-                onAddTask={handleAddTask}
-                onTaskClick={setSelectedTaskId}
-                isPO={isPO}
-                isSM={isSM}
-                isDragDisabled={!canDragOnBoard}
-                onDeleteColumn={handleDeleteColumn}
-              />
-            ))}
-             {isSM && (
-              <div className="kanban-column-container add-column-wrapper">
-                {isAddingColumn ? (
-                  <div className="add-column-form">
-                    <input
-                      type="text"
-                      className="ui-input new-column-title-input"
-                      placeholder="Nom du statut..."
-                      value={newColumnTitle}
-                      onChange={(e) => setNewColumnTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddColumn();
-                        else if (e.key === "Escape") setIsAddingColumn(false);
-                      }}
-                      autoFocus
-                    />
-                    <div className="add-column-actions">
-                      <button
-                        onClick={handleAddColumn}
-                        className="add-column-save-btn"
-                      >
-                        Ajouter
-                      </button>
-                      <button
-                        onClick={() => setIsAddingColumn(false)}
-                        className="add-column-cancel-btn"
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    className="add-column-trigger-btn"
-                    onClick={() => setIsAddingColumn(true)}
+          <Droppable
+            droppableId="board-columns"
+            direction="horizontal"
+            type="COLUMN"
+          >
+            {(provided) => (
+              <div
+                className="kanban-board"
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+              >
+                {columns.map((col, index) => (
+                  <Draggable
+                    key={col.id}
+                    draggableId={`col-${col.id}`}
+                    index={index}
+                    isDragDisabled={!isSM}
                   >
-                    <svg
-                      className="kanban-add-icon"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      style={{ marginRight: "6px" }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Ajouter un statut
-                  </button>
+                    {(prov) => (
+                      <div
+                        className="kanban-column-draggable"
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                      >
+                        <KanbanColumn
+                          title={col.title}
+                          status={col.id}
+                          tasks={activeTasks.filter((t) => t.status === col.id)}
+                          onAddTask={handleAddTask}
+                          onTaskClick={setSelectedTaskId}
+                          isPO={isPO}
+                          isSM={isSM}
+                          isDragDisabled={!canDragOnBoard}
+                          onDeleteColumn={handleDeleteColumn}
+                          dragHandleProps={isSM ? prov.dragHandleProps : undefined}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+                {isSM && (
+                  <div className="kanban-column-container add-column-wrapper">
+                    {isAddingColumn ? (
+                      <div className="add-column-form">
+                        <input
+                          type="text"
+                          className="ui-input new-column-title-input"
+                          placeholder="Nom du statut..."
+                          value={newColumnTitle}
+                          onChange={(e) => setNewColumnTitle(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleAddColumn();
+                            else if (e.key === "Escape") setIsAddingColumn(false);
+                          }}
+                          autoFocus
+                        />
+                        <div className="add-column-actions">
+                          <button
+                            onClick={handleAddColumn}
+                            className="add-column-save-btn"
+                          >
+                            Ajouter
+                          </button>
+                          <button
+                            onClick={() => setIsAddingColumn(false)}
+                            className="add-column-cancel-btn"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        className="add-column-trigger-btn"
+                        onClick={() => setIsAddingColumn(true)}
+                      >
+                        <svg
+                          className="kanban-add-icon"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          style={{ marginRight: "6px" }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M12 4v16m8-8H4"
+                          />
+                        </svg>
+                        Ajouter un statut
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}
-          </div>
+          </Droppable>
         </DragDropContext>
       </div>
        {selectedTaskId && (

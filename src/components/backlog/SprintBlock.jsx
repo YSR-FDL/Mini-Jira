@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import StoryRow from './StoryRow';
 
-export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick }) {
+export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick, onEditClick }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -65,7 +65,9 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                 {!isBacklog && (sprint.startDate && sprint.endDate ? (
                     <span className="sprint-dates">{sprint.startDate} -> {sprint.endDate}</span>
                 ) : (
-                    <button className="btn-xs" style={{ marginLeft: 8 }}>Ajouter des dates</button>
+                    isSM ? (
+                        <button className="btn-xs" style={{ marginLeft: 8 }} onClick={() => onEditClick && onEditClick(sprint)}>Ajouter des dates</button>
+                    ) : null
                 ))}
 
                 {/* Masquer le badge if conteneur de Backlog général */}
@@ -80,6 +82,15 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                 <div className="pbar-fill" style={{ width: `${progressPercent}%` }}></div>
                             </div>
                         </div>
+                        {sprint.capacity != null && sprint.capacity !== '' && (
+                            <span
+                                className="stat"
+                                title="Points engagés / capacité du sprint"
+                                style={{ color: totalPoints > sprint.capacity ? 'var(--color-danger-red)' : undefined }}
+                            >
+                                {totalPoints}/{sprint.capacity} cap.
+                            </span>
+                        )}
                     </div>
                 )}
 
@@ -100,7 +111,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                     borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', zIndex: 10,
                                     display: 'flex', flexDirection: 'column', width: '120px'
                                 }}>
-                                    <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }} onClick={() => setMenuOpen(false)}>Modifier le sprint</span>
+                                    <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }} onClick={() => { setMenuOpen(false); onEditClick && onEditClick(sprint); }}>Modifier le sprint</span>
                                     <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--color-danger-red)' }} onClick={() => { setMenuOpen(false); onDeleteClick && onDeleteClick(sprint.id); }}>Supprimer le sprint</span>
                                 </div>
                             )}

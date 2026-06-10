@@ -105,9 +105,9 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
           <span className="story-id">{id}</span>
           <span 
             className={prio.badgeClass} 
-            onClick={handlePriorityClick} 
-            style={{ cursor: 'pointer' }}
-            title="Cliquez pour changer la priorité"
+            onClick={onPriorityChange ? handlePriorityClick : undefined}
+            style={{ cursor: onPriorityChange ? 'pointer' : 'default' }}
+            title={onPriorityChange ? "Cliquez pour changer la priorité" : undefined}
           >
             {prio.label}
           </span>
@@ -118,11 +118,12 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
               <span
                 className="tag t-feat"
                 onClick={(e) => {
+                  if (!onTagChange) return;
                   e.stopPropagation();
-                  if (onTagChange) onTagChange("Bug", 0);
+                  onTagChange("Bug", 0);
                 }}
-                style={{ cursor: "pointer" }}
-                title="Cliquez pour changer le tag"
+                style={{ cursor: onTagChange ? "pointer" : "default" }}
+                title={onTagChange ? "Cliquez pour changer le tag" : undefined}
               >
                 Feature
               </span>
@@ -137,8 +138,8 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
                     key={`${tag}-${tagIdx}`}
                     className={t.className}
                     onClick={(e) => handleTagClick(tagIdx, e)}
-                    style={{ cursor: "pointer" }}
-                    title="Cliquez pour changer le tag"
+                    style={{ cursor: onTagChange ? "pointer" : "default" }}
+                    title={onTagChange ? "Cliquez pour changer le tag" : undefined}
                   >
                     {t.label}
                   </span>
