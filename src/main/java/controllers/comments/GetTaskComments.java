@@ -1,4 +1,4 @@
-package controllers.agile;
+package controllers.comments;
 
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
@@ -6,23 +6,23 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.SprintDAO;
+import structures_DAO.CommentaireDAO;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.Gson;
-import classes.Sprint;
 
-@WebServlet("/GetProjectSprints")
-public class GetProjectSprints extends HttpServlet {
+@WebServlet("/GetTaskComments")
+public class GetTaskComments extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private SprintDAO sprintDAO;
+    private CommentaireDAO commentDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        sprintDAO = new SprintDAO();
+        commentDAO = new CommentaireDAO();
     }
 
     @Override
@@ -39,30 +39,30 @@ public class GetProjectSprints extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-        String projectIdParam = request.getParameter("projectId");
-        if (projectIdParam == null || projectIdParam.isEmpty()) {
+        String taskIdParam = request.getParameter("taskId");
+        if (taskIdParam == null || taskIdParam.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().print("{\"error\":\"Missing required parameter: projectId\"}");
+            response.getWriter().print("{\"error\":\"Missing required parameter: taskId\"}");
             return;
         }
 
-        int projectId;
+        int taskId;
         try {
-            projectId = Integer.parseInt(projectIdParam);
+            taskId = Integer.parseInt(taskIdParam);
         } catch (NumberFormatException e) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
-            response.getWriter().print("{\"error\":\"Invalid projectId format\"}");
+            response.getWriter().print("{\"error\":\"Invalid taskId format\"}");
             return;
         }
 
-        List<Sprint> sprints = sprintDAO.getProjectSprints(projectId);
+        List<Map<String, Object>> comments = commentDAO.getByTask(taskId);
 
         Gson gson = new Gson();
-        String json = gson.toJson(sprints);
+        String json = gson.toJson(comments);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

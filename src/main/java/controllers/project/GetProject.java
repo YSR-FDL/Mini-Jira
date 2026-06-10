@@ -39,8 +39,8 @@ public class GetProject extends HttpServlet {
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
         String projectIdParam = request.getParameter("projectId");
-        if (projectIdParam != null && !projectIdParam.isEmpty()) {
-            int projectId = Integer.parseInt(projectIdParam);
+        Integer projectId = utils.RequestUtils.parseIntOrNull(projectIdParam);
+        if (projectId != null) {
             Project project = projectDAO.getProjectById(projectId);
 
             Gson gson = new Gson();
@@ -52,7 +52,9 @@ public class GetProject extends HttpServlet {
             out.print(json);
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            response.getWriter().print("{\"error\": \"Missing projectId\"}");
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\": \"Missing or invalid projectId\"}");
         }
     }
 }

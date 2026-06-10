@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,75 +13,172 @@ import connexion_BD.DBInteraction;
 
 public class MetricsDAO {
 
-    public Map<String, Object> getProjectMetrics(int projectId) {
-        Map<String, Object> metrics = new HashMap<>();
-        DBInteraction.connect();
-        String sql = "SELECT " +
-            "COUNT(*) AS total, " +
-            "SUM(CASE WHEN statut = 'done' THEN 1 ELSE 0 END) AS completed, " +
-            "SUM(CASE WHEN statut = 'in-progress' THEN 1 ELSE 0 END) AS inProgress, " +
-            "SUM(CASE WHEN statut = 'review' THEN 1 ELSE 0 END) AS review " +
-            "FROM tasks WHERE id_project = ?";
+    /**
+     * Resolves all workflow states for a project.
+     * Returns the list of states, or a default set if not found.
+     */
+    private List<String> resolveProjectStates(int projectId) {
+        List<String> states = new ArrayList<>();
+        String sql = "SELECT etats FROM projects WHERE id_project = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, projectId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                metrics.put("totalIssues", rs.getInt("total"));
-                metrics.put("completed", rs.getInt("completed"));
-                metrics.put("inProgress", rs.getInt("inProgress"));
-                // overdue = total - completed - inProgress - review (rough approximation)
-                int total = rs.getInt("total");
-                int completed = rs.getInt("completed");
-                int inProgress = rs.getInt("inProgress");
-                int review = rs.getInt("review");
-                int todo = total - completed - inProgress - review;
-                metrics.put("todo", todo);
-                metrics.put("overdue", 0); 
+                String etatsStr = rs.getString("etats");
+                if (etatsStr != null && !etatsStr.isEmpty()) {
+                    for (String s : etatsStr.split(",")) {
+                        states.add(s.trim());
+                    }
+                }
             }
             rs.close();
             ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        if (states.isEmpty()) {
+            states = Arrays.asList("todo", "in-progress", "review", "done");
+        }
+        return states;
+    }
+
+    public Map<String, Object> getProjectMetrics(int projectId) {
+        Map<String, Object> metrics = new HashMap<>();
+        DBInteraction.connect();
+
+        List<String> states = resolveProjectStates(projectId);
+        String firstStatus = states.get(0);
+        String doneStatus = states.get(states.size() - 1);
+
+        // Count tasks per status, then bucket into todo / in-progress / done.
+        Map<String, Integer> counts = new HashMap<>();
+        int total = 0;
+        String sql = "SELECT statut, COUNT(*) AS cnt FROM tasks WHERE id_project = ? GROUP BY statut";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, projectId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                String st = rs.getString("statut");
+                int c = rs.getInt("cnt");
+                counts.put(st == null ? "" : st, c);
+                total += c;
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        int completed = counts.getOrDefault(doneStatus, 0);
+        int todo = counts.getOrDefault(firstStatus, 0);
+        // Avoid double counting if the workflow has a single state (first == last).
+        int inProgress = total - completed - (firstStatus.equals(doneStatus) ? 0 : todo);
+        if (inProgress < 0) inProgress = 0;
+
+        metrics.put("totalIssues", total);
+        metrics.put("completed", completed);
+        metrics.put("todo", todo);
+        metrics.put("inProgress", inProgress);
+        metrics.put("overdue", countOverdue(projectId, doneStatus));
+
         DBInteraction.disconnect();
         return metrics;
+    }
+
+    /**
+     * Counts not-done tasks that belong to a sprint whose end date has passed.
+     * Uses the connection already opened by the caller (no connect/disconnect).
+     */
+    private int countOverdue(int projectId, String doneStatus) {
+        int overdue = 0;
+        String sql = "SELECT COUNT(*) AS cnt FROM tasks t " +
+                     "JOIN sprints s ON t.id_sprint = s.id_sprint " +
+                     "WHERE t.id_project = ? AND s.date_fin < CURRENT_DATE AND t.statut <> ?";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, projectId);
+            ps.setString(2, doneStatus);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                overdue = rs.getInt("cnt");
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return overdue;
     }
 
     public Map<String, Object> getSprintProgress(int sprintId) {
         Map<String, Object> progress = new HashMap<>();
         DBInteraction.connect();
+
+        // First, get the project ID for this sprint to resolve its "done" state
+        String doneStatus = "done";
+        String projectSql = "SELECT p.etats FROM sprints s JOIN projects p ON s.id_project = p.id_project WHERE s.id_sprint = ?";
+        try {
+            PreparedStatement psProj = DBInteraction.getConn().prepareStatement(projectSql);
+            psProj.setInt(1, sprintId);
+            ResultSet rsProj = psProj.executeQuery();
+            if (rsProj.next()) {
+                String etatsStr = rsProj.getString("etats");
+                if (etatsStr != null && !etatsStr.isEmpty()) {
+                    String[] etats = etatsStr.split(",");
+                    doneStatus = etats[etats.length - 1].trim();
+                }
+            }
+            rsProj.close();
+            psProj.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         String sql = "SELECT " +
             "COUNT(*) AS total, " +
-            "SUM(CASE WHEN statut = 'done' THEN 1 ELSE 0 END) AS completed, " +
-            "SUM(CASE WHEN statut = 'todo' THEN 1 ELSE 0 END) AS todo, " +
-            "SUM(CASE WHEN statut = 'in-progress' THEN 1 ELSE 0 END) AS inProgress, " +
-            "SUM(CASE WHEN statut = 'review' THEN 1 ELSE 0 END) AS review, " +
+            "SUM(CASE WHEN statut = ? THEN 1 ELSE 0 END) AS completed, " +
             "COALESCE(SUM(story_points), 0) AS totalPoints, " +
-            "COALESCE(SUM(CASE WHEN statut = 'done' THEN story_points ELSE 0 END), 0) AS completedPoints " +
+            "COALESCE(SUM(CASE WHEN statut = ? THEN story_points ELSE 0 END), 0) AS completedPoints " +
             "FROM tasks WHERE id_sprint = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
-            ps.setInt(1, sprintId);
+            ps.setString(1, doneStatus);
+            ps.setString(2, doneStatus);
+            ps.setInt(3, sprintId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                progress.put("totalIssues", rs.getInt("total"));
-                progress.put("totalCompleted", rs.getInt("completed"));
+                int total = rs.getInt("total");
+                int completed = rs.getInt("completed");
+                progress.put("totalIssues", total);
+                progress.put("totalCompleted", completed);
                 progress.put("totalPoints", rs.getInt("totalPoints"));
                 progress.put("completedPoints", rs.getInt("completedPoints"));
-
-                Map<String, Integer> distribution = new HashMap<>();
-                distribution.put("todo", rs.getInt("todo"));
-                distribution.put("inProgress", rs.getInt("inProgress"));
-                distribution.put("review", rs.getInt("review"));
-                distribution.put("done", rs.getInt("completed"));
-                progress.put("distribution", distribution);
             }
             rs.close();
             ps.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        // Build the real per-status distribution.
+        String distSql = "SELECT statut, COUNT(*) AS cnt FROM tasks WHERE id_sprint = ? GROUP BY statut";
+        try {
+            PreparedStatement psDist = DBInteraction.getConn().prepareStatement(distSql);
+            psDist.setInt(1, sprintId);
+            ResultSet rsDist = psDist.executeQuery();
+            Map<String, Integer> actualDist = new HashMap<>();
+            while (rsDist.next()) {
+                actualDist.put(rsDist.getString("statut"), rsDist.getInt("cnt"));
+            }
+            rsDist.close();
+            psDist.close();
+            progress.put("distribution", actualDist);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
         DBInteraction.disconnect();
         return progress;
     }

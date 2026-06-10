@@ -19,10 +19,12 @@ import com.google.gson.JsonObject;
 public class AssignTaskToSprint extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
+    private structures_DAO.ProjectDAO projectDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
+        projectDAO = new structures_DAO.ProjectDAO();
     }
 
     @Override
@@ -48,7 +50,37 @@ public class AssignTaskToSprint extends HttpServlet {
 
         Gson gson = new Gson();
         JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
+
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        PrintWriter out = response.getWriter();
+
+        if (body == null || !body.has("taskId") || body.get("taskId").isJsonNull()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"message\":\"error\",\"error\":\"Missing taskId\"}");
+            return;
+        }
+
         int taskId = body.get("taskId").getAsInt();
+
+        // RBAC: moving a story between sprints and the backlog is a Scrum Master action.
+        Integer requesterId = utils.RequestUtils.getRequesterId(body);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Task existing = taskDAO.getTaskById(taskId);
+        if (existing == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(existing.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
+        String denial = utils.Rbac.authorizeSprintManagement(roles);
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
 
         int nb;
         // If sprintId is null or missing, unassign (move to backlog)
@@ -59,9 +91,6 @@ public class AssignTaskToSprint extends HttpServlet {
             nb = taskDAO.unassignTaskFromSprint(taskId);
         }
 
-        response.setContentType("application/json");
-        response.setCharacterEncoding("UTF-8");
-        PrintWriter out = response.getWriter();
         if (nb > 0) {
             out.print("{\"message\":\"success\"}");
         } else {

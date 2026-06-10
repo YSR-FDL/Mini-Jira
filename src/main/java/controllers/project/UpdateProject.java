@@ -45,6 +45,24 @@ public class UpdateProject extends HttpServlet {
         String json = sb.toString();
         Gson gson = new Gson();
         Project project = gson.fromJson(json, Project.class);
+
+        // RBAC: editing project settings / assigning SM & PO is an Administrateur
+        // (creator) action. Authorise against the *stored* creator, never the
+        // payload, so a caller cannot grant themselves ownership.
+        com.google.gson.JsonObject obj = gson.fromJson(json, com.google.gson.JsonObject.class);
+        Integer requesterId = utils.RequestUtils.getRequesterId(obj);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Project stored = PDAO.getProjectById(project.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, stored, null);
+        String denial = utils.Rbac.authorizeProjectAdmin(roles, "modifier le projet et ses rôles");
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
         int nb = PDAO.updateProject(project);
 
         response.setCharacterEncoding("UTF-8");

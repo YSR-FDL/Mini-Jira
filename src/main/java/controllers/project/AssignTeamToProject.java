@@ -48,6 +48,20 @@ public class AssignTeamToProject extends HttpServlet {
         int projectId = obj.get("projectId").getAsInt();
         int idTeam = obj.has("idTeam") && !obj.get("idTeam").isJsonNull() ? obj.get("idTeam").getAsInt() : 0;
 
+        // RBAC: assigning a team / roles is an Administrateur (creator) action.
+        Integer requesterId = utils.RequestUtils.getRequesterId(obj);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Project project = PDAO.getProjectById(projectId);
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
+        String denial = utils.Rbac.authorizeProjectAdmin(roles, "assigner une équipe au projet");
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
         int nb = PDAO.assignTeamToProject(projectId, idTeam);
 
         response.setCharacterEncoding("UTF-8");

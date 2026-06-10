@@ -59,6 +59,22 @@ public class UpdateProjectStates extends HttpServlet {
             int projectId = ((Double) data.get("projectId")).intValue();
             List<String> etats = (List<String>) data.get("etats");
 
+            // RBAC: editing the project's workflow columns is a workspace
+            // (Administrateur/creator) action.
+            Integer requesterId = (data.get("requesterId") instanceof Double)
+                    ? ((Double) data.get("requesterId")).intValue() : null;
+            if (requesterId == null) {
+                utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+                return;
+            }
+            classes.Project project = projectDAO.getProjectById(projectId);
+            utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
+            String denial = utils.Rbac.authorizeProjectAdmin(roles, "modifier les colonnes du projet");
+            if (denial != null) {
+                utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+                return;
+            }
+
             int result = projectDAO.updateProjectEtats(projectId, etats);
             if (result > 0) {
                 out.print("{\"message\": \"success\"}");

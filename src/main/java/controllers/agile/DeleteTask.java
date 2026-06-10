@@ -19,10 +19,14 @@ import com.google.gson.JsonObject;
 public class DeleteTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
+    private structures_DAO.ProjectDAO projectDAO;
+    private structures_DAO.TeamDao teamDao;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
+        projectDAO = new structures_DAO.ProjectDAO();
+        teamDao = new structures_DAO.TeamDao();
     }
 
     @Override
@@ -48,13 +52,42 @@ public class DeleteTask extends HttpServlet {
 
         Gson gson = new Gson();
         JsonObject body = gson.fromJson(sb.toString(), JsonObject.class);
-        int taskId = body.get("taskId").getAsInt();
-
-        int nb = taskDAO.deleteTask(taskId);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
+
+        if (body == null || !body.has("taskId") || body.get("taskId").isJsonNull()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.print("{\"message\":\"error\",\"error\":\"Missing taskId\"}");
+            return;
+        }
+
+        int taskId = body.get("taskId").getAsInt();
+
+        // RBAC: Epic delete → PO; Story delete → SM/PO; Sub-task delete → owning Dev.
+        Integer requesterId = utils.RequestUtils.getRequesterId(body);
+        if (requesterId == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
+            return;
+        }
+        classes.Task existing = taskDAO.getTaskById(taskId);
+        if (existing == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
+            return;
+        }
+        classes.Project project = projectDAO.getProjectById(existing.getIdProject());
+        utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
+        classes.Task parent = utils.Rbac.isSubtask(existing) && existing.getIdParent() != null
+                ? taskDAO.getTaskById(existing.getIdParent()) : null;
+        String denial = utils.Rbac.authorizeTaskDelete(roles, existing, parent);
+        if (denial != null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+            return;
+        }
+
+        int nb = taskDAO.deleteTask(taskId);
+
         if (nb > 0) {
             out.print("{\"message\":\"success\"}");
         } else {

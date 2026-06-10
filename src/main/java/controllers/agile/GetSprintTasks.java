@@ -46,7 +46,26 @@ public class GetSprintTasks extends HttpServlet {
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-        int sprintId = Integer.parseInt(request.getParameter("sprintId"));
+        String sprintIdParam = request.getParameter("sprintId");
+        if (sprintIdParam == null || sprintIdParam.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\":\"Missing required parameter: sprintId\"}");
+            return;
+        }
+
+        int sprintId;
+        try {
+            sprintId = Integer.parseInt(sprintIdParam);
+        } catch (NumberFormatException e) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().print("{\"error\":\"Invalid sprintId format\"}");
+            return;
+        }
+
         List<Map<String, Object>> tasks = taskDAO.getSprintTasks(sprintId);
 
         Map<String, Object> result = new HashMap<>();
@@ -56,7 +75,20 @@ public class GetSprintTasks extends HttpServlet {
 
         // Dynamic Column Mapping Logic
         if (projectIdParam != null && !projectIdParam.isEmpty()) {
-            int projectId = Integer.parseInt(projectIdParam);
+            int projectId;
+            try {
+                projectId = Integer.parseInt(projectIdParam);
+            } catch (NumberFormatException e) {
+                // If projectId is invalid, fall back to default columns
+                result.put("columns", getDefaultColumns());
+                Gson gson = new Gson();
+                String json = gson.toJson(result);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                PrintWriter out = response.getWriter();
+                out.print(json);
+                return;
+            }
             Project project = projectDAO.getProjectById(projectId);
 
             if (project != null && project.getEtats() != null && !project.getEtats().isEmpty()) {

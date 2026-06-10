@@ -7,10 +7,12 @@ public class Task {
     private String statut;
     private String priorite;
     private int storyPoints;
+    private int position;
     private String dateCreation;
     private int idProject;
     private Integer idSprint;
     private Integer idAssignee;
+    private Integer idParent;
     private String typeTache;
 
     public Task() {
@@ -35,6 +37,9 @@ public class Task {
     public int getStoryPoints() { return storyPoints; }
     public void setStoryPoints(int storyPoints) { this.storyPoints = storyPoints; }
 
+    public int getPosition() { return position; }
+    public void setPosition(int position) { this.position = position; }
+
     public String getDateCreation() { return dateCreation; }
     public void setDateCreation(String dateCreation) { this.dateCreation = dateCreation; }
 
@@ -46,6 +51,9 @@ public class Task {
 
     public Integer getIdAssignee() { return idAssignee; }
     public void setIdAssignee(Integer idAssignee) { this.idAssignee = idAssignee; }
+
+    public Integer getIdParent() { return idParent; }
+    public void setIdParent(Integer idParent) { this.idParent = idParent; }
 
     public String getTypeTache() { return typeTache; }
     public void setTypeTache(String typeTache) { this.typeTache = typeTache; }

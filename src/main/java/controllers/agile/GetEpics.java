@@ -6,23 +6,27 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.SprintDAO;
+import structures_DAO.TaskDAO;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.Gson;
-import classes.Sprint;
 
-@WebServlet("/GetProjectSprints")
-public class GetProjectSprints extends HttpServlet {
+/**
+ * Renvoie les epics d'un projet avec leurs stories enfants et un cumul
+ * (childCount, doneCount, totalPoints, donePoints) pour la page Epics.
+ */
+@WebServlet("/GetEpics")
+public class GetEpics extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private SprintDAO sprintDAO;
+    private TaskDAO taskDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        sprintDAO = new SprintDAO();
+        taskDAO = new TaskDAO();
     }
 
     @Override
@@ -59,10 +63,10 @@ public class GetProjectSprints extends HttpServlet {
             return;
         }
 
-        List<Sprint> sprints = sprintDAO.getProjectSprints(projectId);
+        List<Map<String, Object>> epics = taskDAO.getEpics(projectId);
 
         Gson gson = new Gson();
-        String json = gson.toJson(sprints);
+        String json = gson.toJson(epics);
 
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");

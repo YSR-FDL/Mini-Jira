@@ -234,4 +234,29 @@ public class TeamDao {
 	    DBInteraction.disconnect();
 	    return nb;
 	}
+
+	/**
+	 * Returns true if the given user belongs to the team (used for RBAC:
+	 * a "Développeur" is any team member who is not Admin/SM/PO of the project).
+	 */
+	public boolean isTeamMember(int idTeam, int idUser) {
+	    if (idTeam <= 0 || idUser <= 0) return false;
+	    boolean member = false;
+	    DBInteraction.connect();
+	    String sql = "select 1 from appartenance_equipe where id_equipe = ? and id_utilisateur = ? limit 1";
+	    try {
+	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+	        ps.setInt(1, idTeam);
+	        ps.setInt(2, idUser);
+	        ResultSet rs = ps.executeQuery();
+	        member = rs.next();
+	        rs.close();
+	        ps.close();
+	    }
+	    catch(SQLException e) {
+	        e.printStackTrace();
+	    }
+	    DBInteraction.disconnect();
+	    return member;
+	}
 }
