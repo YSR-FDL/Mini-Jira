@@ -6,6 +6,8 @@
 .factorypath
 .apt_generated/
 
+bin/
+
 
 # IntelliJ IDEA
 .idea/
