@@ -19,7 +19,7 @@ out/
 
 # Build
 build/
-classes/
+/classes/
 target/
 src/main/webapp/WEB-INF/classes/
 
