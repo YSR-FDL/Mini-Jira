@@ -53,7 +53,7 @@ export default function LoginPage() {
       )
       const user = response.data
       localStorage.setItem("user", JSON.stringify(response.data));
-      navigate("/profile")
+      navigate("/dashboard")
     }
     catch(error) {
       console.error(error)

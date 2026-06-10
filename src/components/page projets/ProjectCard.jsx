@@ -49,7 +49,7 @@ export default function ProjectCard({ project }) {
       </div>
       <div className={styles.footer}>
         <span className={styles.due}>Créé le : {project.dateCreation}</span>
-        {project.archived ? (
+        {project.isArchived? (
           <button className={`${styles.openBtn} ${styles.projectCardBtnArchived}`} disabled> Archivé</button>
         ) : (
           <button className={styles.openBtn} onClick={() => {

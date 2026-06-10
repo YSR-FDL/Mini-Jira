@@ -44,7 +44,7 @@ const iconFolder = (
   </svg>
 )
 
-export default function TeamHeader({ team, onEdit, onAddMember, onDelete }) {
+export default function TeamHeader({ team, onEdit, onAddMember, onDelete, isAdmin }) {
   return (
   <>
     <div className={styles.header}>
@@ -72,21 +72,22 @@ export default function TeamHeader({ team, onEdit, onAddMember, onDelete }) {
             </span>*/}
           </div>
         </div>
-
-        <div className={styles.actions}>
-          <button className={styles.btnSecondary} onClick={onEdit}>
-            {iconEdit}
-            Modifier
-          </button>
-          <button className={styles.btnPrimary} onClick={onAddMember}>
-            {iconAdd}
-            Ajouter membre
-          </button>
-          <button className={styles.btnDanger} onClick={onDelete}>
-            {iconTrash}
-            Supprimer
-          </button>
-        </div>
+        {isAdmin && (
+          <div className={styles.actions}>
+            <button className={styles.btnSecondary} onClick={onEdit}>
+              {iconEdit}
+              Modifier
+            </button>
+            <button className={styles.btnPrimary} onClick={onAddMember}>
+              {iconAdd}
+              Ajouter membre
+            </button>
+            <button className={styles.btnDanger} onClick={onDelete}>
+              {iconTrash}
+              Supprimer
+            </button>
+          </div>
+        )}
       </div>
     </div>
   </>

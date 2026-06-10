@@ -26,6 +26,7 @@ export default function ProjectsPage() {
       const response = await axios.get(
         `http://localhost:8080/Backend_PFA/GetUserProjects?idUser=${user.id}`
       );
+      console.log(response.data)
       setProjects(response.data);
     } catch(error) {
       console.error(error);

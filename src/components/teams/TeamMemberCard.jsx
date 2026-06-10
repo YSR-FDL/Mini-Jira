@@ -48,7 +48,7 @@ const iconMail = (
   </svg>
 );
 
-export default function TeamMemberCard({ member, onViewProfile, onRemove }) {
+export default function TeamMemberCard({ member, onViewProfile, onRemove, isAdmin }) {
   return (
     <div className={styles.card}>
       <div className={styles.cardTop}>
@@ -76,12 +76,11 @@ export default function TeamMemberCard({ member, onViewProfile, onRemove }) {
         >
           {iconEye} Voir profil
         </button>
-        <button
-          className={styles.btnRemove}
-          onClick={() => onRemove && onRemove(member)}
-        >
-          {iconRemove} Retirer
-        </button>
+        {isAdmin && (
+          <button className={styles.btnRemove} onClick={() => onRemove && onRemove(member)}>
+            {iconRemove} Retirer
+          </button>
+        )}
       </div>
     </div>
   );

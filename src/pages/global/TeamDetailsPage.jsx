@@ -10,6 +10,7 @@ import ProjectCard from '../../components/page projets/ProjectCard'
 import axios from 'axios'
 import EditTeamModal from '../../components/teams/EditTeamModal'
 import AddMemberModal from "../../components/teams/AddMemberModal";
+import MemberProfileModal from '../../components/teams/MemberProfileModal'
 
 export default function TeamDetailsPage() {
   const { id } = useParams()
@@ -23,9 +24,23 @@ export default function TeamDetailsPage() {
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [toast, setToast] = useState(null);
+  const user = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = user?.type_utilisateur === 'ADMIN';
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
   const handleEdit = () => {
     setShowEditModal(true);
   };
+
+  // Voir le profil d'un membre
+  function handleViewProfile(member) {
+    setSelectedMember(member);
+  }
 
   const handleAddMembers = async (selectedMembers) => {
     try {
@@ -100,9 +115,25 @@ export default function TeamDetailsPage() {
         console.error(error);
       }
     };
-
     fetchTeam();
   }, [id]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:8080/Backend_PFA/GetProjectsByTeam?idTeam=${id}`
+        );
+        setProjects(response.data);
+        console.log("wa ta fin ra hadchi khedam")
+      }
+      catch (error) {
+        console.error(error);
+      }
+    };
+    fetchProjects();
+  }, [id]);
+
 
   // Si l'équipe n'existe pas, afficher un message d'erreur
   if (!team) {
@@ -141,20 +172,16 @@ export default function TeamDetailsPage() {
           m => m.id !== memberToRemove.id
         )
       }));
-
+      showToast("Membre retiré avec succès");
       setShowRemoveMemberConfirm(false);
       setMemberToRemove(null);
 
     }
     catch(error) {
       console.error(error);
+      showToast("Erreur lors de la suppression du membre");
     }
   };
-
-  //  Voir le profil d'un membre 
-  function handleViewProfile(member) {
-    navigate('/profile')
-  }
 
   //  Voir un projet 
   function handleViewProject(project) {
@@ -190,7 +217,7 @@ export default function TeamDetailsPage() {
         </div>
 
         {/* ── Header de l'équipe ── */}
-        <TeamHeader team={team} onEdit={handleEdit} onAddMember={openAddMemberModal} onDelete={handleDelete} />
+        <TeamHeader team={team} onEdit={handleEdit} onAddMember={openAddMemberModal} onDelete={handleDelete} isAdmin={isAdmin}/>
 
         {/* ── Section Membres ── */}
         <section className={s.section}>
@@ -210,6 +237,7 @@ export default function TeamDetailsPage() {
                     member={member}
                     onViewProfile={handleViewProfile}
                     onRemove={handleRemoveMember}
+                    isAdmin={isAdmin}
                   />
                 </div>
               ))}
@@ -234,8 +262,8 @@ export default function TeamDetailsPage() {
           {projects.length > 0 ? (
             <div className={s.projectsGrid}>
               {projects.map((project, index) => (
-                <div key={project.id} style={{ animationDelay: `${index * 0.08}s` }}>
-                  <ProjectCard project={project}/>
+                <div key={project.idProject}>
+                  <ProjectCard project={project} />
                 </div>
               ))}
             </div>
@@ -309,6 +337,17 @@ export default function TeamDetailsPage() {
             onClose={() => setShowAddMemberModal(false)}
             onAddMembers={handleAddMembers}
         />
+      )}
+      {selectedMember && (
+        <MemberProfileModal
+          member={selectedMember}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
+      {toast && (
+        <div className={`${s.toast} ${toast === "Erreur lors de la suppression du membre" ? s.toastError : ""}`}>
+          {toast}
+        </div>
       )}
     </Layout>
     {showEditModal && (
