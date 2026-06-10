@@ -150,13 +150,15 @@ export default function Settings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!isCreator && !isSM) {
-      setErrorMsg("Vous n'avez pas l'autorisation de modifier les paramètres.");
-      return;
-    }
     setIsSaving(true);
     setMessage("");
     setErrorMsg("");
+
+    if (!isCreator) {
+      setErrorMsg("Seul l'administrateur du projet peut modifier les paramètres.");
+      setIsSaving(false);
+      return;
+    }
 
     try {
       const updated = await projectService.updateProject({
@@ -254,8 +256,9 @@ export default function Settings() {
             </p>
           </div>
 
-          {/* Tab Switcher if user is both Admin (Creator) and Scrum Master (SM) */}
-          {isCreator && isSM && (
+          {/* Tab Switcher: visible to the creator (Admin) and SM. Only the
+              creator can edit; SM sees the settings in read-only. */}
+          {(isCreator || isSM) && (
             <div className="settings-tabs" style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "1px solid var(--border-light)", paddingBottom: "12px" }}>
               <button
                 type="button"
@@ -295,8 +298,8 @@ export default function Settings() {
           )}
 
           <form onSubmit={handleSave} className="settings-content">
-            {/* GENERAL TAB CONTENT (Visible to Admin/Creator only) */}
-            {activeSettingsTab === "general" && isCreator && (
+            {/* GENERAL TAB CONTENT (editable by Admin/Creator, read-only for SM) */}
+            {activeSettingsTab === "general" && (
               <>
                 {/* 1. Informations Générales */}
                 <section className="settings-section">
@@ -400,17 +403,19 @@ export default function Settings() {
                       {errorMsg}
                     </span>
                   )}
-                  <ActionBtn type="submit" variant="primary" disabled={isSaving}>
-                    {isSaving
-                      ? "Enregistrement..."
-                      : "Enregistrer les modifications"}
-                  </ActionBtn>
+                  {isCreator && (
+                    <ActionBtn type="submit" variant="primary" disabled={isSaving}>
+                      {isSaving
+                        ? "Enregistrement..."
+                        : "Enregistrer les modifications"}
+                    </ActionBtn>
+                  )}
                 </div>
               </>
             )}
 
-            {/* ACCES & MEMBRES TAB CONTENT (Visible to SM only) */}
-            {activeSettingsTab === "acces" && isSM && (
+            {/* ACCES & MEMBRES TAB CONTENT (editable by Admin/Creator, read-only for SM) */}
+            {activeSettingsTab === "acces" && (
               <>
                 {/* 1. Rôles Product Owner */}
                 <section className="settings-section">
@@ -433,7 +438,7 @@ export default function Settings() {
                             idPO: parseInt(e.target.value, 10),
                           }))
                         }
-                        disabled={!isSM}
+                        disabled={!isCreator}
                       >
                         <option value="">-- Choisir un Product Owner --</option>
                         {team && team.membres ? (
@@ -459,7 +464,7 @@ export default function Settings() {
                     Liste des membres de l'équipe assignée à ce projet.
                   </p>
 
-                  {isSM && (
+                  {isCreator && (
                     <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "12px" }}>
                       <label style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-mid)" }}>Associer/Changer d'équipe :</label>
                       <select
@@ -597,11 +602,13 @@ export default function Settings() {
                       {errorMsg}
                     </span>
                   )}
-                  <ActionBtn type="submit" variant="primary" disabled={isSaving}>
-                    {isSaving
-                      ? "Enregistrement..."
-                      : "Enregistrer les modifications"}
-                  </ActionBtn>
+                  {isCreator && (
+                    <ActionBtn type="submit" variant="primary" disabled={isSaving}>
+                      {isSaving
+                        ? "Enregistrement..."
+                        : "Enregistrer les modifications"}
+                    </ActionBtn>
+                  )}
                 </div>
               </>
             )}

@@ -39,21 +39,22 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
     { id: "backlog", label: "Backlog", icon: "list_alt" },
     { id: "board", label: "Board", icon: "dashboard" },
     { id: "epics", label: "Epics", icon: "mountain_flag" },
-    { id: "reports", label: "Reports", icon: "bar_chart" },
+    { id: "reports", label: "Reports", icon: "bar_chart", path: "/project-reports" },
     { id: "calendar", label: "Calendar", icon: "calendar_today" },
   ];
 
   return (
     <nav className="navigation-bar">
       {navItems.map((item) => {
+        const to = item.path || `/${item.id}`;
         // Détermine si le lien est actif via la route ou le fallback activeTab
         const isActive =
-          location.pathname === `/${item.id}` || activeTab === item.id;
+          location.pathname === to || activeTab === item.id;
 
         return (
           <Link
             key={item.id}
-            to={`/${item.id}`}
+            to={to}
             className={`nav-link ${isActive ? "active" : ""}`}
             onClick={() => {
               if (onTabChange) onTabChange(item.id);

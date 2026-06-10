@@ -19,18 +19,22 @@ const addDays = (dateStr, days) => {
   return formatDateInput(d);
 };
 
-const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
+const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) => {
+  const isEdit = !!sprint;
   const [isClosing, setIsClosing] = useState(false);
   const [errors, setErrors] = useState({});
 
   const today = formatDateInput(new Date());
 
   const [form, setForm] = useState({
-    name: `Sprint ${sprintCount}`,
-    goal: '',
-    startDate: today,
-    endDate: addDays(today, 14),
-    capacity: '',
+    name: sprint?.name ?? `Sprint ${sprintCount}`,
+    goal: sprint?.goal ?? '',
+    startDate: sprint?.startDate || today,
+    endDate: sprint?.endDate || addDays(sprint?.startDate || today, 14),
+    capacity:
+      sprint?.capacity === null || sprint?.capacity === undefined
+        ? ''
+        : String(sprint.capacity),
   });
 
   const nameRef = useRef(null);
@@ -92,18 +96,19 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
       return;
     }
 
-    const sprint = {
-      id: `sprint-${Date.now()}`,
+    const sprint_payload = {
+      id: isEdit ? sprint.id : `sprint-${Date.now()}`,
       name: form.name.trim(),
       goal: form.goal.trim(),
       startDate: form.startDate,
       endDate: form.endDate,
-      capacity: form.capacity ? parseInt(form.capacity) : null,
-      status: 'upcoming',
+      capacity: form.capacity === '' ? null : parseInt(form.capacity, 10),
+      status: isEdit ? sprint.status : 'upcoming',
+      idProject: isEdit ? sprint.idProject : undefined,
       issues: [],
     };
 
-    if (onSave) onSave(sprint);
+    if (onSave) onSave(sprint_payload);
     handleClose();
   };
 
@@ -120,7 +125,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
             <div className="csm-icon-wrap">
               <FiZap size={16} />
             </div>
-            <h2 className="csm-title">Créer un sprint</h2>
+            <h2 className="csm-title">{isEdit ? 'Modifier le sprint' : 'Créer un sprint'}</h2>
           </div>
           <button className="csm-close-btn" onClick={handleClose} title="Fermer (Esc)">
             <FiX size={20} />
@@ -207,6 +212,23 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
             </div>
           </div>
 
+          {/* Capacité */}
+          <div className="csm-field">
+            <label className="csm-label">
+              <FiZap size={13} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
+              Capacité (points)
+            </label>
+            <input
+              type="number"
+              min="0"
+              className={`csm-input ${errors.capacity ? 'csm-input-error' : ''}`}
+              value={form.capacity}
+              onChange={(e) => handleChange('capacity', e.target.value)}
+              placeholder="ex: 30"
+            />
+            {errors.capacity && <span className="csm-error-msg">{errors.capacity}</span>}
+          </div>
+
         </div>
 
         {/* FOOTER */}
@@ -215,7 +237,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1 }) => {
             Annuler
           </button>
           <button className="csm-btn-primary" onClick={handleSubmit}>
-            Créer le sprint
+            {isEdit ? 'Enregistrer' : 'Créer le sprint'}
           </button>
         </div>
 

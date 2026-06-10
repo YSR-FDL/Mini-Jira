@@ -109,9 +109,9 @@ export default function ProjectHeader() {
     );
   }
 
-  const isSM =
+  const isCreator =
     loggedInUser &&
-    parseInt(loggedInUser.id, 10) === parseInt(project.idSM, 10);
+    parseInt(loggedInUser.id, 10) === parseInt(project.idCreateur, 10);
   const membersList = team && team.membres ? team.membres : [];
 
   return (
@@ -176,7 +176,7 @@ export default function ProjectHeader() {
               </span>
             )}
 
-            {isSM && (
+            {isCreator && (
               <button
                 className="add-member-btn"
                 title="Associer une équipe"

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getRequesterId } from './authHelper';
 
 const API_BASE_URL = 'http://localhost:8080/Backend_PFA';
 
@@ -21,7 +22,7 @@ export const projectService = {
     },
     updateProject: async (projectData) => {
         try {
-            const response = await axiosInstance.post('/UpdateProject', projectData);
+            const response = await axiosInstance.post('/UpdateProject', { ...projectData, requesterId: getRequesterId() });
             return response.data;
         } catch (error) {
             console.error("Error updating project:", error);
@@ -32,7 +33,8 @@ export const projectService = {
         try {
             const response = await axiosInstance.post('/UpdateProjectStates', {
                 projectId: projectId,
-                etats: states
+                etats: states,
+                requesterId: getRequesterId()
             });
             return response.data;
         } catch (error) {
@@ -44,7 +46,8 @@ export const projectService = {
         try {
             const response = await axiosInstance.post('/ArchiveProject', {
                 projectId: projectId,
-                isArchived: isArchived
+                isArchived: isArchived,
+                requesterId: getRequesterId()
             });
             return response.data;
         } catch (error) {
@@ -55,7 +58,8 @@ export const projectService = {
     deleteProject: async (projectId) => {
         try {
             const response = await axiosInstance.post('/DeleteProject', {
-                projectId: projectId
+                projectId: projectId,
+                requesterId: getRequesterId()
             });
             return response.data;
         } catch (error) {
@@ -67,7 +71,8 @@ export const projectService = {
         try {
             const response = await axiosInstance.post('/AssignTeamToProject', {
                 projectId: projectId,
-                idTeam: idTeam
+                idTeam: idTeam,
+                requesterId: getRequesterId()
             });
             return response.data;
         } catch (error) {

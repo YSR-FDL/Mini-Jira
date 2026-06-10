@@ -2,8 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import ActionBtn from "../ui/ActionBtn";
 import StatusDropdown from "../ui/StatusDropdown";
 import "../../styles/Shared/TaskDetailModal.css";
-import { FiMoreHorizontal, FiX, FiAlignLeft } from "react-icons/fi";
+import { FiMoreHorizontal, FiX, FiAlignLeft, FiMessageSquare, FiTrash2, FiPlus, FiCheckSquare } from "react-icons/fi";
 import { FaBug, FaTasks, FaBookmark } from "react-icons/fa";
+import { epicService } from "../../services/epicService";
+import { commentService } from "../../services/commentService";
+import { taskService } from "../../services/taskService";
+import { resolveRoles, taskPermissions } from "../../services/roles";
 
 const TYPE_OPTIONS = [
   {
@@ -64,33 +68,61 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
   const [isClosing, setIsClosing] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
 
+  // Hiérarchie (epics) et commentaires
+  const [epics, setEpics] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
+  // Sous-tâches
+  const [subtasks, setSubtasks] = useState([]);
+  const [newSubtask, setNewSubtask] = useState("");
+
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
-  const isPO = project && currentUserId && parseInt(project.idPO, 10) === currentUserId;
-  const isSM = project && currentUserId && parseInt(project.idSM, 10) === currentUserId;
-  const isDev = currentUserId && !isSM && !isPO;
-  const isAssignedToSelf = editedTask.assignee && currentUserId && parseInt(editedTask.assignee.id, 10) === currentUserId;
+  const isEpic = (editedTask.type || "") === "Epic";
+  const isSubtask = (editedTask.type || "") === "Subtask";
+  // Une "story" est une issue standard : ni epic, ni sous-tâche.
+  const isStory = !isEpic && !isSubtask;
 
-  const canEditTitle = isPO || isSM;
-  const canEditType = isPO || isSM || (isDev && isAssignedToSelf);
-  const canEditPriority = isPO || isSM || (isDev && isAssignedToSelf);
-  const canDelete = isSM;
+  // Statuts extrêmes du workflow projet (1re / dernière colonne), utilisés pour
+  // cocher/décocher une sous-tâche.
+  const todoStatus = statusOptions[0]?.value || "todo";
+  const doneStatus = statusOptions[statusOptions.length - 1]?.value || "done";
+  const isStatusDone = (status) => {
+    const s = (status || "").toLowerCase();
+    return (
+      /(done|termin|released|closed|ferm)/.test(s) || status === doneStatus
+    );
+  };
 
-  const canEditStatus = isSM || (isDev && isAssignedToSelf);
-  const canEditDescription = isPO || isSM || (isDev && isAssignedToSelf);
-  const canEditPoints = isSM || (isDev && isAssignedToSelf);
+  // Centralised RBAC (mirrors backend utils.Rbac): controls appear per role.
+  const roles = resolveRoles(project, teamMembers, currentUserId);
+  const perms = taskPermissions(roles, editedTask);
+  const isPO = roles.isPO;
+  const isSM = roles.isSM;
+
+  const canEditTitle = perms.canEditTitle;
+  const canEditType = perms.canEditType;
+  const canEditPriority = perms.canEditPriority;
+  const canDelete = perms.canDelete;
+  const canEditStatus = perms.canEditStatus;
+  const canEditDescription = perms.canEditDescription;
+  const canEditPoints = perms.canEditPoints;
+  const canEditParent = perms.canEditParent;
+  const canManageSubtasks = perms.canManageSubtasks; // créer / supprimer sous-tâches
+  const canToggleSubtask = perms.canToggleSubtask;
+  const canEditAssignee = perms.canEditAssignee;
 
   const assigneeOptions = (() => {
-    if (isPO) {
+    if (perms.assigneeScope === "team") {
       return allUsers.filter(u => teamMembers.some(m => parseInt(m.id, 10) === parseInt(u.id, 10)));
-    } else if (isDev) {
+    } else if (perms.assigneeScope === "self") {
       const selfUser = allUsers.find(u => parseInt(u.id, 10) === currentUserId);
       return selfUser ? [selfUser] : [];
     }
     return [];
   })();
-  const canEditAssignee = isPO || isDev;
 
   useEffect(() => {
     fetch("http://localhost:8080/Backend_PFA/GetAllUsers")
@@ -143,6 +175,122 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
       })
       .catch((err) => console.error("Error fetching all users:", err));
   }, []);
+
+  // Charge les epics du projet (pour le sélecteur de parent) et les
+  // commentaires de la tâche courante.
+  useEffect(() => {
+    const rawId = localStorage.getItem("selectedProjectId");
+    const projectId =
+      rawId && rawId !== "undefined" && rawId !== "null"
+        ? parseInt(rawId, 10)
+        : 1;
+    epicService
+      .getEpics(projectId)
+      .then(setEpics)
+      .catch((err) => console.error("Error fetching epics:", err));
+  }, []);
+
+  useEffect(() => {
+    if (task && task.id !== "NEW") {
+      commentService
+        .getByTask(task.id)
+        .then(setComments)
+        .catch((err) => console.error("Error fetching comments:", err));
+    }
+  }, [task]);
+
+  // Charge les sous-tâches (enfants) d'une story existante.
+  useEffect(() => {
+    if (task && task.id !== "NEW" && isStory) {
+      epicService
+        .getChildren(task.id)
+        .then(setSubtasks)
+        .catch((err) => console.error("Error fetching subtasks:", err));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task]);
+
+  const refreshSubtasks = () => {
+    epicService
+      .getChildren(task.id)
+      .then(setSubtasks)
+      .catch((err) => console.error("Error refreshing subtasks:", err));
+  };
+
+  const handleAddSubtask = () => {
+    if (!newSubtask.trim()) return;
+    const parentRawId = parseInt(String(task.id).replace("MJ-", ""), 10);
+    taskService
+      .createDetailedTask({
+        title: newSubtask.trim(),
+        tags: ["Subtask"],
+        parentId: parentRawId,
+        sprintId: null,
+        status: todoStatus,
+      })
+      .then(() => {
+        setNewSubtask("");
+        refreshSubtasks();
+      })
+      .catch((err) => console.error("Error adding subtask:", err));
+  };
+
+  const handleToggleSubtask = (st) => {
+    const newStatus = isStatusDone(st.status) ? todoStatus : doneStatus;
+    // Mise à jour optimiste
+    setSubtasks((prev) =>
+      prev.map((s) => (s.id === st.id ? { ...s, status: newStatus } : s)),
+    );
+    // updateTaskStatus (=> /MoveTask) ne modifie que le statut : pas de risque
+    // d'écraser le type 'Subtask' ou l'assigné comme le ferait un updateTask partiel.
+    taskService
+      .updateTaskStatus(st.id, newStatus)
+      .then(refreshSubtasks)
+      .catch((err) => {
+        console.error("Error toggling subtask:", err);
+        refreshSubtasks();
+      });
+  };
+
+  const handleDeleteSubtask = (subtaskId) => {
+    taskService
+      .deleteTask(subtaskId)
+      .then(refreshSubtasks)
+      .catch((err) => console.error("Error deleting subtask:", err));
+  };
+
+  const refreshComments = () => {
+    commentService
+      .getByTask(task.id)
+      .then(setComments)
+      .catch((err) => console.error("Error refreshing comments:", err));
+  };
+
+  const handleAddComment = () => {
+    if (!newComment.trim()) return;
+    commentService
+      .add({ taskId: task.id, authorId: currentUserId, contenu: newComment.trim() })
+      .then(() => {
+        setNewComment("");
+        refreshComments();
+      })
+      .catch((err) => console.error("Error adding comment:", err));
+  };
+
+  const handleDeleteComment = (commentId) => {
+    commentService
+      .remove(commentId)
+      .then(refreshComments)
+      .catch((err) => console.error("Error deleting comment:", err));
+  };
+
+  const formatCommentDate = (raw) => {
+    if (!raw) return "";
+    const d = new Date(String(raw).replace(" ", "T"));
+    if (isNaN(d.getTime())) return raw;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
 
   // Inline editing states
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -233,6 +381,8 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
 
   const stopEditingDesc = () => {
     setIsEditingDesc(false);
+    // Persist the edited description (no-op for NEW tasks, which save on create).
+    saveChanges(editedTask);
   };
 
   if (!task) return null;
@@ -396,6 +546,185 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                   )
                 )}
               </div>
+              {/* SUBTASKS (stories only, existing) */}
+              {task.id !== "NEW" && isStory && (
+                <div className="subtasks-section">
+                  {(() => {
+                    const doneCount = subtasks.filter((s) =>
+                      isStatusDone(s.status),
+                    ).length;
+                    const total = subtasks.length;
+                    const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+                    return (
+                      <>
+                        <h3 className="section-title">
+                          <FiCheckSquare style={{ marginRight: "8px" }} />
+                          Sous-tâches{" "}
+                          {total > 0 && (
+                            <span className="subtask-counter">
+                              {doneCount}/{total}
+                            </span>
+                          )}
+                        </h3>
+
+                        {total > 0 && (
+                          <div className="subtask-progress">
+                            <div className="subtask-progress-bar">
+                              <div
+                                className="subtask-progress-fill"
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            <span className="subtask-progress-pct">{pct}%</span>
+                          </div>
+                        )}
+
+                        <div className="subtask-list">
+                          {subtasks.map((st) => {
+                            const done = isStatusDone(st.status);
+                            return (
+                              <div
+                                key={st.id}
+                                className={`subtask-item ${done ? "is-done" : ""}`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="subtask-check"
+                                  checked={done}
+                                  disabled={!canToggleSubtask}
+                                  onChange={() => handleToggleSubtask(st)}
+                                />
+                                <span className="subtask-title">{st.title}</span>
+                                {st.assignee && (
+                                  <span
+                                    className="subtask-avatar"
+                                    style={{ background: st.assignee.bgColor }}
+                                    title={st.assignee.name}
+                                  >
+                                    {st.assignee.initials}
+                                  </span>
+                                )}
+                                {canManageSubtasks && (
+                                  <button
+                                    className="subtask-delete"
+                                    title="Supprimer la sous-tâche"
+                                    onClick={() => handleDeleteSubtask(st.id)}
+                                  >
+                                    <FiTrash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {total === 0 && (
+                            <p className="subtask-empty">
+                              Aucune sous-tâche. Découpez cette issue en
+                              étapes plus petites.
+                            </p>
+                          )}
+                        </div>
+
+                        {canManageSubtasks && (
+                          <div className="subtask-add">
+                            <FiPlus className="subtask-add-icon" />
+                            <input
+                              className="subtask-add-input"
+                              placeholder="Ajouter une sous-tâche..."
+                              value={newSubtask}
+                              onChange={(e) => setNewSubtask(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleAddSubtask();
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* COMMENTS (existing tasks only) */}
+              {task.id !== "NEW" && (
+                <div className="comments-section">
+                  <h3 className="section-title">
+                    <FiMessageSquare style={{ marginRight: "8px" }} />
+                    Commentaires {comments.length > 0 && `(${comments.length})`}
+                  </h3>
+
+                  <div className="comment-list">
+                    {comments.length === 0 ? (
+                      <p className="comment-empty">
+                        Aucun commentaire pour le moment.
+                      </p>
+                    ) : (
+                      comments.map((c) => {
+                        const canDeleteComment =
+                          isSM ||
+                          (c.authorId != null && c.authorId === currentUserId);
+                        return (
+                          <div key={c.id} className="comment-item">
+                            <div
+                              className="comment-avatar"
+                              style={{
+                                backgroundColor: c.author
+                                  ? c.author.bgColor
+                                  : "var(--border-mid)",
+                              }}
+                            >
+                              {c.author ? c.author.initials : "?"}
+                            </div>
+                            <div className="comment-body">
+                              <div className="comment-head">
+                                <span className="comment-author">
+                                  {c.author ? c.author.name : "Utilisateur supprimé"}
+                                </span>
+                                <span className="comment-date">
+                                  {formatCommentDate(c.dateCreation)}
+                                </span>
+                                {canDeleteComment && (
+                                  <button
+                                    className="comment-delete"
+                                    title="Supprimer le commentaire"
+                                    onClick={() => handleDeleteComment(c.id)}
+                                  >
+                                    <FiTrash2 size={13} />
+                                  </button>
+                                )}
+                              </div>
+                              <p className="comment-text">{c.contenu}</p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="comment-compose">
+                    <textarea
+                      className="ui-input scroll"
+                      placeholder="Ajouter un commentaire..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                          handleAddComment();
+                        }
+                      }}
+                      style={{ width: "100%", minHeight: "70px", resize: "vertical" }}
+                    />
+                    <div className="comment-compose-actions">
+                      <ActionBtn
+                        variant="primary"
+                        onClick={handleAddComment}
+                        disabled={!newComment.trim()}
+                      >
+                        Commenter
+                      </ActionBtn>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* RIGHT COLUMN: Metadata */}
@@ -442,21 +771,27 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                   <div className="metadata-group">
                     <div className="metadata-label">Type</div>
                     <div className="metadata-value no-hover">
-                      <select
-                        className="ui-input"
-                        style={{ height: "32px", padding: "0 8px" }}
-                        value={editedTask.type || "Feature"}
-                        disabled={!canEditType}
-                        onChange={(e) =>
-                          handleFieldChange("type", e.target.value)
-                        }
-                      >
-                        {TYPE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
+                      {isEpic ? (
+                        <span className="type-epic-badge">EPIC</span>
+                      ) : isSubtask ? (
+                        <span className="type-subtask-badge">SOUS-TÂCHE</span>
+                      ) : (
+                        <select
+                          className="ui-input"
+                          style={{ height: "32px", padding: "0 8px" }}
+                          value={editedTask.type || "Feature"}
+                          disabled={!canEditType}
+                          onChange={(e) =>
+                            handleFieldChange("type", e.target.value)
+                          }
+                        >
+                          {TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
 
@@ -487,38 +822,45 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                         <div className="metadata-group">
                           <div className="metadata-label">Assigné à</div>
                           <div className="metadata-value">
-                            <select
-                              className="ui-input"
-                              style={{
-                                height: "32px",
-                                padding: "0 8px",
-                                width: "100%",
-                              }}
-                              value={
-                                editedTask.assignee
-                                  ? editedTask.assignee.id || ""
-                                  : ""
-                              }
-                              disabled={!canEditAssignee}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === "") {
-                                  handleFieldChange("assignee", null);
-                                } else {
-                                  const selectedUser = allUsers.find(
-                                    (u) => String(u.id) === val,
-                                  );
-                                  handleFieldChange("assignee", selectedUser || null);
+                            {canEditAssignee ? (
+                              <select
+                                className="ui-input"
+                                style={{
+                                  height: "32px",
+                                  padding: "0 8px",
+                                  width: "100%",
+                                }}
+                                value={
+                                  editedTask.assignee
+                                    ? editedTask.assignee.id || ""
+                                    : ""
                                 }
-                              }}
-                            >
-                              <option value="">Non assigné</option>
-                              {assigneeOptions.map((u) => (
-                                <option key={u.id} value={u.id}>
-                                  {u.name}
-                                </option>
-                              ))}
-                            </select>
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val === "") {
+                                    handleFieldChange("assignee", null);
+                                  } else {
+                                    const selectedUser = allUsers.find(
+                                      (u) => String(u.id) === val,
+                                    );
+                                    handleFieldChange("assignee", selectedUser || null);
+                                  }
+                                }}
+                              >
+                                <option value="">Non assigné</option>
+                                {assigneeOptions.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="metadata-readonly">
+                                {editedTask.assignee
+                                  ? editedTask.assignee.name
+                                  : "Non assigné"}
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}
@@ -538,30 +880,66 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                         </div>
                       </div>
 
+                      {/* EPIC PARENT (stories uniquement) */}
+                      {isStory && (
+                        <div className="metadata-group">
+                          <div className="metadata-label">Epic parent</div>
+                          <div className="metadata-value no-hover">
+                            <select
+                              className="ui-input"
+                              style={{ height: "32px", padding: "0 8px", width: "100%" }}
+                              value={editedTask.parentId || ""}
+                              disabled={!canEditParent}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleFieldChange(
+                                  "parentId",
+                                  val === "" ? null : parseInt(val, 10),
+                                );
+                              }}
+                            >
+                              <option value="">Aucun</option>
+                              {epics
+                                .filter((ep) => ep.id !== editedTask.id)
+                                .map((ep) => (
+                                  <option key={ep.id} value={ep.rawId}>
+                                    {ep.title}
+                                  </option>
+                                ))}
+                            </select>
+                          </div>
+                        </div>
+                      )}
+
                       {!isPO && (
                         <div className="metadata-group">
                           <div className="metadata-label">Story points</div>
                           <div className="metadata-value no-hover">
-                            <input
-                              type="number"
-                              min="0"
-                              className="ui-input"
-                              style={{
-                                minHeight: "auto",
-                                height: "32px",
-                                width: "60px",
-                                padding: "4px 8px",
-                                margin: 0,
-                              }}
-                              value={editedTask.points || 0}
-                              disabled={!canEditPoints}
-                              onChange={(e) =>
-                                handleFieldChange(
-                                  "points",
-                                  Math.max(0, parseInt(e.target.value) || 0),
-                                )
-                              }
-                            />
+                            {canEditPoints ? (
+                              <input
+                                type="number"
+                                min="0"
+                                className="ui-input"
+                                style={{
+                                  minHeight: "auto",
+                                  height: "32px",
+                                  width: "60px",
+                                  padding: "4px 8px",
+                                  margin: 0,
+                                }}
+                                value={editedTask.points || 0}
+                                onChange={(e) =>
+                                  handleFieldChange(
+                                    "points",
+                                    Math.max(0, parseInt(e.target.value) || 0),
+                                  )
+                                }
+                              />
+                            ) : (
+                              <span className="metadata-readonly">
+                                {editedTask.points || 0} pts
+                              </span>
+                            )}
                           </div>
                         </div>
                       )}

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getRequesterId } from './authHelper';
 
 const API = 'http://localhost:8080/Backend_PFA';
 
@@ -11,6 +12,7 @@ const mapSprintToFrontend = (s) => {
         startDate: s.dateDebut || '',
         endDate: s.dateFin || '',
         status: s.statut || 'a venir',
+        capacity: (s.capacite === null || s.capacite === undefined) ? null : s.capacite,
         idProject: s.idProject
     };
 };
@@ -24,7 +26,11 @@ const mapSprintToBackend = (s) => {
         dateDebut: s.startDate,
         dateFin: s.endDate,
         statut: s.status || 'a venir',
-        idProject: s.idProject || 1
+        capacite: (s.capacity === null || s.capacity === undefined || s.capacity === '')
+            ? null
+            : parseInt(s.capacity, 10),
+        idProject: s.idProject || 1,
+        requesterId: getRequesterId()
     };
 };
 
@@ -39,11 +45,16 @@ export const sprintService = {
     updateStatus: (sprintId, status) =>
         axios.post(`${API}/UpdateSprintStatus`, { 
             sprintId: parseInt(sprintId), 
-            status: status 
+            status: status,
+            requesterId: getRequesterId()
         }).then(r => r.data),
+
+    update: (sprint) =>
+        axios.post(`${API}/UpdateSprint`, mapSprintToBackend(sprint)).then(r => r.data),
 
     delete: (sprintId) =>
         axios.post(`${API}/DeleteSprint`, { 
-            sprintId: parseInt(sprintId) 
+            sprintId: parseInt(sprintId),
+            requesterId: getRequesterId()
         }).then(r => r.data),
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import styles from '../../styles/Project/ProjectCard.module.css'
 import { useNavigate } from 'react-router-dom'
+import { getRequesterId } from '../../services/authHelper'
 
 const statusColors = {
   'ARCHIVÉ':      { bg: '#EAF2FF', color: '#0052CC', border: '#B3D4FF' },
@@ -11,6 +12,8 @@ const statusColors = {
 export default function ProjectCard({ project }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const navigate = useNavigate();
+  // Workspace-level actions (edit/archive/delete) belong to the project creator (Admin).
+  const isCreator = getRequesterId() != null && parseInt(project.idCreateur, 10) === getRequesterId();
   const progress = 50;
   const progressColor = progress >= 100 ? 'var(--green)' : progress >= 50  ? 'var(--blue)' :
     progress >= 25  ? '#F79009' : 'var(--red)'
@@ -20,8 +23,10 @@ export default function ProjectCard({ project }) {
       <div className={styles.header}>
         <h3 className={styles.title}>{project.nomProjet}</h3>
         <div className={styles.menuWrapper}>
-          <button className={styles.menuBtn} onClick={() => setMenuOpen(!menuOpen)}>⋮</button>
-          {menuOpen && (
+          {isCreator && (
+            <button className={styles.menuBtn} onClick={() => setMenuOpen(!menuOpen)}>⋮</button>
+          )}
+          {isCreator && menuOpen && (
             <div className={styles.dropdown}>
               {!project.isArchived ? (
               <>

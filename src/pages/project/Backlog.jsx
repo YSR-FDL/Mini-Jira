@@ -23,6 +23,7 @@ export default function Backlog() {
 
   // Modales
   const [isSprintModalOpen, setIsSprintModalOpen] = useState(false);
+  const [editingSprint, setEditingSprint] = useState(null);
   const [isTerminateModalOpen, setIsTerminateModalOpen] = useState(false);
 
   const [search, setSearch] = useState("");
@@ -161,6 +162,25 @@ export default function Backlog() {
     });
   };
 
+  const handleEditSprint = (sprint) => {
+    setEditingSprint(sprint);
+  };
+
+  const handleUpdateSprintConfirm = (sprintData) => {
+    sprintService
+      .update(sprintData)
+      .then(() => {
+        setEditingSprint(null);
+        fetchData();
+      })
+      .catch((err) => {
+        console.error("Error updating sprint:", err);
+        const msg =
+          err?.response?.data?.error || "Impossible de modifier le sprint.";
+        alert(msg);
+      });
+  };
+
   const handleStartSprint = (sprintId) => {
     if (activeSprint) {
       alert("Impossible de démarrer, un sprint est déjà actif.");
@@ -173,6 +193,10 @@ export default function Backlog() {
       })
       .catch((err) => {
         console.error("Error starting sprint:", err);
+        const msg =
+          err?.response?.data?.error ||
+          "Impossible de démarrer le sprint.";
+        alert(msg);
       });
   };
 
@@ -192,18 +216,22 @@ export default function Backlog() {
           (t) => String(t.sprintId) === String(activeSprint.id),
         );
         const incompleteIssues = activeSprintTasks.filter(
-          (i) => i.status !== "done",
+          (i) => i.status !== columns[columns.length - 1]?.id && i.status !== "done",
         );
+
+        if (incompleteIssues.length === 0) {
+          setIsTerminateModalOpen(false);
+          fetchData();
+          return;
+        }
+
         const destSprintId =
           moveToDest === "backlog"
-            ? "backlog"
+            ? null
             : moveToDest.split("upcoming-")[1];
 
-        const promises = incompleteIssues.map((issue) => {
-          return taskService.moveTask(issue.id, destSprintId);
-        });
-
-        Promise.all(promises).then(() => {
+        const taskIds = incompleteIssues.map((issue) => issue.id);
+        taskService.batchMoveTasks(taskIds, destSprintId).then(() => {
           setIsTerminateModalOpen(false);
           fetchData();
         });
@@ -253,9 +281,13 @@ export default function Backlog() {
         fetchData();
       });
     } else {
-      taskService.updateTask(taskData.id, taskData).then(() => {
-        setSelectedTaskId(null);
-        fetchData();
+      // Auto-save from the modal: persist and update local state in place.
+      // Don't close or full-refetch, so the modal stays open while editing.
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskData.id ? { ...t, ...taskData } : t)),
+      );
+      taskService.updateTask(taskData.id, taskData).catch((err) => {
+        console.error("Error updating task:", err);
       });
     }
   };
@@ -304,20 +336,18 @@ export default function Backlog() {
 
   const handleDragEnd = (result) => {
     const { source, destination, draggableId } = result;
-    if (
-      !destination ||
-      (destination.droppableId === source.droppableId &&
-        destination.index === source.index)
-    )
-      return;
+    if (!destination) return;
 
     // RBAC check:
     if (isSM) {
       // SM can move anything
     } else if (isPO) {
-      // PO can only move unassigned tickets (droppableId is null, "null", or "backlog") and only within the backlog pool
-      const isSourceBacklog = source.droppableId === "null" || source.droppableId === "backlog";
-      const isDestBacklog = destination.droppableId === "null" || destination.droppableId === "backlog";
+      // PO can only move unassigned tickets within the backlog pool
+      const isSourceBacklog =
+        source.droppableId === "null" || source.droppableId === "backlog";
+      const isDestBacklog =
+        destination.droppableId === "null" ||
+        destination.droppableId === "backlog";
       if (!isSourceBacklog || !isDestBacklog) {
         return; // Prevent dragging
       }
@@ -326,17 +356,45 @@ export default function Backlog() {
       return;
     }
 
-    // UI Optimiste
-    const draggedTask = tasks.find((t) => t.id === draggableId);
-    if (draggedTask)
-      draggedTask.sprintId =
-        destination.droppableId === "null" || destination.droppableId === "backlog"
-          ? null
-          : parseInt(destination.droppableId);
+    const sameList = destination.droppableId === source.droppableId;
+    if (sameList && destination.index === source.index) return;
 
-    taskService
-      .moveTask(draggableId, destination.droppableId)
-      .then(() => fetchData());
+    const targetSprintId =
+      destination.droppableId === "null" || destination.droppableId === "backlog"
+        ? null
+        : parseInt(destination.droppableId, 10);
+
+    // When search/assignee filters are active, the drop index maps to a
+    // filtered subset, so we can't reliably persist absolute order. Fall back
+    // to a membership-only move in that case.
+    const filtersActive = search.trim() !== "" || activeAssignees.length > 0;
+    if (filtersActive) {
+      if (sameList) return;
+      taskService.moveTask(draggableId, destination.droppableId).then(() => fetchData());
+      return;
+    }
+
+    const norm = (s) =>
+      s === null || s === undefined || s === "null" ? null : parseInt(s, 10);
+    const inDest = (t) => norm(t.sprintId) === targetSprintId;
+
+    const dragged = tasks.find((t) => t.id === draggableId);
+    if (!dragged) return;
+    const updatedDragged = { ...dragged, sprintId: targetSprintId };
+
+    const without = tasks.filter((t) => t.id !== draggableId);
+    const destItems = without.filter(inDest);
+    destItems.splice(destination.index, 0, updatedDragged);
+    const others = without.filter((t) => !inDest(t));
+
+    // Optimistic update: new order + sprint membership.
+    setTasks([...others, ...destItems]);
+
+    const orderedIds = destItems.map((t) => t.id);
+    taskService.reorderTasks(orderedIds, targetSprintId).catch((err) => {
+      console.error("Error reordering tasks:", err);
+      fetchData();
+    });
   };
 
   // --- FILTRES ---
@@ -350,6 +408,10 @@ export default function Backlog() {
   }, [tasks]);
 
   const filteredTasks = tasks.filter((task) => {
+    // Les epics (conteneurs) et les sous-tâches (gérées dans leur story parente)
+    // ne s'affichent pas dans le backlog/sprints.
+    const type = task.tags && task.tags[0];
+    if (type === "Epic" || type === "Subtask") return false;
     const matchesSearch = task.title
       .toLowerCase()
       .includes(search.toLowerCase());
@@ -462,14 +524,15 @@ export default function Backlog() {
                 sprintTasks={sprintTasks}
                 sortConfig={sortConfig}
                 onAddTask={handleAddTask}
-                onTagChange={handleTagChange}
-                onPriorityChange={handlePriorityChange}
+                onTagChange={isPO ? handleTagChange : undefined}
+                onPriorityChange={isPO ? handlePriorityChange : undefined}
                 onTaskClick={setSelectedTaskId}
                 isSM={isSM}
                 isPO={isPO}
                 onStartClick={handleStartSprint}
                 onTerminateClick={handleOpenTerminateModal}
                 onDeleteClick={handleDeleteSprint}
+                onEditClick={handleEditSprint}
               />
             );
           })}
@@ -594,6 +657,15 @@ export default function Backlog() {
         <CreateSprintModal
           onClose={() => setIsSprintModalOpen(false)}
           onSave={handleCreateSprintConfirm}
+        />
+      )}
+
+      {/* MODALE EDITION SPRINT */}
+      {editingSprint && (
+        <CreateSprintModal
+          sprint={editingSprint}
+          onClose={() => setEditingSprint(null)}
+          onSave={handleUpdateSprintConfirm}
         />
       )}
 

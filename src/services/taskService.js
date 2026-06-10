@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getRequesterId } from './authHelper';
 
 const API_BASE_URL = 'http://localhost:8080/Backend_PFA';
 
@@ -17,7 +18,9 @@ export const taskService = {
             return response.data.map(t => ({
                 id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
-                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee, sprintId: t.idSprint !== undefined ? t.idSprint : null
+                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
+                sprintId: t.idSprint !== undefined ? t.idSprint : null,
+                parentId: t.idParent !== undefined ? t.idParent : null
             }));
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -31,7 +34,9 @@ export const taskService = {
             const formattedTasks = response.data.tasks.map(t => ({
                 id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
-                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee, sprintId: sprintId !== undefined ? sprintId : null
+                tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
+                sprintId: sprintId !== undefined ? sprintId : null,
+                parentId: t.idParent !== undefined ? t.idParent : null
             }));
             return { tasks: formattedTasks, columns: response.data.columns };
         } catch (error) {
@@ -45,10 +50,11 @@ export const taskService = {
         const rawId = localStorage.getItem('selectedProjectId');
         const currentProjectId = projectId || ((rawId && rawId !== 'undefined' && rawId !== 'null') ? parseInt(rawId, 10) : 1);
         const parsedSprintId = (sprintId === 'null' || sprintId === null) ? null : parseInt(sprintId, 10);
-        const payload = { titre: title, idSprint: parsedSprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0 };
+        const payload = { titre: title, idSprint: parsedSprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0, requesterId: getRequesterId() };
         const response = await axiosInstance.post('/CreateTask', payload);
         if (response.data.message === 'success') {
-            return { id: `MJ-TEMP-${Date.now()}`, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: parsedSprintId, points: 0, assignee: null };
+            const realId = response.data.idTask ? `MJ-${response.data.idTask}` : `MJ-TEMP-${Date.now()}`;
+            return { id: realId, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: parsedSprintId, points: 0, assignee: null };
         }
         throw new Error("Failed to create task");
     },
@@ -63,7 +69,9 @@ export const taskService = {
             statut: taskData.status || 'todo',
             priorite: taskData.priority || 'medium',
             typeTache: taskData.tags && taskData.tags.length > 0 ? taskData.tags[0] : 'Feature',
-            storyPoints: taskData.points || 0
+            storyPoints: taskData.points || 0,
+            idParent: (taskData.parentId === undefined || taskData.parentId === null || taskData.parentId === 'null') ? null : parseInt(taskData.parentId, 10),
+            requesterId: getRequesterId()
         };
         const response = await axiosInstance.post('/CreateTask', payload);
         return response.data.message === 'success';
@@ -72,7 +80,7 @@ export const taskService = {
     // --- UPDATE ---
     updateTaskStatus: async (taskId, newStatus) => {
         const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
-        const response = await axiosInstance.post('/MoveTask', { taskId: rawId, newStatus: newStatus });
+        const response = await axiosInstance.post('/MoveTask', { taskId: rawId, newStatus: newStatus, requesterId: getRequesterId() });
         return response.data.message === 'success';
     },
 
@@ -99,8 +107,17 @@ export const taskService = {
             typeTache: updatedData.tags ? updatedData.tags[0] : 'Feature', 
             storyPoints: updatedData.points,
             idSprint: (updatedData.sprintId !== undefined && updatedData.sprintId !== null && updatedData.sprintId !== 'null') ? parseInt(updatedData.sprintId, 10) : null,
-            idAssignee: idAssignee
+            idAssignee: idAssignee,
+            requesterId: getRequesterId()
         };
+        // Hiérarchie : inclure idParent uniquement s'il est explicitement fourni.
+        // null = détacher de l'epic ; absent = conserver le parent actuel (sémantique
+        // de présence côté backend).
+        if (updatedData.parentId !== undefined) {
+            payload.idParent = (updatedData.parentId === null || updatedData.parentId === 'null')
+                ? null
+                : parseInt(updatedData.parentId, 10);
+        }
         const response = await axiosInstance.post('/UpdateTask', payload);
         return response.data.message === 'success';
     },
@@ -108,7 +125,7 @@ export const taskService = {
     moveTask: async (taskId, newSprintId) => {
         const rawTaskId = parseInt(taskId.toString().replace('MJ-', ''), 10);
         const targetSprint = (newSprintId === null || newSprintId === 'null' || newSprintId === 'backlog') ? null : parseInt(newSprintId, 10);
-        const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint });
+        const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint, requesterId: getRequesterId() });
         return response.data.message === 'success';
     },
 
@@ -120,11 +137,37 @@ export const taskService = {
     deleteTask: async (taskId) => {
         try {
             const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
-            const response = await axiosInstance.post('/DeleteTask', { taskId: rawId });
+            const response = await axiosInstance.post('/DeleteTask', { taskId: rawId, requesterId: getRequesterId() });
             return response.data.message === 'success';
         } catch (error) {
             console.error("Error deleting task:", error);
             return false;
+        }
+    },
+
+    batchMoveTasks: async (taskIds, sprintId) => {
+        try {
+            const rawIds = taskIds.map(id => parseInt(id.toString().replace('MJ-', ''), 10));
+            const targetSprint = (sprintId === null || sprintId === 'null' || sprintId === 'backlog') ? null : parseInt(sprintId, 10);
+            const response = await axiosInstance.post('/BatchMoveTasksToSprint', { taskIds: rawIds, sprintId: targetSprint, requesterId: getRequesterId() });
+            return response.data;
+        } catch (error) {
+            console.error("Error batch moving tasks:", error);
+            return null;
+        }
+    },
+
+    // Persist the order of a container (backlog or sprint). taskIds is the
+    // ordered list of task ids; sprintId is the target container (null = backlog).
+    reorderTasks: async (taskIds, sprintId) => {
+        try {
+            const rawIds = taskIds.map(id => parseInt(id.toString().replace('MJ-', ''), 10));
+            const targetSprint = (sprintId === null || sprintId === 'null' || sprintId === 'backlog') ? null : parseInt(sprintId, 10);
+            const response = await axiosInstance.post('/ReorderTasks', { taskIds: rawIds, sprintId: targetSprint, requesterId: getRequesterId() });
+            return response.data;
+        } catch (error) {
+            console.error("Error reordering tasks:", error);
+            return null;
         }
     }
 };

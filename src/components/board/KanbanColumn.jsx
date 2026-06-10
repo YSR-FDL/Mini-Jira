@@ -13,6 +13,7 @@ function KanbanColumn({
   isSM,
   onDeleteColumn,
   isDragDisabled,
+  dragHandleProps,
 }) {
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
@@ -35,11 +36,13 @@ function KanbanColumn({
       {/* En-tête de la colonne */}
       <div
         className="kanban-column-header"
+        {...(dragHandleProps || {})}
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           position: "relative",
+          cursor: dragHandleProps ? "grab" : "default",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
