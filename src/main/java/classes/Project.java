@@ -101,5 +101,12 @@ public class Project {
 	}
 	public void setIdPO(int idPO) {
 		this.idPO = idPO;
-	}	
+	}
+	@Override
+	public String toString() {
+		return "Project [idProject=" + idProject + ", nomProjet=" + nomProjet + ", cle=" + cle + ", etats=" + etats
+				+ ", dateCreation=" + dateCreation + ", isArchived=" + isArchived + ", idCreateur=" + idCreateur
+				+ ", idTeam=" + idTeam + ", idSM=" + idSM + ", idPO=" + idPO + "]";
+	}
+	
 }

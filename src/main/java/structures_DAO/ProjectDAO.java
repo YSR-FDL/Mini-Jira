@@ -1,5 +1,6 @@
 package structures_DAO;
 
+import java.security.Timestamp;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -36,46 +37,46 @@ public class ProjectDAO {
 	}
 
 	public List<Project> getUserProjects(int idUser) {
-	    List<Project> projects = new ArrayList<Project>();
-	    DBInteraction.connect();
-	    String sql = "select distinct p.* from projects p left join appartenance_equipe ae on p.idTeam = ae.id_equipe "
-	    		+ "where p.idCreateur = ? or p.idSM = ? or p.idPO = ? or ae.id_utilisateur = ? order by p.date_creation desc;";
-	    try {
-	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
-	        ps.setInt(1, idUser);
-	        ps.setInt(2, idUser);
-	        ps.setInt(3, idUser);
-	        ps.setInt(4, idUser);
-	        ResultSet rs = ps.executeQuery();
-	        while(rs.next()) {
-	            Project project = new Project();
-	            project.setIdProject(rs.getInt("id_project"));
-	            project.setNomProjet(rs.getString("nom_projet"));
-	            project.setCle(rs.getString("cle"));
-	            java.sql.Date d = rs.getDate("date_creation");
-	            project.setDateCreation(d != null ? d.toString() : "");
-	            project.setIdCreateur(rs.getInt("idCreateur"));
-	            project.setArchived(rs.getBoolean("isArchived"));
-	            project.setIdTeam(rs.getInt("idTeam"));
-	            project.setIdSM(rs.getInt("idSM"));
-	            project.setIdPO(rs.getInt("idPO"));
-	            String etatsString = rs.getString("etats");
-	            if(etatsString != null && !etatsString.isEmpty()) {
-	                project.setEtats(
-	                    Arrays.asList(etatsString.split(","))
-	                );
-	            }
-	            projects.add(project);
-	        }
-	        rs.close();
-	        ps.close();
-	    }
-	    catch(SQLException e) {
-	        e.printStackTrace();
-	    } 
-	    DBInteraction.disconnect();
-	    return projects;
-	}
+		    List<Project> projects = new ArrayList<Project>();
+		    DBInteraction.connect();
+		    String sql = "select distinct p.* from projects p left join appartenance_equipe ae on p.idTeam = ae.id_equipe "
+		    		+ "where p.idCreateur = ? or p.idSM = ? or p.idPO = ? or ae.id_utilisateur = ? order by p.date_creation desc;";
+		    try {
+		        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+		        ps.setInt(1, idUser);
+		        ps.setInt(2, idUser);
+		        ps.setInt(3, idUser);
+		        ps.setInt(4, idUser);
+		        ResultSet rs = ps.executeQuery();
+		        while(rs.next()) {
+		            Project project = new Project();
+		            project.setIdProject(rs.getInt("id_project"));
+		            project.setNomProjet(rs.getString("nom_projet"));
+		            project.setCle(rs.getString("cle"));
+		            java.sql.Date d = rs.getDate("date_creation");
+		            project.setDateCreation(d != null ? d.toString() : "");
+		            project.setIdCreateur(rs.getInt("idCreateur"));
+		            project.setArchived(rs.getBoolean("isArchived"));
+		            project.setIdTeam(rs.getInt("idTeam"));
+		            project.setIdSM(rs.getInt("idSM"));
+		            project.setIdPO(rs.getInt("idPO"));
+		            String etatsString = rs.getString("etats");
+		            if(etatsString != null && !etatsString.isEmpty()) {
+		                project.setEtats(
+		                    Arrays.asList(etatsString.split(","))
+		                );
+		            }
+		            projects.add(project);
+		        }
+		        rs.close();
+		        ps.close();
+		    }
+		    catch(SQLException e) {
+		        e.printStackTrace();
+		    } 
+		    DBInteraction.disconnect();
+		    return projects;
+		}
 
 	public Project getProjectById(int projectId) {
 		Project project = null;
@@ -206,5 +207,42 @@ public class ProjectDAO {
 	    }
 	    DBInteraction.disconnect();
 	    return nb;
+	}
+
+	public List<Project> getProjectsByTeam(int idTeam) {
+	    List<Project> projects = new ArrayList<>();
+	    DBInteraction.connect();
+	    String sql = "select * from projects where idTeam = ?";
+	    try {
+	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+	        ps.setInt(1, idTeam);
+	        ResultSet rs = ps.executeQuery();
+	        while(rs.next()) {
+	            Project project = new Project();
+	            project.setIdProject(rs.getInt("id_project"));
+	            project.setNomProjet(rs.getString("nom_projet"));
+	            project.setCle(rs.getString("cle"));
+	            java.sql.Timestamp d = rs.getTimestamp("date_creation");
+	            project.setDateCreation(d != null ? d.toString() : "");
+	            project.setArchived(rs.getBoolean("isArchived"));
+	            project.setIdTeam(rs.getInt("idTeam"));
+	            project.setIdSM(rs.getInt("idSM"));
+	            project.setIdPO(rs.getInt("idPO"));
+	            project.setIdCreateur(rs.getInt("idCreateur"));
+	            projects.add(project);
+	        }
+	        rs.close();
+	        ps.close();
+	    }
+	    catch(Exception e) {
+	        e.printStackTrace();
+	    }
+	    DBInteraction.disconnect();
+	    return projects;
+	}
+	
+	public static void main(String[] args) {
+		ProjectDAO p = new ProjectDAO();
+		System.out.println(p.getProjectById(1).toString());
 	}
 }
