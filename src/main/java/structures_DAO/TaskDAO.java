@@ -536,4 +536,52 @@ public class TaskDAO {
         DBInteraction.disconnect();
         return updated;
     }
+    
+    public List<Map<String, Object>> getUserTasks(int userId) {
+        List<Map<String, Object>> tasks = new ArrayList<>();
+        DBInteraction.connect();
+        String sql =
+            "SELECT t.id_task, t.titre, t.description, t.statut, t.priorite, " +
+            "       t.story_points, t.date_creation, t.id_project, t.id_sprint, " +
+            "       t.id_assignee, t.id_parent, t.type_tache, " +
+            "       u.nom AS nom_assignee, u.prenom AS prenom_assignee, " +
+            "       p.nom_projet " +
+            "FROM tasks t " +
+            "LEFT JOIN utilisateurs u ON t.id_assignee = u.id " +
+            "LEFT JOIN projects p ON t.id_project = p.id_project " +
+            "WHERE t.id_assignee = ? " +
+            "ORDER BY t.id_project ASC, t.date_creation DESC";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, userId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Map<String, Object> map = new HashMap<>();
+                map.put("idTask", rs.getInt("id_task"));
+                map.put("titre", rs.getString("titre"));
+                map.put("description", rs.getString("description"));
+                map.put("statut", rs.getString("statut"));
+                map.put("priorite", rs.getString("priorite"));
+                map.put("storyPoints", rs.getInt("story_points"));
+                map.put("dateCreation", rs.getString("date_creation"));
+                map.put("idProject", rs.getInt("id_project"));
+                map.put("nomProjet", rs.getString("nom_projet"));
+
+                int sprintId = rs.getInt("id_sprint");
+                map.put("idSprint", rs.wasNull() ? null : sprintId);
+
+                int parentId = rs.getInt("id_parent");
+                map.put("idParent", rs.wasNull() ? null : parentId);
+
+                map.put("typeTache", rs.getString("type_tache"));
+                tasks.add(map);
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return tasks;
+    }
 }
