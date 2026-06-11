@@ -422,6 +422,66 @@
   font-size: 14px;
 }
 
+.filterRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.filterBar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-full);
+  padding: 9px 16px;
+  box-shadow: var(--shadow-sm);
+  min-width: 240px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.searchBar:focus-within {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+}
+
+.searchIcon {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13.5px;
+  color: var(--text-dark);
+  font-family: var(--font-body);
+}
+
+.searchInput::placeholder {
+  color: var(--text-light);
+}
+
+.pageHeaderRight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
