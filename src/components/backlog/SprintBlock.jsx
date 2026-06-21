@@ -122,7 +122,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
 
             {/* LISTE DES TICKETS INTERNES */}
             {isExpanded && (
-                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}>
+                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig || !(isSM || isPO)}>
                     {(provided, snapshot) => (
                         <div 
                             className="sprint-content"
@@ -140,7 +140,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                         key={task.id} 
                                         task={task} 
                                         index={index}
-                                        isDragDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}
+                                        isDragDisabled={!!sortConfig || !(isSM || isPO)}
                                         onTagChange={(newTag, tagIndex) => onTagChange && onTagChange(task.id, newTag, tagIndex)}
                                         onPriorityChange={(newPriority) => onPriorityChange && onPriorityChange(task.id, newPriority)}
                                         onClick={() => onTaskClick && onTaskClick(task.id)}

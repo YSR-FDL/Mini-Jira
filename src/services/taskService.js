@@ -10,17 +10,31 @@ const axiosInstance = axios.create({
     }
 });
 
+/** Extracts the numeric task id from a prefixed id like "CORE-14". */
+const toRawId = (id) => parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
+
+/** Returns the project key from localStorage, defaulting to 'MJ'. */
+const getProjectKey = () => {
+    try {
+        const key = localStorage.getItem('selectedProjectKey');
+        if (key && key !== 'undefined' && key !== 'null') return key;
+    } catch (e) { /* ignore */ }
+    return 'MJ';
+};
+
 export const taskService = {
     // --- READ ---
     getProjectTasks: async (projectId) => {
         try {
             const response = await axiosInstance.get(`/GetProjectTasks?projectId=${projectId}`);
+            const key = getProjectKey();
             return response.data.map(t => ({
-                id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
+                id: `${key}-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
                 sprintId: t.idSprint !== undefined ? t.idSprint : null,
-                parentId: t.idParent !== undefined ? t.idParent : null
+                parentId: t.idParent !== undefined ? t.idParent : null,
+                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null
             }));
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -31,12 +45,14 @@ export const taskService = {
     getSprintTasksAndColumns: async (sprintId, projectId) => {
         try {
             const response = await axiosInstance.get(`/GetSprintTasks?sprintId=${sprintId}&projectId=${projectId}`);
+            const key = getProjectKey();
             const formattedTasks = response.data.tasks.map(t => ({
-                id: `MJ-${t.idTask}`, title: t.titre, description: t.description,
+                id: `${key}-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
                 sprintId: sprintId !== undefined ? sprintId : null,
-                parentId: t.idParent !== undefined ? t.idParent : null
+                parentId: t.idParent !== undefined ? t.idParent : null,
+                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null
             }));
             return { tasks: formattedTasks, columns: response.data.columns };
         } catch (error) {
@@ -53,7 +69,8 @@ export const taskService = {
         const payload = { titre: title, idSprint: parsedSprintId, idProject: currentProjectId, statut: status, priorite: 'medium', typeTache: 'Feature', storyPoints: 0, requesterId: getRequesterId() };
         const response = await axiosInstance.post('/CreateTask', payload);
         if (response.data.message === 'success') {
-            const realId = response.data.idTask ? `MJ-${response.data.idTask}` : `MJ-TEMP-${Date.now()}`;
+            const key = getProjectKey();
+            const realId = response.data.idTask ? `${key}-${response.data.idTask}` : `${key}-TEMP-${Date.now()}`;
             return { id: realId, title: title, tags: ['Feature'], priority: 'medium', status: status, sprintId: parsedSprintId, points: 0, assignee: null };
         }
         throw new Error("Failed to create task");
@@ -79,13 +96,24 @@ export const taskService = {
 
     // --- UPDATE ---
     updateTaskStatus: async (taskId, newStatus) => {
-        const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const rawId = toRawId(taskId);
         const response = await axiosInstance.post('/MoveTask', { taskId: rawId, newStatus: newStatus, requesterId: getRequesterId() });
         return response.data.message === 'success';
     },
 
+    // Dépôt du livrable (lien GitHub) d'une sous-tâche par le développeur propriétaire.
+    submitDeliverable: async (taskId, deliverableLink) => {
+        const rawId = toRawId(taskId);
+        const response = await axiosInstance.post('/SubmitDeliverable', {
+            taskId: rawId,
+            lienLivrable: deliverableLink || null,
+            requesterId: getRequesterId()
+        });
+        return response.data.message === 'success';
+    },
+
     updateTask: async (taskId, updatedData) => {
-        const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const rawId = toRawId(taskId);
         
         let idAssignee = null;
         if (updatedData.assignee) {
@@ -110,9 +138,6 @@ export const taskService = {
             idAssignee: idAssignee,
             requesterId: getRequesterId()
         };
-        // Hiérarchie : inclure idParent uniquement s'il est explicitement fourni.
-        // null = détacher de l'epic ; absent = conserver le parent actuel (sémantique
-        // de présence côté backend).
         if (updatedData.parentId !== undefined) {
             payload.idParent = (updatedData.parentId === null || updatedData.parentId === 'null')
                 ? null
@@ -123,7 +148,7 @@ export const taskService = {
     },
 
     moveTask: async (taskId, newSprintId) => {
-        const rawTaskId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+        const rawTaskId = toRawId(taskId);
         const targetSprint = (newSprintId === null || newSprintId === 'null' || newSprintId === 'backlog') ? null : parseInt(newSprintId, 10);
         const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint, requesterId: getRequesterId() });
         return response.data.message === 'success';
@@ -136,7 +161,7 @@ export const taskService = {
 
     deleteTask: async (taskId) => {
         try {
-            const rawId = parseInt(taskId.toString().replace('MJ-', ''), 10);
+            const rawId = toRawId(taskId);
             const response = await axiosInstance.post('/DeleteTask', { taskId: rawId, requesterId: getRequesterId() });
             return response.data.message === 'success';
         } catch (error) {
@@ -147,7 +172,7 @@ export const taskService = {
 
     batchMoveTasks: async (taskIds, sprintId) => {
         try {
-            const rawIds = taskIds.map(id => parseInt(id.toString().replace('MJ-', ''), 10));
+            const rawIds = taskIds.map(id => toRawId(id));
             const targetSprint = (sprintId === null || sprintId === 'null' || sprintId === 'backlog') ? null : parseInt(sprintId, 10);
             const response = await axiosInstance.post('/BatchMoveTasksToSprint', { taskIds: rawIds, sprintId: targetSprint, requesterId: getRequesterId() });
             return response.data;
@@ -157,11 +182,9 @@ export const taskService = {
         }
     },
 
-    // Persist the order of a container (backlog or sprint). taskIds is the
-    // ordered list of task ids; sprintId is the target container (null = backlog).
     reorderTasks: async (taskIds, sprintId) => {
         try {
-            const rawIds = taskIds.map(id => parseInt(id.toString().replace('MJ-', ''), 10));
+            const rawIds = taskIds.map(id => toRawId(id));
             const targetSprint = (sprintId === null || sprintId === 'null' || sprintId === 'backlog') ? null : parseInt(sprintId, 10);
             const response = await axiosInstance.post('/ReorderTasks', { taskIds: rawIds, sprintId: targetSprint, requesterId: getRequesterId() });
             return response.data;

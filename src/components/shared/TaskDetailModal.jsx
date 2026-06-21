@@ -77,6 +77,10 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
 
+  // Livrable (lien GitHub) — pour les sous-tâches.
+  const [deliverableLink, setDeliverableLink] = useState(task?.deliverableLink || "");
+  const [deliverableError, setDeliverableError] = useState("");
+
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
@@ -113,6 +117,8 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
   const canManageSubtasks = perms.canManageSubtasks; // créer / supprimer sous-tâches
   const canToggleSubtask = perms.canToggleSubtask;
   const canEditAssignee = perms.canEditAssignee;
+  const canSubmitDeliverable = perms.canSubmitDeliverable;
+  const canRejectDeliverable = perms.canRejectDeliverable;
 
   const assigneeOptions = (() => {
     if (perms.assigneeScope === "team") {
@@ -219,7 +225,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
 
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
-    const parentRawId = parseInt(String(task.id).replace("MJ-", ""), 10);
+    const parentRawId = parseInt(String(task.id).replace(/^[A-Z]+-/, ""), 10);
     taskService
       .createDetailedTask({
         title: newSubtask.trim(),
@@ -257,6 +263,37 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
       .deleteTask(subtaskId)
       .then(refreshSubtasks)
       .catch((err) => console.error("Error deleting subtask:", err));
+  };
+
+  // Dépôt du livrable (lien GitHub) d'une sous-tâche.
+  const handleSubmitDeliverable = () => {
+    const link = (deliverableLink || "").trim();
+    if (link && !/^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(\/.*)?$/.test(link)) {
+      setDeliverableError("Veuillez saisir une URL GitHub valide.");
+      return;
+    }
+    setDeliverableError("");
+    taskService
+      .submitDeliverable(task.id, link)
+      .then(() => {
+        setEditedTask((prev) => ({ ...prev, deliverableLink: link || null }));
+      })
+      .catch((err) => {
+        console.error("Error submitting deliverable:", err);
+        setDeliverableError("Échec de l'enregistrement du livrable.");
+      });
+  };
+
+  const handleRejectDeliverable = () => {
+    if (window.confirm("Êtes-vous sûr de vouloir rejeter et supprimer ce livrable ?")) {
+      taskService
+        .submitDeliverable(task.id, "")
+        .then(() => {
+          setEditedTask((prev) => ({ ...prev, deliverableLink: null }));
+          setDeliverableLink("");
+        })
+        .catch((err) => console.error("Error rejecting deliverable:", err));
+    }
   };
 
   const refreshComments = () => {
@@ -546,6 +583,66 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                   )
                 )}
               </div>
+              {/* LIVRABLE (sous-tâches existantes — visible par tous, éditable par le dev propriétaire) */}
+              {task.id !== "NEW" && isSubtask && (
+                <div className="deliverable-section" style={{ marginBottom: "40px" }}>
+                  <h3 className="section-title">
+                    <svg style={{ marginRight: "8px", verticalAlign: "-2px" }} width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                    Livrable (lien GitHub)
+                  </h3>
+                  {canSubmitDeliverable ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <input
+                          className="ui-input"
+                          style={{ flex: 1, padding: "8px 12px" }}
+                          type="url"
+                          placeholder="https://github.com/utilisateur/depot..."
+                          value={deliverableLink}
+                          onChange={(e) => setDeliverableLink(e.target.value)}
+                        />
+                        <ActionBtn variant="primary" onClick={handleSubmitDeliverable}>
+                          Déposer
+                        </ActionBtn>
+                      </div>
+                      {editedTask.deliverableLink && (
+                        <a
+                          href={editedTask.deliverableLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: "var(--color-primary-blue)", wordBreak: "break-all", fontSize: "13px" }}
+                        >
+                          {editedTask.deliverableLink}
+                        </a>
+                      )}
+                      {deliverableError && (
+                        <span style={{ color: "var(--color-danger-red)", fontSize: "12px" }}>
+                          {deliverableError}
+                        </span>
+                      )}
+                    </div>
+                  ) : editedTask.deliverableLink ? (
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <a
+                        href={editedTask.deliverableLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "var(--color-primary-blue)", wordBreak: "break-all" }}
+                      >
+                        {editedTask.deliverableLink}
+                      </a>
+                      {canRejectDeliverable && (
+                        <ActionBtn variant="danger" onClick={handleRejectDeliverable}>
+                          Rejeter
+                        </ActionBtn>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="description-placeholder">Aucun livrable déposé.</span>
+                  )}
+                </div>
+              )}
+
               {/* SUBTASKS (stories only, existing) */}
               {task.id !== "NEW" && isStory && (
                 <div className="subtasks-section">

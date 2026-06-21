@@ -4,8 +4,10 @@
 // exactly the controls each role is allowed to use:
 //   - Administrateur (project creator) : workspace + role/team assignment.
 //   - Product Owner (PO)               : Epics CRUD, Story scope, backlog order.
-//   - Scrum Master (SM)                : Sprints, assignment, estimates, board.
-//   - Développeur (Dev)                : own sub-tasks + own stories on the board.
+//   - Scrum Master (SM)                : Sprints, sprint↔backlog moves, board.
+//                                        Does NOT assign or estimate (Agile).
+//   - Développeur (Dev)                : pull-assign, collective estimation,
+//                                        collective board movement, own sub-tasks.
 import { getRequesterId } from "./authHelper";
 
 const toInt = (v) => (v === null || v === undefined || v === "" ? null : parseInt(v, 10));
@@ -76,10 +78,14 @@ const devOwns = (roles, task, parentTask) => {
 
 // ── Project-level predicates ─────────────────────────────────────────────
 export const canManageSprints = (roles) => !!roles && roles.isSM;
+// Sprint Goal (objectif) — SM or PO (RACI: Define Sprint Goals PO=R, SM=RA).
+export const canEditSprintGoal = (roles) => !!roles && (roles.isSM || roles.isPO);
 export const canCreateEpic = (roles) => !!roles && roles.isPO;
 export const canManageEpics = (roles) => !!roles && roles.isPO; // create/attach/detach/delete
 export const canCreateStory = (roles) => !!roles && roles.isPO;
 export const canReorderBacklog = (roles) => !!roles && (roles.isSM || roles.isPO);
+// Sprint backlog placement (assign a story to a sprint / backlog) — SM or PO.
+export const canAssignStoryToSprint = (roles) => !!roles && (roles.isSM || roles.isPO);
 export const canEditProjectSettings = (roles) => !!roles && roles.isAdmin;
 export const canArchiveOrDeleteProject = (roles) => !!roles && roles.isAdmin;
 export const canAssignTeamOrRoles = (roles) => !!roles && roles.isAdmin;
@@ -88,14 +94,19 @@ export const canAssignTeamOrRoles = (roles) => !!roles && roles.isAdmin;
 export const canCreateSubtaskUnder = (roles, parentStory) =>
   !!roles && roles.isDev && assigneeId(parentStory) === roles.userId;
 
+/** Can this user submit the deliverable (GitHub link) of the given sub-task? */
+export const canSubmitDeliverable = (roles, subtask, parentTask) =>
+  !!roles && roles.isDev && taskType(subtask) === "Subtask" && devOwns(roles, subtask, parentTask);
+
 /** Can this user move the given task on the board (status change)? */
 export const canMoveOnBoard = (roles, task, parentTask) => {
   if (!roles) return false;
   const type = taskType(task);
   if (type === "Epic") return roles.isPO;
-  if (type === "Subtask") return roles.isDev && devOwns(roles, task, parentTask);
+  // Responsabilité collective : tout Dev peut déplacer n'importe quel ticket.
+  if (type === "Subtask") return roles.isDev;
   // Story
-  return roles.isSM || (roles.isDev && assigneeId(task) === roles.userId);
+  return roles.isSM || roles.isDev;
 };
 
 /**
@@ -118,6 +129,8 @@ export const taskPermissions = (roles, task, parentTask) => {
     canDelete: false,
     canManageSubtasks: false,
     canToggleSubtask: false,
+    canSubmitDeliverable: false,
+    canRejectDeliverable: false,
     assigneeScope: "none", // 'team' | 'self' | 'none'
   };
   if (!roles || !roles.isMember) return none;
@@ -136,6 +149,7 @@ export const taskPermissions = (roles, task, parentTask) => {
 
   if (type === "Subtask") {
     const owns = roles.isDev && devOwns(roles, task, parentTask);
+    const po = roles.isPO;
     return {
       ...none,
       canEditTitle: owns,
@@ -146,6 +160,8 @@ export const taskPermissions = (roles, task, parentTask) => {
       canEditAssignee: owns,
       canDelete: owns,
       canToggleSubtask: owns,
+      canSubmitDeliverable: owns,
+      canRejectDeliverable: po,
       assigneeScope: owns ? "self" : "none",
     };
   }
@@ -161,12 +177,13 @@ export const taskPermissions = (roles, task, parentTask) => {
     canEditType: roles.isPO,
     canEditPriority: roles.isPO,
     canEditParent: roles.isPO,
-    // Estimation & board → Scrum Master / owning Dev.
-    canEditPoints: roles.isSM,
-    canEditStatus: roles.isSM || (roles.isDev && ownsStory),
-    // Assignment → Scrum Master (team) or Dev self-pull on an unassigned story.
-    canEditAssignee: roles.isSM || (roles.isDev && unassigned),
-    assigneeScope: roles.isSM ? "team" : roles.isDev && unassigned ? "self" : "none",
+    // Estimation → Développeurs (estimation collective en Sprint Planning).
+    canEditPoints: roles.isDev,
+    // Board → SM ou tout Dev (responsabilité collective).
+    canEditStatus: roles.isSM || roles.isDev,
+    // Assignment → Système pull : Dev s'auto-assigne ou se désassigne.
+    canEditAssignee: roles.isDev && (unassigned || ownsStory),
+    assigneeScope: roles.isDev && (unassigned || ownsStory) ? "self" : "none",
     // Deletion → Scrum Master or Product Owner.
     canDelete: roles.isSM || roles.isPO,
     // Sub-tasks belong to the Dev who owns the story.

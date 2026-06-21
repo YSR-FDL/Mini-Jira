@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API = 'http://localhost:8080/Backend_PFA';
 
-const toRawId = (id) => parseInt(String(id).replace('MJ-', ''), 10);
+const toRawId = (id) => parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
 
 const mapComment = (c) => ({
     id: c.idCommentaire,

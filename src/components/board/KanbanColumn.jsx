@@ -7,6 +7,7 @@ function KanbanColumn({
   title,
   status,
   tasks,
+  allTasks,
   onAddTask,
   onTaskClick,
   isPO,
@@ -158,6 +159,7 @@ function KanbanColumn({
                 index={index}
                 isDragDisabled={isDragDisabled}
                 onClick={() => onTaskClick && onTaskClick(task.id)}
+                allTasks={allTasks}
               />
             ))}
 
