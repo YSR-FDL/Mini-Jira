@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import StoryRow from './StoryRow';
 
-export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick, onEditClick }) {
+export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick, onEditClick, columns = [] }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -39,12 +39,18 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
     const totalPoints = sprintTasks.reduce((sum, task) => sum + (task.points || 0), 0);
 
     // 2. Sommer les Story Points des tâches terminées uniquement
+    const doneStatusId = columns && columns.length > 0 ? columns[columns.length - 1].id : 'done';
     const donePoints = sprintTasks
-        .filter(task => task.status === 'done')
+        .filter(task => task.status === doneStatusId || task.status === 'done')
         .reduce((sum, task) => sum + (task.points || 0), 0);
 
-    // 3. Remplir en pourcentage pour la jauge CSS
-    const progressPercent = totalPoints === 0 ? 0 : Math.round((donePoints / totalPoints) * 100);
+    let progressPercent = 0;
+    if (totalPoints > 0) {
+        progressPercent = Math.round((donePoints / totalPoints) * 100);
+    } else if (sprintTasks.length > 0) {
+        const doneTasksCount = sprintTasks.filter(task => task.status === doneStatusId || task.status === 'done').length;
+        progressPercent = Math.round((doneTasksCount / sprintTasks.length) * 100);
+    }
 
     return (
         <div className="sprint-block">
@@ -101,7 +107,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                     {!isBacklog && isSM && (sprint.status === 'active' || sprint.status === 'actif') && (
                         <button className="btn-xs" onClick={() => onTerminateClick && onTerminateClick(sprint.id)}>Terminer le sprint</button>
                     )}
-                    {!isBacklog && isSM && (
+                    {!isBacklog && (isSM || isPO) && (
                         <div style={{ position: 'relative' }}>
                             <button className="btn-xs" onClick={() => setMenuOpen(!menuOpen)}>•••</button>
                             {menuOpen && (
@@ -112,7 +118,9 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                     display: 'flex', flexDirection: 'column', width: '120px'
                                 }}>
                                     <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer' }} onClick={() => { setMenuOpen(false); onEditClick && onEditClick(sprint); }}>Modifier le sprint</span>
-                                    <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--color-danger-red)' }} onClick={() => { setMenuOpen(false); onDeleteClick && onDeleteClick(sprint.id); }}>Supprimer le sprint</span>
+                                    {isSM && (
+                                        <span style={{ padding: '8px 12px', fontSize: '12px', cursor: 'pointer', color: 'var(--color-danger-red)' }} onClick={() => { setMenuOpen(false); onDeleteClick && onDeleteClick(sprint.id); }}>Supprimer le sprint</span>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -122,7 +130,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
 
             {/* LISTE DES TICKETS INTERNES */}
             {isExpanded && (
-                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}>
+                <Droppable droppableId={sprint.id} isDropDisabled={!!sortConfig || !(isSM || isPO)}>
                     {(provided, snapshot) => (
                         <div 
                             className="sprint-content"
@@ -140,7 +148,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                         key={task.id} 
                                         task={task} 
                                         index={index}
-                                        isDragDisabled={!!sortConfig || (!isSM && (!isPO || !isBacklog))}
+                                        isDragDisabled={!!sortConfig || !(isSM || isPO)}
                                         onTagChange={(newTag, tagIndex) => onTagChange && onTagChange(task.id, newTag, tagIndex)}
                                         onPriorityChange={(newPriority) => onPriorityChange && onPriorityChange(task.id, newPriority)}
                                         onClick={() => onTaskClick && onTaskClick(task.id)}

@@ -66,6 +66,11 @@ export default function Board() {
         }
         setProject(projectData);
 
+        // Store the project key for task ID formatting.
+        if (projectData && projectData.cle) {
+          localStorage.setItem('selectedProjectKey', projectData.cle);
+        }
+
         // Fetch team members
         if (projectData && projectData.idTeam > 0) {
           try {
@@ -152,15 +157,8 @@ export default function Board() {
     const { source, destination, draggableId } = result;
     if (!canDragOnBoard) return;
 
-    // Developer can only transition tasks assigned to themselves
-    if (isDev) {
-      const draggedTask = tasks.find((t) => t.id === draggableId);
-      const isAssignedToMe = draggedTask && draggedTask.assignee && parseInt(draggedTask.assignee.id, 10) === currentUserId;
-      if (!isAssignedToMe) {
-        alert("Vous ne pouvez déplacer que les tickets qui vous sont assignés.");
-        return;
-      }
-    }
+    // Responsabilité collective : tout Dev peut déplacer n'importe quel
+    // ticket de l'équipe sur le board (principe Agile).
 
     if (
       !destination ||
@@ -191,7 +189,7 @@ export default function Board() {
 
   const handleAddTask = (statusId, title) => {
     if (!activeSprint || !title.trim()) return;
-    const tempId = `MJ-TEMP-${Date.now()}`;
+    const tempId = `${(localStorage.getItem('selectedProjectKey') || 'MJ')}-TEMP-${Date.now()}`;
     const optimisticTask = {
       id: tempId,
       title,
@@ -328,6 +326,11 @@ export default function Board() {
 
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
+      // Sub-tasks don't appear as cards on the board — they're shown as
+      // progress indicators on their parent story's card.
+      const type = task.tags && task.tags[0];
+      if (type === "Subtask") return false;
+
       const matchesSearch =
         search === "" ||
         task.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -446,6 +449,7 @@ export default function Board() {
                           title={col.title}
                           status={col.id}
                           tasks={activeTasks.filter((t) => t.status === col.id)}
+                          allTasks={tasks}
                           onAddTask={handleAddTask}
                           onTaskClick={setSelectedTaskId}
                           isPO={isPO}
@@ -521,6 +525,7 @@ export default function Board() {
       </div>
        {selectedTaskId && (
         <TaskDetailModal
+          key={selectedTaskId}
           task={
             selectedTaskId === "NEW"
               ? {
@@ -535,6 +540,12 @@ export default function Board() {
               : tasks.find((t) => t.id === selectedTaskId)
           }
           onClose={() => setSelectedTaskId(null)}
+          onOpenTask={(id, taskObj) => {
+            if (taskObj && !tasks.find(t => t.id === id)) {
+               setTasks(prev => [...prev, taskObj]);
+            }
+            setSelectedTaskId(id);
+          }}
           onSave={
             selectedTaskId === "NEW"
               ? (taskData) => {

@@ -58,6 +58,11 @@ export default function Backlog() {
       setTasks(tasksData);
       setProject(projectData);
 
+      // Store the project key for task ID formatting.
+      if (projectData && projectData.cle) {
+        localStorage.setItem('selectedProjectKey', projectData.cle);
+      }
+
       // Fetch team members
       if (projectData && projectData.idTeam > 0) {
         try {
@@ -339,20 +344,11 @@ export default function Backlog() {
     if (!destination) return;
 
     // RBAC check:
-    if (isSM) {
-      // SM can move anything
-    } else if (isPO) {
-      // PO can only move unassigned tickets within the backlog pool
-      const isSourceBacklog =
-        source.droppableId === "null" || source.droppableId === "backlog";
-      const isDestBacklog =
-        destination.droppableId === "null" ||
-        destination.droppableId === "backlog";
-      if (!isSourceBacklog || !isDestBacklog) {
-        return; // Prevent dragging
-      }
+    if (isSM || isPO) {
+      // SM et PO finalisent le sprint backlog : ils peuvent déplacer les stories
+      // entre le backlog et les sprints (RACI : PO=R, SM=A).
     } else {
-      // Dev and Admin cannot drag at all in Backlog
+      // Dev et Admin ne peuvent pas réorganiser le backlog/sprints.
       return;
     }
 
@@ -533,6 +529,7 @@ export default function Backlog() {
                 onTerminateClick={handleOpenTerminateModal}
                 onDeleteClick={handleDeleteSprint}
                 onEditClick={handleEditSprint}
+                columns={columns}
               />
             );
           })}
@@ -629,6 +626,7 @@ export default function Backlog() {
       {/* MODALE TICKET */}
       {selectedTaskId && (
         <TaskDetailModal
+          key={selectedTaskId}
           task={
             selectedTaskId === "NEW"
               ? {
@@ -643,6 +641,12 @@ export default function Backlog() {
               : tasks.find((t) => t.id === selectedTaskId)
           }
           onClose={() => setSelectedTaskId(null)}
+          onOpenTask={(id, taskObj) => {
+            if (taskObj && !tasks.find(t => t.id === id)) {
+               setTasks(prev => [...prev, taskObj]);
+            }
+            setSelectedTaskId(id);
+          }}
           onSave={handleSaveDetailedTask}
           onDelete={handleDeleteTask}
           columns={columns}
@@ -657,6 +661,8 @@ export default function Backlog() {
         <CreateSprintModal
           onClose={() => setIsSprintModalOpen(false)}
           onSave={handleCreateSprintConfirm}
+          isPO={isPO}
+          isSM={isSM}
         />
       )}
 
@@ -666,6 +672,8 @@ export default function Backlog() {
           sprint={editingSprint}
           onClose={() => setEditingSprint(null)}
           onSave={handleUpdateSprintConfirm}
+          isPO={isPO}
+          isSM={isSM}
         />
       )}
 
