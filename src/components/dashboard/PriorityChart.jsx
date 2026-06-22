@@ -9,7 +9,6 @@ import {
   Cell,
 } from "recharts";
 import { AlertTriangle } from "lucide-react";
-import { taskPriorityData } from "../../data/dashboardMockData";
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -35,7 +34,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function PriorityChart() {
+export default function PriorityChart({ taskPriorityData = [] }) {
   return (
     <div className="card">
       <div className="cardHeader">

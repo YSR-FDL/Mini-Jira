@@ -525,6 +525,7 @@ export default function Board() {
       </div>
        {selectedTaskId && (
         <TaskDetailModal
+          key={selectedTaskId}
           task={
             selectedTaskId === "NEW"
               ? {
@@ -539,6 +540,12 @@ export default function Board() {
               : tasks.find((t) => t.id === selectedTaskId)
           }
           onClose={() => setSelectedTaskId(null)}
+          onOpenTask={(id, taskObj) => {
+            if (taskObj && !tasks.find(t => t.id === id)) {
+               setTasks(prev => [...prev, taskObj]);
+            }
+            setSelectedTaskId(id);
+          }}
           onSave={
             selectedTaskId === "NEW"
               ? (taskData) => {

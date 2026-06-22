@@ -1,29 +1,41 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { CheckSquare } from "lucide-react";
-import { recentTasks } from "../../data/dashboardMockData";
 
 function PriorityBadge({ priority }) {
+  const p = (priority || "").toLowerCase();
   const map = {
-    LOW: { label: "Low", cls: "badge badgeLow" },
-    MEDIUM: { label: "Medium", cls: "badge badgeMedium" },
-    HIGH: { label: "High", cls: "badge badgeHigh" },
-    CRITICAL: { label: "Critical", cls: "badge badgeCritical" },
+    low: { label: "Low", cls: "badge badgeLow" },
+    medium: { label: "Medium", cls: "badge badgeMedium" },
+    high: { label: "High", cls: "badge badgeHigh" },
+    critical: { label: "Critical", cls: "badge badgeCritical" },
   };
-  const { label, cls } = map[priority] || map["LOW"];
+  const { label, cls } = map[p] || { label: priority || "—", cls: "badge badgeLow" };
   return <span className={cls}>{label}</span>;
 }
 
 function StatusBadge({ status }) {
-  const map = {
-    "À FAIRE": { label: "À Faire", cls: "badge badgeTodo" },
-    "EN COURS": { label: "En Cours", cls: "badge badgeInProgress" },
-    TERMINÉ: { label: "Terminé", cls: "badge badgeDone" },
-  };
-  const { label, cls } = map[status] || map["À FAIRE"];
+  const s = (status || "").toLowerCase();
+  let label = status || "—";
+  let cls = "badge badgeTodo";
+
+  if (s.includes("termin") || s.includes("done") || s.includes("releas")) {
+    label = "Terminé";
+    cls = "badge badgeDone";
+  } else if (s.includes("cours") || s.includes("progress") || s.includes("test") || s.includes("revue") || s.includes("review")) {
+    label = "En Cours";
+    cls = "badge badgeInProgress";
+  } else {
+    label = "À Faire";
+    cls = "badge badgeTodo";
+  }
+
   return <span className={cls}>{label}</span>;
 }
 
-export default function RecentTasks() {
+export default function RecentTasks({ recentTasks = [] }) {
+  const navigate = useNavigate();
+
   return (
     <div className="card">
       <div className="cardHeader">
@@ -31,7 +43,7 @@ export default function RecentTasks() {
           <CheckSquare size={15} />
           Mes Tâches Récentes
         </span>
-        <button className="cardAction">Voir tout</button>
+        <button className="cardAction" onClick={() => navigate("/tasks")}>Voir tout</button>
       </div>
 
       <table className="tasksTable">
@@ -60,7 +72,7 @@ export default function RecentTasks() {
                 <StatusBadge status={task.status} />
               </td>
               <td style={{ color: "var(--text-faint)", fontSize: "12px", whiteSpace: "nowrap" }}>
-                {task.deadline}
+                {task.deadline || "—"}
               </td>
             </tr>
           ))}

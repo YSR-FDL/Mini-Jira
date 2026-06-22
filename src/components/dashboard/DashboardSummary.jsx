@@ -6,7 +6,6 @@ import {
   AlertCircle,
   BarChart2,
 } from "lucide-react";
-import { globalSummary } from "../../data/dashboardMockData";
 
 const SUMMARY_ITEMS = [
   {
@@ -43,7 +42,7 @@ const SUMMARY_ITEMS = [
   },
 ];
 
-export default function DashboardSummary() {
+export default function DashboardSummary({ globalSummary = {} }) {
   return (
     <div className="card" style={{ marginBottom: 0 }}>
       <div className="cardHeader">

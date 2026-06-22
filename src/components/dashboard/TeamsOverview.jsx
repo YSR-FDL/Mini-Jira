@@ -1,6 +1,6 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { UsersRound } from "lucide-react";
-import { myTeams } from "../../data/dashboardMockData";
 
 function getTeamInitials(name) {
   return name
@@ -11,7 +11,9 @@ function getTeamInitials(name) {
     .join("");
 }
 
-export default function TeamsOverview() {
+export default function TeamsOverview({ myTeams = [] }) {
+  const navigate = useNavigate();
+
   return (
     <div className="card">
       <div className="cardHeader">
@@ -19,7 +21,7 @@ export default function TeamsOverview() {
           <UsersRound size={15} />
           Mes Équipes
         </span>
-        <button className="cardAction">Voir tout</button>
+        <button className="cardAction" onClick={() => navigate("/teams")}>Voir tout</button>
       </div>
 
       <div className="teamsList">

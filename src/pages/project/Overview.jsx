@@ -6,6 +6,7 @@ import "../../styles/Project/Overview.css";
 import ActionBtn from "../../components/ui/ActionBtn";
 import axios from "axios";
 import { projectService } from "../../services/projectService";
+import { activityService } from "../../services/activityService";
 
 // Static fallback for members and activities to keep visual richness
 const fallbackMembers = [
@@ -58,6 +59,7 @@ export default function Overview() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState([]);
+  const [activities, setActivities] = useState([]);
 
   useEffect(() => {
     const rawId = localStorage.getItem("selectedProjectId");
@@ -126,9 +128,12 @@ export default function Overview() {
       }
     };
 
-    Promise.all([fetchMetrics, fetchMembers()])
-      .then(([res]) => {
+    const fetchActivities = activityService.getProjectActivities(projectId);
+
+    Promise.all([fetchMetrics, fetchMembers(), fetchActivities])
+      .then(([res, _membersRes, actsRes]) => {
         setData(res);
+        setActivities(actsRes);
         setLoading(false);
       })
       .catch((err) => {
@@ -183,12 +188,36 @@ export default function Overview() {
     distribution,
     totalCompleted,
     totalIssues,
+    totalPoints,
+    completedPoints,
   } = activeSprintSummary;
-  const progressPercent =
-    totalIssues === 0 ? 0 : Math.round((totalCompleted / totalIssues) * 100);
+  
+  // Helper to map statuses to specific colors
+  const getStatusColor = (statusName) => {
+    const s = statusName.toLowerCase();
+    if (s.includes('faire') || s.includes('todo')) return '#cbd5e1'; // gray
+    if (s.includes('cours') || s.includes('progress')) return '#3b82f6'; // blue
+    if (s.includes('revue') || s.includes('review') || s.includes('test')) return '#f59e0b'; // orange
+    if (s.includes('terminé') || s.includes('done') || s.includes('termine')) return '#10b981'; // green
+    return '#94a3b8'; // default gray
+  };
 
   // Build distribution display from dynamic keys
   const distributionEntries = distribution ? Object.entries(distribution) : [];
+
+  // Sort distribution entries logically
+  const statusOrder = {
+    'à faire': 1, 'todo': 1,
+    'en cours': 2, 'in progress': 2,
+    'en revue': 3, 'review': 3, 'test': 3,
+    'terminé': 4, 'done': 4
+  };
+
+  const sortedDistribution = [...distributionEntries].sort((a, b) => {
+    const orderA = statusOrder[a[0].toLowerCase()] || 99;
+    const orderB = statusOrder[b[0].toLowerCase()] || 99;
+    return orderA - orderB;
+  });
 
   const byType = data.byType || [];
   const byPriority = data.byPriority || [];
@@ -244,34 +273,48 @@ export default function Overview() {
             <div className="sprint-stats-header">
               <span className="stat-text">Progression</span>
               <span className="stat-ratio">
-                {totalCompleted} / {totalIssues} issues terminées
+                {totalPoints > 0 
+                  ? `${completedPoints} / ${totalPoints} points terminés`
+                  : `${totalCompleted} / ${totalIssues} issues terminées`
+                }
               </span>
             </div>
             <div className="pbar-wrap overview-pbar">
-              <div className="pbar-bg">
-                <div
-                  className="pbar-fill"
-                  style={{ width: `${progressPercent}%` }}
-                ></div>
+              <div className="pbar-bg" style={{ display: 'flex', overflow: 'hidden' }}>
+                {sortedDistribution.map(([status, count]) => {
+                  const width = totalIssues > 0 ? (count / totalIssues) * 100 : 0;
+                  if (width === 0) return null;
+                  return (
+                    <div
+                      key={status}
+                      style={{
+                        width: `${width}%`,
+                        backgroundColor: getStatusColor(status),
+                        height: '100%',
+                        transition: 'width 0.5s ease-in-out'
+                      }}
+                      title={`${status}: ${count}`}
+                    ></div>
+                  );
+                })}
               </div>
             </div>
             <div className="sprint-distribution">
-              {distributionEntries.length > 0 ? (
-                distributionEntries.map(([status, count], idx) => (
+              {sortedDistribution.length > 0 ? (
+                sortedDistribution.map(([status, count]) => (
                   <span key={status} className="dist-item">
-                    <span className={`dot dot-status-${idx}`} style={{
-                      backgroundColor: idx === distributionEntries.length - 1 ? '#10b981' : 
-                        idx === 0 ? '#3b82f6' : '#f59e0b'
+                    <span className="dot" style={{
+                      backgroundColor: getStatusColor(status)
                     }}></span> {status} ({count})
                   </span>
                 ))
               ) : (
                 <>
                   <span className="dist-item">
-                    <span className="dot dot-todo"></span> À faire (0)
+                    <span className="dot dot-todo" style={{ backgroundColor: '#cbd5e1' }}></span> À faire (0)
                   </span>
                   <span className="dist-item">
-                    <span className="dot dot-done"></span> Terminé (0)
+                    <span className="dot dot-done" style={{ backgroundColor: '#10b981' }}></span> Terminé (0)
                   </span>
                 </>
               )}
@@ -359,25 +402,41 @@ export default function Overview() {
           <section className="overview-section activity-section">
             <h2 className="section-title">Activité récente</h2>
             <div className="activity-timeline">
-              {fallbackActivity.map((event) => (
-                <div key={event.id} className="timeline-item">
-                  <div
-                    className="timeline-avatar"
-                    style={{ backgroundColor: event.bgColor }}
-                  >
-                    {event.initials}
+              {activities.length > 0 ? activities.map((event) => {
+                let actionText = "";
+                let suffixText = "";
+                switch (event.actionType) {
+                  case "CREATED_TASK": actionText = "a créé la tâche"; break;
+                  case "STATUS_CHANGE": actionText = "a déplacé la tâche"; suffixText = ` vers ${event.newValue}`; break;
+                  case "ASSIGNEE_CHANGE": actionText = "a réassigné la tâche"; break;
+                  case "SPRINT_CHANGE": actionText = "a changé le sprint de"; break;
+                  case "POINTS_UPDATE": actionText = "a estimé les points de"; suffixText = ` à ${event.newValue}`; break;
+                  case "DELIVERABLE_SUBMIT": actionText = "a mis à jour le livrable de"; break;
+                  default: actionText = "a modifié la tâche"; break;
+                }
+
+                return (
+                  <div key={event.id} className="timeline-item">
+                    <div
+                      className="timeline-avatar"
+                      style={{ backgroundColor: event.user.bgColor || "#ef9f27", color: "#FFF" }}
+                    >
+                      {event.user.initials}
+                    </div>
+                    <div className="timeline-content">
+                      <p className="timeline-text">
+                        <span className="timeline-name">{event.user.name}</span>{" "}
+                        {actionText}{" "}
+                        <span className="timeline-issue">{event.taskTitle}</span>
+                        {suffixText}
+                      </p>
+                      <span className="timeline-time">{new Date(event.dateCreation).toLocaleString("fr-FR")}</span>
+                    </div>
                   </div>
-                  <div className="timeline-content">
-                    <p className="timeline-text">
-                      <span className="timeline-name">{event.name}</span>{" "}
-                      {event.action}{" "}
-                      <span className="timeline-issue">{event.issueName}</span>
-                      {event.targetState && ` vers ${event.targetState}`}
-                    </p>
-                    <span className="timeline-time">{event.time}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              }) : (
+                <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Aucune activité récente.</p>
+              )}
             </div>
           </section>
 

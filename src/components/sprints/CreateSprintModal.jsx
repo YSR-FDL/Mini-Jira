@@ -19,8 +19,9 @@ const addDays = (dateStr, days) => {
   return formatDateInput(d);
 };
 
-const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) => {
+const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null, isPO, isSM }) => {
   const isEdit = !!sprint;
+  const disableNonGoal = isEdit && isPO && !isSM;
   const [isClosing, setIsClosing] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -40,11 +41,11 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
   const nameRef = useRef(null);
 
   useEffect(() => {
-    if (nameRef.current) {
+    if (nameRef.current && !disableNonGoal) {
       nameRef.current.focus();
       nameRef.current.select();
     }
-  }, []);
+  }, [disableNonGoal]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -71,6 +72,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
   };
 
   const applyPreset = (days) => {
+    if (disableNonGoal) return;
     const end = addDays(form.startDate, days);
     setForm((prev) => ({ ...prev, endDate: end }));
   };
@@ -147,6 +149,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
               value={form.name}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="ex: Sprint 3"
+              disabled={disableNonGoal}
             />
             {errors.name && <span className="csm-error-msg">{errors.name}</span>}
           </div>
@@ -174,18 +177,20 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
             </label>
 
             {/* Presets */}
-            <div className="csm-presets">
-              {DURATION_PRESETS.map((p) => (
-                <button
-                  key={p.days}
-                  type="button"
-                  className="csm-preset-btn"
-                  onClick={() => applyPreset(p.days)}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
+            {!disableNonGoal && (
+              <div className="csm-presets">
+                {DURATION_PRESETS.map((p) => (
+                  <button
+                    key={p.days}
+                    type="button"
+                    className="csm-preset-btn"
+                    onClick={() => applyPreset(p.days)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="csm-date-row">
               <div className="csm-date-field">
@@ -195,6 +200,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
                   className={`csm-input ${errors.startDate ? 'csm-input-error' : ''}`}
                   value={form.startDate}
                   onChange={(e) => handleChange('startDate', e.target.value)}
+                  disabled={disableNonGoal}
                 />
                 {errors.startDate && <span className="csm-error-msg">{errors.startDate}</span>}
               </div>
@@ -206,6 +212,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
                   className={`csm-input ${errors.endDate ? 'csm-input-error' : ''}`}
                   value={form.endDate}
                   onChange={(e) => handleChange('endDate', e.target.value)}
+                  disabled={disableNonGoal}
                 />
                 {errors.endDate && <span className="csm-error-msg">{errors.endDate}</span>}
               </div>
@@ -225,6 +232,7 @@ const CreateSprintModal = ({ onClose, onSave, sprintCount = 1, sprint = null }) 
               value={form.capacity}
               onChange={(e) => handleChange('capacity', e.target.value)}
               placeholder="ex: 30"
+              disabled={disableNonGoal}
             />
             {errors.capacity && <span className="csm-error-msg">{errors.capacity}</span>}
           </div>

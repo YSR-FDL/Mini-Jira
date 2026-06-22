@@ -150,19 +150,20 @@ export const taskPermissions = (roles, task, parentTask) => {
   if (type === "Subtask") {
     const owns = roles.isDev && devOwns(roles, task, parentTask);
     const po = roles.isPO;
+    const canMove = roles.isSM || roles.isDev || roles.isPO;
     return {
       ...none,
-      canEditTitle: owns,
-      canEditDescription: owns,
-      canEditPriority: owns,
-      canEditStatus: owns,
-      canEditPoints: owns,
-      canEditAssignee: owns,
-      canDelete: owns,
-      canToggleSubtask: owns,
-      canSubmitDeliverable: owns,
+      canEditTitle: owns || roles.isPO, // Allow PO to edit title if needed, or just owns
+      canEditDescription: owns || roles.isPO,
+      canEditPriority: owns || roles.isPO,
+      canEditStatus: canMove,
+      canEditPoints: owns || roles.isDev,
+      canEditAssignee: roles.isDev,
+      canDelete: owns || roles.isSM || roles.isPO,
+      canToggleSubtask: canMove,
+      canSubmitDeliverable: roles.isDev || roles.isPO,
       canRejectDeliverable: po,
-      assigneeScope: owns ? "self" : "none",
+      assigneeScope: roles.isDev ? "team" : "none",
     };
   }
 

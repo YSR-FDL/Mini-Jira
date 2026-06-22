@@ -529,6 +529,7 @@ export default function Backlog() {
                 onTerminateClick={handleOpenTerminateModal}
                 onDeleteClick={handleDeleteSprint}
                 onEditClick={handleEditSprint}
+                columns={columns}
               />
             );
           })}
@@ -625,6 +626,7 @@ export default function Backlog() {
       {/* MODALE TICKET */}
       {selectedTaskId && (
         <TaskDetailModal
+          key={selectedTaskId}
           task={
             selectedTaskId === "NEW"
               ? {
@@ -639,6 +641,12 @@ export default function Backlog() {
               : tasks.find((t) => t.id === selectedTaskId)
           }
           onClose={() => setSelectedTaskId(null)}
+          onOpenTask={(id, taskObj) => {
+            if (taskObj && !tasks.find(t => t.id === id)) {
+               setTasks(prev => [...prev, taskObj]);
+            }
+            setSelectedTaskId(id);
+          }}
           onSave={handleSaveDetailedTask}
           onDelete={handleDeleteTask}
           columns={columns}
@@ -653,6 +661,8 @@ export default function Backlog() {
         <CreateSprintModal
           onClose={() => setIsSprintModalOpen(false)}
           onSave={handleCreateSprintConfirm}
+          isPO={isPO}
+          isSM={isSM}
         />
       )}
 
@@ -662,6 +672,8 @@ export default function Backlog() {
           sprint={editingSprint}
           onClose={() => setEditingSprint(null)}
           onSave={handleUpdateSprintConfirm}
+          isPO={isPO}
+          isSM={isSM}
         />
       )}
 

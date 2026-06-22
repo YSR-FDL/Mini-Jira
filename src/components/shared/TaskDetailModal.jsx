@@ -7,6 +7,7 @@ import { FaBug, FaTasks, FaBookmark } from "react-icons/fa";
 import { epicService } from "../../services/epicService";
 import { commentService } from "../../services/commentService";
 import { taskService } from "../../services/taskService";
+import { activityService } from "../../services/activityService";
 import { resolveRoles, taskPermissions } from "../../services/roles";
 
 const TYPE_OPTIONS = [
@@ -34,7 +35,7 @@ const PRIORITY_OPTIONS = [
   { value: "critical", label: "Critique" },
 ];
 
-const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], project, teamMembers = [], sprints = [] }) => {
+const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns = [], project, teamMembers = [], sprints = [] }) => {
   const statusOptions =
     columns.length > 0
       ? columns.map((col) => {
@@ -76,6 +77,8 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
   // Sous-tâches
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
+  const [activities, setActivities] = useState([]);
+  const [activeTab, setActiveTab] = useState("comments"); // "comments" or "history"
 
   // Livrable (lien GitHub) — pour les sous-tâches.
   const [deliverableLink, setDeliverableLink] = useState(task?.deliverableLink || "");
@@ -84,8 +87,8 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
-  const isEpic = (editedTask.type || "") === "Epic";
-  const isSubtask = (editedTask.type || "") === "Subtask";
+  const isEpic = /epic/i.test(editedTask.type || "");
+  const isSubtask = /subtask/i.test(editedTask.type || "");
   // Une "story" est une issue standard : ni epic, ni sous-tâche.
   const isStory = !isEpic && !isSubtask;
 
@@ -198,10 +201,16 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
 
   useEffect(() => {
     if (task && task.id !== "NEW") {
+      const rawId = parseInt(String(task.id).replace(/^[A-Z]+-/, ""), 10);
       commentService
-        .getByTask(task.id)
+        .getByTask(rawId)
         .then(setComments)
         .catch((err) => console.error("Error fetching comments:", err));
+        
+      activityService
+        .getTaskActivities(rawId)
+        .then(setActivities)
+        .catch((err) => console.error("Error fetching activities:", err));
     }
   }, [task]);
 
@@ -691,7 +700,7 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                                   disabled={!canToggleSubtask}
                                   onChange={() => handleToggleSubtask(st)}
                                 />
-                                <span className="subtask-title">{st.title}</span>
+                                <span className="subtask-title" onClick={() => onOpenTask && onOpenTask(st.id, st)}>{st.title}</span>
                                 {st.assignee && (
                                   <span
                                     className="subtask-avatar"
@@ -741,14 +750,29 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                 </div>
               )}
 
-              {/* COMMENTS (existing tasks only) */}
+              {/* COMMENTS & HISTORY TABS (existing tasks only) */}
               {task.id !== "NEW" && (
                 <div className="comments-section">
-                  <h3 className="section-title">
-                    <FiMessageSquare style={{ marginRight: "8px" }} />
-                    Commentaires {comments.length > 0 && `(${comments.length})`}
-                  </h3>
+                  <div style={{ display: "flex", gap: "16px", marginBottom: "16px", borderBottom: "1px solid var(--border-mid)", paddingBottom: "8px" }}>
+                    <h3 
+                      className="section-title" 
+                      style={{ cursor: "pointer", color: activeTab === "comments" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
+                      onClick={() => setActiveTab("comments")}
+                    >
+                      <FiMessageSquare style={{ marginRight: "8px" }} />
+                      Commentaires {comments.length > 0 && `(${comments.length})`}
+                    </h3>
+                    <h3 
+                      className="section-title" 
+                      style={{ cursor: "pointer", color: activeTab === "history" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
+                      onClick={() => setActiveTab("history")}
+                    >
+                      Historique
+                    </h3>
+                  </div>
 
+                  {activeTab === "comments" ? (
+                  <>
                   <div className="comment-list">
                     {comments.length === 0 ? (
                       <p className="comment-empty">
@@ -820,6 +844,59 @@ const TaskDetailModal = ({ task, onClose, onSave, onDelete, columns = [], projec
                       </ActionBtn>
                     </div>
                   </div>
+                  </>
+                  ) : (
+                    <div className="activity-timeline" style={{ marginTop: "16px" }}>
+                      {activities.length > 0 ? activities.map((event) => {
+                        let actionText = "";
+                        let suffixText = "";
+                        switch (event.actionType) {
+                          case "CREATED_TASK": actionText = "a créé la tâche"; break;
+                          case "STATUS_CHANGE": actionText = "a déplacé la tâche"; suffixText = ` vers ${event.newValue}`; break;
+                          case "ASSIGNEE_CHANGE": actionText = "a réassigné la tâche"; break;
+                          case "SPRINT_CHANGE": actionText = "a changé le sprint de"; break;
+                          case "POINTS_UPDATE": actionText = "a estimé les points de"; suffixText = ` à ${event.newValue}`; break;
+                          case "DELIVERABLE_SUBMIT": actionText = "a déposé un livrable"; break;
+                          default: actionText = "a modifié la tâche"; break;
+                        }
+
+                        return (
+                          <div key={event.id} className="timeline-item" style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+                            <div
+                              className="timeline-avatar"
+                              style={{ 
+                                backgroundColor: event.user.bgColor || "#185fa5", 
+                                color: "#FFF", 
+                                width: "32px", 
+                                height: "32px", 
+                                borderRadius: "50%", 
+                                display: "flex", 
+                                alignItems: "center", 
+                                justifyContent: "center",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                flexShrink: 0
+                              }}
+                            >
+                              {event.user.initials}
+                            </div>
+                            <div className="timeline-content">
+                              <p className="timeline-text" style={{ margin: "0 0 4px 0", fontSize: "14px", color: "var(--color-text)" }}>
+                                <span className="timeline-name" style={{ fontWeight: "600" }}>{event.user.name}</span>{" "}
+                                {actionText}{" "}
+                                {suffixText}
+                              </p>
+                              <span className="timeline-time" style={{ fontSize: "12px", color: "var(--text-soft)" }}>
+                                {new Date(event.dateCreation).toLocaleString("fr-FR")}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }) : (
+                        <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Aucun historique pour cette tâche.</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

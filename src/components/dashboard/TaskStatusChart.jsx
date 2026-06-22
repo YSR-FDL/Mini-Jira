@@ -1,7 +1,6 @@
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { LayoutList } from "lucide-react";
-import { taskStatusData } from "../../data/dashboardMockData";
 
 const CustomTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -27,7 +26,7 @@ const CustomTooltip = ({ active, payload }) => {
   return null;
 };
 
-export default function TaskStatusChart() {
+export default function TaskStatusChart({ taskStatusData = [] }) {
   const total = taskStatusData.reduce((s, d) => s + d.value, 0);
 
   return (
