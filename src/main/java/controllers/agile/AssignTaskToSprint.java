@@ -83,15 +83,25 @@ public class AssignTaskToSprint extends HttpServlet {
         }
 
         int nb;
+        String sprintActionVal = "Backlog";
         // If sprintId is null or missing, unassign (move to backlog)
         if (body.has("sprintId") && !body.get("sprintId").isJsonNull()) {
             int sprintId = body.get("sprintId").getAsInt();
             nb = taskDAO.assignTaskToSprint(taskId, sprintId);
+            sprintActionVal = String.valueOf(sprintId);
         } else {
             nb = taskDAO.unassignTaskFromSprint(taskId);
         }
 
         if (nb > 0) {
+            new structures_DAO.ActivityDAO().logActivity(
+                taskId,
+                existing.getIdProject(),
+                requesterId,
+                "SPRINT_CHANGE",
+                existing.getIdSprint() == null ? "Backlog" : String.valueOf(existing.getIdSprint()),
+                sprintActionVal
+            );
             out.print("{\"message\":\"success\"}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

@@ -108,6 +108,14 @@ public class SubmitDeliverable extends HttpServlet {
         int nb = taskDAO.updateDeliverable(taskId, lienLivrable);
 
         if (nb > 0) {
+            new structures_DAO.ActivityDAO().logActivity(
+                taskId,
+                existing.getIdProject(),
+                requesterId,
+                "DELIVERABLE_SUBMIT",
+                existing.getLienLivrable(),
+                lienLivrable
+            );
             out.print("{\"message\":\"success\"}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);

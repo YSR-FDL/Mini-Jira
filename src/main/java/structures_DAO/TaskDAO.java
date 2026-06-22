@@ -178,10 +178,11 @@ public class TaskDAO {
     public List<Map<String, Object>> getSprintTasks(int sprintId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
-        String sql = TASK_SELECT + "WHERE t.id_sprint = ? ORDER BY t.position ASC, t.date_creation ASC";
+        String sql = TASK_SELECT + "WHERE t.id_sprint = ? OR t.id_parent IN (SELECT id_task FROM tasks WHERE id_sprint = ?) ORDER BY t.position ASC, t.date_creation ASC";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, sprintId);
+            ps.setInt(2, sprintId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 tasks.add(buildTaskMap(rs));

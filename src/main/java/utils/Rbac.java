@@ -80,7 +80,7 @@ public final class Rbac {
         return new Roles(userId, admin, sm, po, dev);
     }
 
-    // ── Task type helpers ────────────────────────────────────────────────
+    // Task type helpers
     public static boolean isEpic(Task t) {
         return t != null && "Epic".equalsIgnoreCase(t.getTypeTache());
     }
@@ -94,7 +94,7 @@ public final class Rbac {
         return t != null && !isEpic(t) && !isSubtask(t);
     }
 
-    // ── Project workspace (Administrateur only) ──────────────────────────
+    //  Project workspace (Administrateur only)
     public static String authorizeProjectAdmin(Roles roles, String action) {
         if (roles != null && roles.isAdmin) {
             return null;
@@ -102,7 +102,7 @@ public final class Rbac {
         return "Seul l'administrateur du projet peut " + action + ".";
     }
 
-    // ── Sprints (Scrum Master only) ──────────────────────────────────────
+    // Sprints (Scrum Master only)
     public static String authorizeSprintManagement(Roles roles) {
         if (roles != null && roles.isSM) {
             return null;
@@ -110,7 +110,7 @@ public final class Rbac {
         return "Seul le Scrum Master peut gérer les sprints.";
     }
 
-    // ── Sprint backlog : affectation des stories aux sprints ─────────────
+    //  Sprint backlog : affectation des stories aux sprints
     /**
      * Finalisation du sprint backlog (Sprint Planning). D'après la matrice
      * RACI, le Product Owner et le Scrum Master sont responsables/accountable
@@ -124,7 +124,7 @@ public final class Rbac {
         return "Seul le Scrum Master ou le Product Owner peut affecter des stories aux sprints.";
     }
 
-    // ── Édition d'un sprint (niveau champ) ───────────────────────────────
+    // Édition d'un sprint (niveau champ)
     /**
      * Édition d'un sprint. Le Scrum Master peut tout modifier (nom, dates,
      * capacité, objectif). D'après la RACI « Define Sprint Goals » (PO=R,
@@ -157,7 +157,7 @@ public final class Rbac {
                 && eq(existing.getCapacite(), incoming.getCapacite());
     }
 
-    // ── Livrable d'une sous-tâche (lien GitHub) ──────────────────────────
+    //  Livrable d'une sous-tâche (lien GitHub)
     /**
      * Dépôt/édition du livrable (dépôt GitHub) d'une sous-tâche. Seul le
      * développeur propriétaire de la sous-tâche (assignée à lui, ou rattachée à
@@ -180,7 +180,7 @@ public final class Rbac {
         return "Seul le développeur propriétaire de la sous-tâche peut déposer le livrable.";
     }
 
-    // ── Backlog reordering ───────────────────────────────────────────────
+    //  Backlog reordering
     /**
      * Reordering / sprint placement: the Scrum Master and the Product Owner may
      * reorder any container (backlog or sprint) and thereby place stories into a
@@ -197,7 +197,7 @@ public final class Rbac {
         return "Seul le Scrum Master ou le Product Owner peut réordonner les tickets.";
     }
 
-    // ── Task creation ────────────────────────────────────────────────────
+    //  Task creation
     /**
      * @param newTask the task being created (type + intended assignee)
      * @param parent  the parent task when creating a Sub-task (may be null)
@@ -226,7 +226,7 @@ public final class Rbac {
         return roles.isPO ? null : "Seul le Product Owner peut créer des stories.";
     }
 
-    // ── Task deletion ────────────────────────────────────────────────────
+    //  Task deletion
     public static String authorizeTaskDelete(Roles roles, Task existing, Task parent) {
         if (roles == null || existing == null || !roles.isMember) {
             return "Action non autorisée.";
@@ -250,7 +250,7 @@ public final class Rbac {
         return "Seul le Scrum Master ou le Product Owner peut supprimer une story.";
     }
 
-    // ── Task update (field-level) ────────────────────────────────────────
+    // Task update (field-level)
     /**
      * Computes which task fields are *actually* being changed.
      *
@@ -330,7 +330,7 @@ public final class Rbac {
             return null;
         }
 
-        // ---- Standard Story ----
+        //  Standard Story
         for (String field : changedFields) {
             String denial = authorizeStoryField(roles, existing, incoming, field);
             if (denial != null) {

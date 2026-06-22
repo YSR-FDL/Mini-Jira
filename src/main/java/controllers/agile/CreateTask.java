@@ -81,6 +81,17 @@ public class CreateTask extends HttpServlet {
 
         int nb = taskDAO.addTask(task);
 
+        if (nb > 0) {
+            new structures_DAO.ActivityDAO().logActivity(
+                task.getIdTask(),
+                task.getIdProject(),
+                requesterId,
+                "CREATED_TASK",
+                null,
+                null
+            );
+        }
+
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();

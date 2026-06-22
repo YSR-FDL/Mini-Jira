@@ -101,6 +101,14 @@ public class MoveTask extends HttpServlet {
         int nb = taskDAO.updateTaskStatus(taskId, newStatus);
 
         if (nb > 0) {
+            new structures_DAO.ActivityDAO().logActivity(
+                taskId,
+                existing.getIdProject(),
+                requesterId,
+                "STATUS_CHANGE",
+                existing.getStatut(),
+                newStatus
+            );
             out.print("{\"message\":\"success\"}");
         } else {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
