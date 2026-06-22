@@ -23,7 +23,7 @@ import java.sql.Statement;
 public class DBInteraction {
 	private static final String url = "jdbc:mysql://localhost:3306/MiniJira?useUnicode=true&characterEncoding=UTF-8";
 	private static final String username = "root";
-	private static final String password = "2005";
+	private static final String password = "_Y$rF(2005);";
 
 	private static final ThreadLocal<Connection> CONNECTION = new ThreadLocal<>();
 

@@ -36,6 +36,7 @@ public class TaskDAO {
         task.setIdParent(rs.wasNull() ? null : parentId);
 
         task.setTypeTache(rs.getString("type_tache"));
+        task.setLienLivrable(rs.getString("lien_livrable"));
         return task;
     }
 
@@ -74,6 +75,7 @@ public class TaskDAO {
         }
         map.put("tags", tags);
         map.put("typeTache", typeTache);
+        map.put("lienLivrable", rs.getString("lien_livrable"));
 
         return map;
     }
@@ -106,8 +108,8 @@ public class TaskDAO {
             e.printStackTrace();
         }
 
-        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache, lien_livrable) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, task.getTitre());
@@ -133,6 +135,11 @@ public class TaskDAO {
                 ps.setNull(10, java.sql.Types.INTEGER);
             }
             ps.setString(11, task.getTypeTache() != null ? task.getTypeTache() : "Feature");
+            if (task.getLienLivrable() != null) {
+                ps.setString(12, task.getLienLivrable());
+            } else {
+                ps.setNull(12, java.sql.Types.VARCHAR);
+            }
             nb = ps.executeUpdate();
             if (nb > 0) {
                 ResultSet keys = ps.getGeneratedKeys();
@@ -171,10 +178,11 @@ public class TaskDAO {
     public List<Map<String, Object>> getSprintTasks(int sprintId) {
         List<Map<String, Object>> tasks = new ArrayList<>();
         DBInteraction.connect();
-        String sql = TASK_SELECT + "WHERE t.id_sprint = ? ORDER BY t.position ASC, t.date_creation ASC";
+        String sql = TASK_SELECT + "WHERE t.id_sprint = ? OR t.id_parent IN (SELECT id_task FROM tasks WHERE id_sprint = ?) ORDER BY t.position ASC, t.date_creation ASC";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setInt(1, sprintId);
+            ps.setInt(2, sprintId);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 tasks.add(buildTaskMap(rs));
@@ -328,6 +336,7 @@ public class TaskDAO {
                 int parentId = rs.getInt("id_parent");
                 task.setIdParent(rs.wasNull() ? null : parentId);
                 task.setTypeTache(rs.getString("type_tache"));
+                task.setLienLivrable(rs.getString("lien_livrable"));
             }
             rs.close();
             ps.close();
@@ -359,6 +368,30 @@ public class TaskDAO {
         return updateTask(task, null);
     }
 
+    /**
+     * Met à jour uniquement le lien du livrable (dépôt GitHub) d'une tâche.
+     * Utilisé lorsqu'un développeur dépose le livrable d'une sous-tâche.
+     */
+    public int updateDeliverable(int taskId, String lienLivrable) {
+        int nb = 0;
+        DBInteraction.connect();
+        String sql = "UPDATE tasks SET lien_livrable = ? WHERE id_task = ?";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            if (lienLivrable != null) {
+                ps.setString(1, lienLivrable);
+            } else {
+                ps.setNull(1, java.sql.Types.VARCHAR);
+            }
+            ps.setInt(2, taskId);
+            nb = ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return nb;
+    }
     /**
      * Updates a task using presence-based partial semantics.
      *
@@ -402,10 +435,14 @@ public class TaskDAO {
         if (hasPresence ? !providedFields.contains("idParent") : task.getIdParent() == null)
             task.setIdParent(existing.getIdParent());
 
+        // lienLivrable: present semantics. Omitted = keep current; present null = clear.
+        if (hasPresence ? !providedFields.contains("lienLivrable") : task.getLienLivrable() == null)
+            task.setLienLivrable(existing.getLienLivrable());
+
         int nb = 0;
         DBInteraction.connect();
         String sql = "UPDATE tasks SET titre = ?, description = ?, statut = ?, priorite = ?, " +
-                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ? WHERE id_task = ?";
+                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ?, lien_livrable = ? WHERE id_task = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setString(1, task.getTitre());
@@ -429,7 +466,12 @@ public class TaskDAO {
                 ps.setNull(8, java.sql.Types.INTEGER);
             }
             ps.setString(9, task.getTypeTache());
-            ps.setInt(10, task.getIdTask());
+            if (task.getLienLivrable() != null) {
+                ps.setString(10, task.getLienLivrable());
+            } else {
+                ps.setNull(10, java.sql.Types.VARCHAR);
+            }
+            ps.setInt(11, task.getIdTask());
             nb = ps.executeUpdate();
             ps.close();
         } catch (SQLException e) {

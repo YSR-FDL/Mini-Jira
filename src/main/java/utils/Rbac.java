@@ -3,6 +3,7 @@ package utils;
 import java.util.Set;
 
 import classes.Project;
+import classes.Sprint;
 import classes.Task;
 import structures_DAO.TeamDao;
 
@@ -16,16 +17,22 @@ import structures_DAO.TeamDao;
  *                      explicitly forbidden from touching Sprints, Epics,
  *                      Stories or Sub-tasks.
  *   - Product Owner  : project idPO. Full CRUD on Epics; creates/defines and
- *                      prioritises Stories; links Stories to Epics. Read-only
- *                      on Sub-tasks; cannot assign, estimate or manage Sprints.
- *   - Scrum Master   : project idSM. Manages Sprints, assigns Stories, sets
- *                      story-point estimates, moves Stories between Sprints and
- *                      the Backlog, deletes rogue Stories. Read-only on Epics
+ *                      prioritises Stories; links Stories to Epics. Defines the
+ *                      Sprint Goal (objectif) and helps finalise the sprint
+ *                      backlog by assigning stories to sprints. Read-only on
+ *                      Sub-tasks; cannot estimate or otherwise manage Sprints.
+ *   - Scrum Master   : project idSM. Manages Sprints, moves Stories between
+ *                      Sprints and the Backlog, deletes rogue Stories. Does NOT
+ *                      assign stories (Agile pull system) nor estimate story
+ *                      points (developers' responsibility). Read-only on Epics
  *                      and Sub-tasks.
- *   - Développeur    : a team member who is none of the above. Full CRUD on
- *                      Sub-tasks of stories they own, may self-assign unassigned
- *                      Stories, and may move their own Stories/Sub-tasks on the
- *                      board. Read-only on Epics; cannot create/delete Stories.
+ *   - Développeur    : a team member who is none of the above. Self-assigns
+ *                      unassigned Stories (pull system), estimates story points
+ *                      collectively, and may move ANY team ticket on the board
+ *                      (collective responsibility). Full CRUD on Sub-tasks of
+ *                      stories they own, including submitting the deliverable
+ *                      (GitHub link) of their sub-tasks. Read-only on Epics;
+ *                      cannot create or delete Stories.
  *
  * Every decision method returns {@code null} when the action is allowed, or a
  * human-readable reason string when it is denied (so controllers can return a
@@ -73,7 +80,7 @@ public final class Rbac {
         return new Roles(userId, admin, sm, po, dev);
     }
 
-    // ── Task type helpers ────────────────────────────────────────────────
+    // Task type helpers
     public static boolean isEpic(Task t) {
         return t != null && "Epic".equalsIgnoreCase(t.getTypeTache());
     }
@@ -87,7 +94,7 @@ public final class Rbac {
         return t != null && !isEpic(t) && !isSubtask(t);
     }
 
-    // ── Project workspace (Administrateur only) ──────────────────────────
+    //  Project workspace (Administrateur only)
     public static String authorizeProjectAdmin(Roles roles, String action) {
         if (roles != null && roles.isAdmin) {
             return null;
@@ -95,7 +102,7 @@ public final class Rbac {
         return "Seul l'administrateur du projet peut " + action + ".";
     }
 
-    // ── Sprints (Scrum Master only) ──────────────────────────────────────
+    // Sprints (Scrum Master only)
     public static String authorizeSprintManagement(Roles roles) {
         if (roles != null && roles.isSM) {
             return null;
@@ -103,25 +110,94 @@ public final class Rbac {
         return "Seul le Scrum Master peut gérer les sprints.";
     }
 
-    // ── Backlog reordering ───────────────────────────────────────────────
+    //  Sprint backlog : affectation des stories aux sprints
     /**
-     * Reordering: the Scrum Master may reorder any container; the Product Owner
-     * may reorder the Backlog only (sprintId == null).
+     * Finalisation du sprint backlog (Sprint Planning). D'après la matrice
+     * RACI, le Product Owner et le Scrum Master sont responsables/accountable
+     * de l'identification des stories pour le sprint. L'affectation d'une story
+     * à un sprint (ou son retour au backlog) est donc ouverte au SM et au PO.
      */
-    public static String authorizeReorder(Roles roles, Integer sprintId) {
+    public static String authorizeSprintBacklog(Roles roles) {
+        if (roles != null && (roles.isSM || roles.isPO)) {
+            return null;
+        }
+        return "Seul le Scrum Master ou le Product Owner peut affecter des stories aux sprints.";
+    }
+
+    // Édition d'un sprint (niveau champ)
+    /**
+     * Édition d'un sprint. Le Scrum Master peut tout modifier (nom, dates,
+     * capacité, objectif). D'après la RACI « Define Sprint Goals » (PO=R,
+     * SM=RA), le Product Owner ne peut modifier QUE l'objectif du sprint.
+     */
+    public static String authorizeSprintUpdate(Roles roles, Sprint existing, Sprint incoming) {
         if (roles == null) {
             return "Action non autorisée.";
         }
         if (roles.isSM) {
             return null;
         }
-        if (roles.isPO && sprintId == null) {
-            return null;
+        if (roles.isPO) {
+            if (onlyObjectifChanged(existing, incoming)) {
+                return null;
+            }
+            return "Le Product Owner ne peut modifier que l'objectif du sprint.";
         }
-        return "Seul le Scrum Master (ou le Product Owner dans le backlog) peut réordonner les tickets.";
+        return "Seul le Scrum Master peut gérer les sprints.";
     }
 
-    // ── Task creation ────────────────────────────────────────────────────
+    /** Vrai si seul l'objectif du sprint diffère (nom, dates et capacité inchangés). */
+    private static boolean onlyObjectifChanged(Sprint existing, Sprint incoming) {
+        if (existing == null || incoming == null) {
+            return false;
+        }
+        return eq(existing.getNomSprint(), incoming.getNomSprint())
+                && eq(existing.getDateDebut(), incoming.getDateDebut())
+                && eq(existing.getDateFin(), incoming.getDateFin())
+                && eq(existing.getCapacite(), incoming.getCapacite());
+    }
+
+    //  Livrable d'une sous-tâche (lien GitHub)
+    /**
+     * Dépôt/édition du livrable (dépôt GitHub) d'une sous-tâche. Seul le
+     * développeur propriétaire de la sous-tâche (assignée à lui, ou rattachée à
+     * une story qu'il possède) peut déposer son livrable. Le Product Owner peut
+     * rejeter (supprimer) un livrable.
+     */
+    public static String authorizeDeliverableSubmit(Roles roles, Task subtask, Task parent, boolean isRemoval) {
+        if (roles == null || subtask == null || !roles.isMember) {
+            return "Action non autorisée.";
+        }
+        if (!isSubtask(subtask)) {
+            return "Le livrable ne peut être déposé que sur une sous-tâche.";
+        }
+        if (isRemoval && roles.isPO) {
+            return null; // Product Owner may reject/remove the deliverable
+        }
+        if (roles.isDev && ownsTaskOrParent(roles, subtask, parent)) {
+            return null;
+        }
+        return "Seul le développeur propriétaire de la sous-tâche peut déposer le livrable.";
+    }
+
+    //  Backlog reordering
+    /**
+     * Reordering / sprint placement: the Scrum Master and the Product Owner may
+     * reorder any container (backlog or sprint) and thereby place stories into a
+     * sprint, consistent with their shared responsibility for finalising the
+     * sprint backlog (RACI: PO=R, SM=A).
+     */
+    public static String authorizeReorder(Roles roles, Integer sprintId) {
+        if (roles == null) {
+            return "Action non autorisée.";
+        }
+        if (roles.isSM || roles.isPO) {
+            return null;
+        }
+        return "Seul le Scrum Master ou le Product Owner peut réordonner les tickets.";
+    }
+
+    //  Task creation
     /**
      * @param newTask the task being created (type + intended assignee)
      * @param parent  the parent task when creating a Sub-task (may be null)
@@ -150,7 +226,7 @@ public final class Rbac {
         return roles.isPO ? null : "Seul le Product Owner peut créer des stories.";
     }
 
-    // ── Task deletion ────────────────────────────────────────────────────
+    //  Task deletion
     public static String authorizeTaskDelete(Roles roles, Task existing, Task parent) {
         if (roles == null || existing == null || !roles.isMember) {
             return "Action non autorisée.";
@@ -174,7 +250,7 @@ public final class Rbac {
         return "Seul le Scrum Master ou le Product Owner peut supprimer une story.";
     }
 
-    // ── Task update (field-level) ────────────────────────────────────────
+    // Task update (field-level)
     /**
      * Computes which task fields are *actually* being changed.
      *
@@ -254,7 +330,7 @@ public final class Rbac {
             return null;
         }
 
-        // ---- Standard Story ----
+        //  Standard Story
         for (String field : changedFields) {
             String denial = authorizeStoryField(roles, existing, incoming, field);
             if (denial != null) {
@@ -276,20 +352,17 @@ public final class Rbac {
                 return roles.isPO ? null
                         : "Seul le Product Owner peut modifier la portée des stories.";
 
-            // Estimation & sprint planning → Scrum Master.
+            // Estimation → Développeurs (estimation collective en Sprint Planning).
             case "storyPoints":
-                return roles.isSM ? null
-                        : "Seul le Scrum Master peut estimer les story points.";
+                return roles.isDev ? null
+                        : "Seuls les développeurs peuvent estimer les story points.";
             case "idSprint":
-                return roles.isSM ? null
-                        : "Seul le Scrum Master peut déplacer une story entre sprints et backlog.";
+                return (roles.isSM || roles.isPO) ? null
+                        : "Seul le Scrum Master ou le Product Owner peut déplacer une story entre sprints et backlog.";
 
-            // Assignment → Scrum Master (any member) or Dev self-assignment on
-            // an unassigned story.
+            // Assignment → Système pull Agile : seul le Dev peut s'auto-assigner
+            // une story non assignée, ou se désassigner de sa propre story.
             case "idAssignee": {
-                if (roles.isSM) {
-                    return null;
-                }
                 if (roles.isDev) {
                     boolean currentlyUnassigned = existing.getIdAssignee() == null;
                     boolean selfAssign = incoming.getIdAssignee() != null
@@ -297,21 +370,26 @@ public final class Rbac {
                     if (currentlyUnassigned && selfAssign) {
                         return null;
                     }
+                    // Un dev peut se désassigner de sa propre story (remettre en pool).
+                    boolean selfUnassign = existing.getIdAssignee() != null
+                            && existing.getIdAssignee() == roles.userId
+                            && incoming.getIdAssignee() == null;
+                    if (selfUnassign) {
+                        return null;
+                    }
                     return "Vous ne pouvez vous attribuer que des stories non assignées.";
                 }
-                return "Seul le Scrum Master peut assigner les stories.";
+                return "Seuls les développeurs peuvent s'auto-assigner des stories (système pull).";
             }
 
-            // Board movement (status) → Scrum Master, or the Dev who owns the story.
+            // Board movement (status) → Scrum Master, ou tout Développeur
+            // (responsabilité collective de l'équipe face à l'objectif du sprint).
             case "statut": {
                 if (roles.isSM) {
                     return null;
                 }
                 if (roles.isDev) {
-                    boolean owns = existing.getIdAssignee() != null
-                            && existing.getIdAssignee() == roles.userId;
-                    return owns ? null
-                            : "Vous ne pouvez déplacer que les stories qui vous sont assignées.";
+                    return null; // Responsabilité collective : tout Dev peut déplacer
                 }
                 return "Vous n'êtes pas autorisé à déplacer cette story.";
             }

@@ -95,7 +95,17 @@ public class UpdateSprint extends HttpServlet {
                 : sprintDAO.getProjectIdBySprint(sprint.getIdSprint());
         classes.Project project = projectDAO.getProjectById(projectId);
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-        String denial = utils.Rbac.authorizeSprintManagement(roles);
+        // Field-level: the Scrum Master may edit everything; the Product Owner
+        // may only change the Sprint Goal (objectif). Compare against the stored
+        // sprint to know which fields the request actually changes.
+        classes.Sprint existingSprint = sprintDAO.getSprintById(sprint.getIdSprint());
+        if (existingSprint == null) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Sprint introuvable.");
+            return;
+        }
+        // Field-level: SM may change anything; the PO may only change the goal
+        // (objectif). authorizeSprintUpdate compares incoming vs stored sprint.
+        String denial = utils.Rbac.authorizeSprintUpdate(roles, existingSprint, sprint);
         if (denial != null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
             return;

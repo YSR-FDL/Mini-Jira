@@ -103,8 +103,40 @@ public class SprintDAO {
         return nb;
     }
 
-    public int updateSprint(Sprint sprint) {
-        int nb = 0;
+    /**
+     * Charge un sprint par son identifiant, ou null s'il est introuvable.
+     * Utilisé pour les contrôles RBAC au niveau champ (ex. édition de l'objectif).
+     */
+    public Sprint getSprintById(int sprintId) {
+        Sprint sprint = null;
+        DBInteraction.connect();
+        String sql = "SELECT * FROM sprints WHERE id_sprint = ?";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, sprintId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                sprint = new Sprint();
+                sprint.setIdSprint(rs.getInt("id_sprint"));
+                sprint.setNomSprint(rs.getString("nom_sprint"));
+                sprint.setObjectif(rs.getString("objectif"));
+                sprint.setDateDebut(rs.getString("date_debut"));
+                sprint.setDateFin(rs.getString("date_fin"));
+                sprint.setStatut(rs.getString("statut"));
+                int cap = rs.getInt("capacite");
+                sprint.setCapacite(rs.wasNull() ? null : cap);
+                sprint.setIdProject(rs.getInt("id_project"));
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return sprint;
+    }
+
+    public int updateSprint(Sprint sprint) {        int nb = 0;
         DBInteraction.connect();
         String sql = "UPDATE sprints SET nom_sprint = ?, objectif = ?, date_debut = ?, date_fin = ?, statut = ?, capacite = ? WHERE id_sprint = ?";
         try {

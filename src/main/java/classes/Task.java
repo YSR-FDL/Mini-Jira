@@ -14,6 +14,7 @@ public class Task {
     private Integer idAssignee;
     private Integer idParent;
     private String typeTache;
+    private String lienLivrable;
 
     public Task() {
         this.typeTache = "Feature";
@@ -57,5 +58,8 @@ public class Task {
 
     public String getTypeTache() { return typeTache; }
     public void setTypeTache(String typeTache) { this.typeTache = typeTache; }
+
+    public String getLienLivrable() { return lienLivrable; }
+    public void setLienLivrable(String lienLivrable) { this.lienLivrable = lienLivrable; }
     
 }

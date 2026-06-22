@@ -82,7 +82,7 @@ public class BatchMoveTasksToSprint extends HttpServlet {
         }
         classes.Project project = projectDAO.getProjectById(firstTask.getIdProject());
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-        String denial = utils.Rbac.authorizeSprintManagement(roles);
+        String denial = utils.Rbac.authorizeSprintBacklog(roles);
         if (denial != null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
             return;

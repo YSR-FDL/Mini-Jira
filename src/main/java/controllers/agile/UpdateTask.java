@@ -99,6 +99,41 @@ public class UpdateTask extends HttpServlet {
             nb = taskDAO.updateTask(task, body.keySet());
         }
 
+        if (nb > 0) {
+            structures_DAO.ActivityDAO activityDAO = new structures_DAO.ActivityDAO();
+            for (String field : changedFields) {
+                String oldVal = "";
+                String newVal = "";
+                String action = "UPDATED_TASK";
+                switch (field) {
+                    case "statut":
+                        action = "STATUS_CHANGE";
+                        oldVal = existing.getStatut();
+                        newVal = task.getStatut();
+                        break;
+                    case "idAssignee":
+                        action = "ASSIGNEE_CHANGE";
+                        oldVal = existing.getIdAssignee() == null ? "Unassigned" : String.valueOf(existing.getIdAssignee());
+                        newVal = task.getIdAssignee() == null ? "Unassigned" : String.valueOf(task.getIdAssignee());
+                        break;
+                    case "idSprint":
+                        action = "SPRINT_CHANGE";
+                        oldVal = existing.getIdSprint() == null ? "Backlog" : String.valueOf(existing.getIdSprint());
+                        newVal = task.getIdSprint() == null ? "Backlog" : String.valueOf(task.getIdSprint());
+                        break;
+                    case "storyPoints":
+                        action = "POINTS_UPDATE";
+                        oldVal = String.valueOf(existing.getStoryPoints());
+                        newVal = String.valueOf(task.getStoryPoints());
+                        break;
+                    default:
+                        // Ignore minor fields like description or title in the brief activity stream for simplicity
+                        continue;
+                }
+                activityDAO.logActivity(task.getIdTask(), existing.getIdProject(), requesterId, action, oldVal, newVal);
+            }
+        }
+
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
