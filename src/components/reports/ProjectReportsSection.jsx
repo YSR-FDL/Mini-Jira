@@ -2,7 +2,15 @@ import { useState } from "react";
 import { Bug } from "lucide-react";
 import styles from "../../styles/Reports/ReportsPage.module.css";
 import ReportCard from "./ReportCard";
-import { sortReportsByGravity } from "../../data/reportsMockData";
+
+// ─── Gravity sort order ───────────────────────────────────────────────────
+const GRAVITY_ORDER = { CRITIQUE: 0, ELEVEE: 1, MOYENNE: 2, FAIBLE: 3 };
+
+function sortReportsByGravity(reports) {
+  return [...reports].sort(
+    (a, b) => (GRAVITY_ORDER[a.gravite] ?? 99) - (GRAVITY_ORDER[b.gravite] ?? 99)
+  );
+}
 
 // ─── Config statut projet ─────────────────────────────────────────────────
 const PROJECT_STATUS_CONFIG = {
@@ -53,7 +61,9 @@ export default function ProjectReportsSection({ project, user, index }) {
                 {project.status}
               </span>
             </div>
-            <p className={styles.projectDesc}>{project.description}</p>
+            {project.description && (
+              <p className={styles.projectDesc}>{project.description}</p>
+            )}
           </div>
         </div>
 

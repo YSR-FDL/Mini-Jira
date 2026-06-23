@@ -1,11 +1,18 @@
-import { useState } from "react";
-import { Bug } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bug, Loader2 } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import ProjectReportsSection from "../../components/reports/ProjectReportsSection";
 import styles from "../../styles/Reports/ReportsPage.module.css";
-import { myProjectsWithReports, currentUser } from "../../data/reportsMockData";
+import { bugReportService } from "../../services/bugReportService";
 
 // ─── Config gravité pour les stats rapides ────────────────────────────────
+const PRIORITY_TO_GRAVITE = {
+  critical: "CRITIQUE",
+  high:     "ELEVEE",
+  medium:   "MOYENNE",
+  low:      "FAIBLE",
+};
+
 const STAT_CONFIG = [
   { key: "CRITIQUE", label: "Critiques",  color: "#DC2626" },
   { key: "ELEVEE",   label: "Élevées",    color: "#D97706" },
@@ -15,9 +22,50 @@ const STAT_CONFIG = [
 
 export default function ReportsPage() {
   const [filter, setFilter] = useState("Tous");
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ── Fetch bug reports from backend ──
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    bugReportService
+      .getBugReports()
+      .then((data) => {
+        if (cancelled) return;
+        // Map each report's priority to gravité label for UI display
+        const mapped = (data.projects || []).map((project) => ({
+          ...project,
+          reports: (project.reports || []).map((r) => ({
+            ...r,
+            gravite: PRIORITY_TO_GRAVITE[r.priority] || "MOYENNE",
+          })),
+        }));
+        setProjects(mapped);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error("Failed to load bug reports:", err);
+        setError("Impossible de charger les bug reports.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // ── Build the current user from localStorage ──
+  const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUser = {
+    id: storedUser.id,
+    name: `${storedUser.prenom || ""} ${storedUser.nom || ""}`.trim() || "Utilisateur",
+    initials: `${(storedUser.prenom || "U")[0]}${(storedUser.nom || "")[0] || ""}`.toUpperCase(),
+  };
 
   // ── Calcul des statistiques globales ──
-  const allReports = myProjectsWithReports.flatMap((p) => p.reports);
+  const allReports = projects.flatMap((p) => p.reports);
   const totalReports = allReports.length;
 
   const statCounts = STAT_CONFIG.reduce((acc, stat) => {
@@ -26,7 +74,7 @@ export default function ReportsPage() {
   }, {});
 
   // ── Filtrage par gravité ──
-  const filteredProjects = myProjectsWithReports
+  const filteredProjects = projects
     .map((project) => {
       if (filter === "Tous") return project;
       const filteredReports = project.reports.filter((r) => r.gravite === filter);
@@ -71,7 +119,7 @@ export default function ReportsPage() {
               <div className={styles.statDot} style={{ background: stat.color }} />
               <div className={styles.statInfo}>
                 <span className={styles.statValue} style={{ color: stat.color }}>
-                  {statCounts[stat.key]}
+                  {loading ? "–" : statCounts[stat.key]}
                 </span>
                 <span className={styles.statLabel}>{stat.label}</span>
               </div>
@@ -96,9 +144,20 @@ export default function ReportsPage() {
           ))}
         </div>
 
-        {/* ── Liste des projets avec leurs reports ── */}
+        {/* ── Contenu principal ── */}
         <div className={styles.projectList}>
-          {filteredProjects.length === 0 ? (
+          {loading ? (
+            <div className={styles.emptyState}>
+              <Loader2 size={32} strokeWidth={1.6} style={{ animation: "spin 1s linear infinite" }} />
+              <p>Chargement des bug reports…</p>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          ) : error ? (
+            <div className={styles.emptyState}>
+              <Bug size={40} strokeWidth={1.4} />
+              <p>{error}</p>
+            </div>
+          ) : filteredProjects.length === 0 ? (
             <div className={styles.emptyState}>
               <Bug size={40} strokeWidth={1.4} />
               <p>Aucun bug report trouvé pour ce filtre.</p>
