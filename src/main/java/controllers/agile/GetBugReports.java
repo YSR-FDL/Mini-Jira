@@ -6,29 +6,39 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import structures_DAO.MetricsDAO;
+import structures_DAO.BugReportDAO;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.Gson;
 
 /**
- * GetGlobalDashboardMetrics — Packages all aggregated analytics across all projects.
+ * GetBugReports — Returns all Bug-type tasks from the user's projects,
+ * grouped by project. Used by the Bug Reports page.
+ *
+ * Query params:
+ *   - userId (required): the logged-in user's ID
+ *
+ * Response:
+ *   { "projects": [ { id, title, status, progress, reports: [...] } ] }
  */
-@WebServlet("/GetGlobalDashboardMetrics")
-public class GetGlobalDashboardMetrics extends HttpServlet {
+@WebServlet("/GetBugReports")
+public class GetBugReports extends HttpServlet {
     private static final long serialVersionUID = 1L;
-    private MetricsDAO metricsDAO;
+    private BugReportDAO bugReportDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
-        metricsDAO = new MetricsDAO();
+        bugReportDAO = new BugReportDAO();
     }
 
     @Override
-    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -36,7 +46,8 @@ public class GetGlobalDashboardMetrics extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -61,8 +72,10 @@ public class GetGlobalDashboardMetrics extends HttpServlet {
             return;
         }
 
-        // Fetch dashboard data scoped to the user's projects
-        Map<String, Object> result = metricsDAO.getGlobalDashboardData(userId);
+        List<Map<String, Object>> projects = bugReportDAO.getBugReportsByUser(userId);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("projects", projects);
 
         Gson gson = new Gson();
         String json = gson.toJson(result);

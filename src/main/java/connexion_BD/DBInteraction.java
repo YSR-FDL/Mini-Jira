@@ -16,9 +16,6 @@ import java.sql.Statement;
  * using — the root cause of intermittent "No operations allowed after
  * connection closed" errors and leaked transaction state.
  *
- * The public API ({@code connect}/{@code getConn}/{@code disconnect}) is kept
- * identical so existing DAOs need no changes: they still call connect() at the
- * start of an operation and disconnect() at the end.
  */
 public class DBInteraction {
 	private static final String url = "jdbc:mysql://localhost:3306/MiniJira?useUnicode=true&characterEncoding=UTF-8";
