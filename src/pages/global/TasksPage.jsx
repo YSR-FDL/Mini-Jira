@@ -12,7 +12,7 @@ export default function TasksPage() {
   const [search, setSearch] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const idUser = user?.id;
+  const idUser = user?.id || 1;
 
   useEffect(() => {
     if (!idUser) return;
