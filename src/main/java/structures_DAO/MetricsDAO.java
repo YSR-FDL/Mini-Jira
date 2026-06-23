@@ -136,17 +136,25 @@ public class MetricsDAO {
             e.printStackTrace();
         }
 
+        // Exclude parent tasks that have children in the same sprint to avoid
+        // double-counting story points (the children already carry the velocity).
         String sql = "SELECT " +
             "COUNT(*) AS total, " +
             "SUM(CASE WHEN statut = ? THEN 1 ELSE 0 END) AS completed, " +
-            "COALESCE(SUM(story_points), 0) AS totalPoints, " +
-            "COALESCE(SUM(CASE WHEN statut = ? THEN story_points ELSE 0 END), 0) AS completedPoints " +
+            "COALESCE(SUM(CASE WHEN id_task NOT IN " +
+                "(SELECT DISTINCT id_parent FROM tasks WHERE id_parent IS NOT NULL AND id_sprint = ?) " +
+                "THEN story_points ELSE 0 END), 0) AS totalPoints, " +
+            "COALESCE(SUM(CASE WHEN statut = ? AND id_task NOT IN " +
+                "(SELECT DISTINCT id_parent FROM tasks WHERE id_parent IS NOT NULL AND id_sprint = ?) " +
+                "THEN story_points ELSE 0 END), 0) AS completedPoints " +
             "FROM tasks WHERE id_sprint = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setString(1, doneStatus);
-            ps.setString(2, doneStatus);
-            ps.setInt(3, sprintId);
+            ps.setInt(2, sprintId);
+            ps.setString(3, doneStatus);
+            ps.setInt(4, sprintId);
+            ps.setInt(5, sprintId);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 int total = rs.getInt("total");
@@ -281,33 +289,65 @@ public class MetricsDAO {
         }
     }
 
-    public Map<String, Object> getGlobalDashboardData() {
+    public Map<String, Object> getGlobalDashboardData(int userId) {
         Map<String, Object> data = new HashMap<>();
         DBInteraction.connect();
         try {
-            // 1. Global Stats
-            Map<String, Object> stats = new HashMap<>();
-            ResultSet rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM projects").executeQuery();
-            if (rs.next()) stats.put("totalProjects", rs.getInt(1)); rs.close();
-            
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM tasks").executeQuery();
-            if (rs.next()) stats.put("totalTasks", rs.getInt(1)); rs.close();
-            
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM utilisateurs").executeQuery();
-            if (rs.next()) stats.put("totalUsers", rs.getInt(1)); rs.close();
-            
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM equipes").executeQuery();
-            if (rs.next()) stats.put("totalTeams", rs.getInt(1)); rs.close();
+            // Subquery: projects the user is part of (via team membership, or as creator/SM/PO)
+            String userProjectsSubquery =
+                "(SELECT DISTINCT p.id_project FROM projects p " +
+                "LEFT JOIN appartenance_equipe ae ON ae.id_equipe = p.idTeam " +
+                "WHERE ae.id_utilisateur = ? OR p.idCreateur = ? OR p.idSM = ? OR p.idPO = ?)";
 
+            // 1. Global Stats (scoped to user's projects)
+            Map<String, Object> stats = new HashMap<>();
+
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(DISTINCT p.id_project) FROM projects p " +
+                "LEFT JOIN appartenance_equipe ae ON ae.id_equipe = p.idTeam " +
+                "WHERE ae.id_utilisateur = ? OR p.idCreateur = ? OR p.idSM = ? OR p.idPO = ?");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) stats.put("totalProjects", rs.getInt(1));
+            rs.close(); ps.close();
+
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(*) FROM tasks WHERE id_project IN " + userProjectsSubquery);
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) stats.put("totalTasks", rs.getInt(1));
+            rs.close(); ps.close();
+
+            // totalUsers: members in the user's teams
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(DISTINCT ae2.id_utilisateur) FROM appartenance_equipe ae2 " +
+                "WHERE ae2.id_equipe IN (SELECT ae.id_equipe FROM appartenance_equipe ae WHERE ae.id_utilisateur = ?)");
+            ps.setInt(1, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) stats.put("totalUsers", rs.getInt(1));
+            rs.close(); ps.close();
+
+            // totalTeams: teams the user belongs to
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(*) FROM appartenance_equipe WHERE id_utilisateur = ?");
+            ps.setInt(1, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) stats.put("totalTeams", rs.getInt(1));
+            rs.close(); ps.close();
+
+            // Task status distribution (scoped)
             int completed = 0, inProgress = 0, todo = 0;
-            rs = DBInteraction.getConn().prepareStatement("SELECT statut, COUNT(*) as cnt FROM tasks GROUP BY statut").executeQuery();
-            
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT statut, COUNT(*) as cnt FROM tasks WHERE id_project IN " + userProjectsSubquery + " GROUP BY statut");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
+
             List<Map<String, Object>> statusDist = new ArrayList<>();
             while (rs.next()) {
                 String st = rs.getString("statut");
                 int cnt = rs.getInt("cnt");
                 String stLower = st != null ? st.toLowerCase() : "";
-                
+
                 if (stLower.contains("termin") || stLower.contains("done") || stLower.contains("releas")) {
                     completed += cnt;
                     statusDist.add(createStatusItem(st, cnt, "#00875A"));
@@ -319,16 +359,19 @@ public class MetricsDAO {
                     statusDist.add(createStatusItem(st, cnt, "#97A0AF"));
                 }
             }
-            rs.close();
+            rs.close(); ps.close();
             stats.put("completedTasks", completed);
             stats.put("inProgressTasks", inProgress);
             stats.put("todoTasks", todo);
             data.put("globalStats", stats);
             data.put("taskStatusData", statusDist);
 
-            // 2. Priority Distribution
+            // 2. Priority Distribution (scoped)
             List<Map<String, Object>> priorityDist = new ArrayList<>();
-            rs = DBInteraction.getConn().prepareStatement("SELECT COALESCE(priorite, 'medium') as priorite, COUNT(*) as cnt FROM tasks GROUP BY priorite").executeQuery();
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COALESCE(priorite, 'medium') as priorite, COUNT(*) as cnt FROM tasks WHERE id_project IN " + userProjectsSubquery + " GROUP BY priorite");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 Map<String, Object> item = new HashMap<>();
                 item.put("name", rs.getString("priorite"));
@@ -336,17 +379,19 @@ public class MetricsDAO {
                 item.put("color", getPriorityColor(rs.getString("priorite")));
                 priorityDist.add(item);
             }
-            rs.close();
+            rs.close(); ps.close();
             data.put("taskPriorityData", priorityDist);
 
-            // 3. Recent Tasks
+            // 3. Recent Tasks (scoped to user's projects)
             List<Map<String, Object>> recentTasks = new ArrayList<>();
-            rs = DBInteraction.getConn().prepareStatement(
+            ps = DBInteraction.getConn().prepareStatement(
                 "SELECT t.id_task, t.titre, p.nom_projet, t.priorite, t.statut, s.date_fin " +
                 "FROM tasks t LEFT JOIN projects p ON t.id_project = p.id_project " +
                 "LEFT JOIN sprints s ON t.id_sprint = s.id_sprint " +
-                "ORDER BY t.date_creation DESC LIMIT 6"
-            ).executeQuery();
+                "WHERE t.id_project IN " + userProjectsSubquery + " " +
+                "ORDER BY t.date_creation DESC LIMIT 6");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 Map<String, Object> t = new HashMap<>();
                 t.put("id", rs.getInt("id_task"));
@@ -357,19 +402,22 @@ public class MetricsDAO {
                 t.put("deadline", rs.getString("date_fin"));
                 recentTasks.add(t);
             }
-            rs.close();
+            rs.close(); ps.close();
             data.put("recentTasks", recentTasks);
 
-            // 4. Teams Overview
+            // 4. Teams Overview (only teams the user belongs to)
             List<Map<String, Object>> myTeams = new ArrayList<>();
-            rs = DBInteraction.getConn().prepareStatement(
+            ps = DBInteraction.getConn().prepareStatement(
                 "SELECT e.id, e.nom, " +
                 "(SELECT COUNT(*) FROM appartenance_equipe ae WHERE ae.id_equipe = e.id) as members, " +
                 "(SELECT COUNT(*) FROM projects p WHERE p.idTeam = e.id) as projects, " +
                 "(SELECT COUNT(*) FROM tasks t2 JOIN projects p2 ON t2.id_project = p2.id_project WHERE p2.idTeam = e.id) as totalTasks, " +
                 "(SELECT COUNT(*) FROM tasks t3 JOIN projects p3 ON t3.id_project = p3.id_project WHERE p3.idTeam = e.id AND (LOWER(t3.statut) LIKE '%termin%' OR LOWER(t3.statut) LIKE '%done%' OR LOWER(t3.statut) LIKE '%releas%')) as doneTasks " +
-                "FROM equipes e WHERE e.isArchived = 0 LIMIT 5"
-            ).executeQuery();
+                "FROM equipes e " +
+                "JOIN appartenance_equipe ae ON ae.id_equipe = e.id " +
+                "WHERE ae.id_utilisateur = ? AND e.isArchived = 0 LIMIT 5");
+            ps.setInt(1, userId);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 Map<String, Object> team = new HashMap<>();
                 team.put("id", rs.getInt("id"));
@@ -382,32 +430,54 @@ public class MetricsDAO {
                 team.put("progression", progression);
                 myTeams.add(team);
             }
-            rs.close();
+            rs.close(); ps.close();
             data.put("myTeams", myTeams);
 
-            // 5. Global Summary
+            // 5. Global Summary (scoped)
             Map<String, Object> globalSummary = new HashMap<>();
-            globalSummary.put("completionRate", stats.get("totalTasks").equals(0) ? 0 : Math.round(((int)stats.get("completedTasks") * 100.0f) / (int)stats.get("totalTasks")));
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM projects WHERE isArchived = 0").executeQuery();
-            if (rs.next()) globalSummary.put("activeProjects", rs.getInt(1)); rs.close();
-            
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM sprints WHERE statut IN ('actif', 'active')").executeQuery();
-            if (rs.next()) globalSummary.put("activeSprints", rs.getInt(1)); rs.close();
-            
-            rs = DBInteraction.getConn().prepareStatement("SELECT COUNT(*) FROM tasks t JOIN sprints s ON t.id_sprint = s.id_sprint WHERE s.date_fin < CURRENT_DATE AND LOWER(t.statut) NOT LIKE '%termin%' AND LOWER(t.statut) NOT LIKE '%done%' AND LOWER(t.statut) NOT LIKE '%releas%'").executeQuery();
-            if (rs.next()) globalSummary.put("overdueTasks", rs.getInt(1)); rs.close();
+            int totalTasks = (int) stats.get("totalTasks");
+            globalSummary.put("completionRate", totalTasks == 0 ? 0 : Math.round((completed * 100.0f) / totalTasks));
+
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(DISTINCT p.id_project) FROM projects p " +
+                "LEFT JOIN appartenance_equipe ae ON ae.id_equipe = p.idTeam " +
+                "WHERE p.isArchived = 0 AND (ae.id_utilisateur = ? OR p.idCreateur = ? OR p.idSM = ? OR p.idPO = ?)");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) globalSummary.put("activeProjects", rs.getInt(1));
+            rs.close(); ps.close();
+
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(*) FROM sprints WHERE statut IN ('actif', 'active') AND id_project IN " + userProjectsSubquery);
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) globalSummary.put("activeSprints", rs.getInt(1));
+            rs.close(); ps.close();
+
+            ps = DBInteraction.getConn().prepareStatement(
+                "SELECT COUNT(*) FROM tasks t JOIN sprints s ON t.id_sprint = s.id_sprint " +
+                "WHERE s.date_fin < CURRENT_DATE AND LOWER(t.statut) NOT LIKE '%termin%' AND LOWER(t.statut) NOT LIKE '%done%' AND LOWER(t.statut) NOT LIKE '%releas%' " +
+                "AND t.id_project IN " + userProjectsSubquery);
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
+            if (rs.next()) globalSummary.put("overdueTasks", rs.getInt(1));
+            rs.close(); ps.close();
             data.put("globalSummary", globalSummary);
 
-            // 6. Recent Projects
+            // 6. Recent Projects (only user's projects)
             List<Map<String, Object>> recentProjects = new ArrayList<>();
-            rs = DBInteraction.getConn().prepareStatement(
+            ps = DBInteraction.getConn().prepareStatement(
                 "SELECT p.id_project, p.nom_projet, p.isArchived, " +
-                "(SELECT COUNT(DISTINCT ae.id_utilisateur) FROM appartenance_equipe ae WHERE ae.id_equipe = p.idTeam) as members, " +
+                "(SELECT COUNT(DISTINCT ae2.id_utilisateur) FROM appartenance_equipe ae2 WHERE ae2.id_equipe = p.idTeam) as members, " +
                 "(SELECT COUNT(*) FROM tasks t WHERE t.id_project = p.id_project) as totalTasks, " +
                 "(SELECT COUNT(*) FROM tasks t2 WHERE t2.id_project = p.id_project AND (LOWER(t2.statut) LIKE '%termin%' OR LOWER(t2.statut) LIKE '%done%' OR LOWER(t2.statut) LIKE '%releas%')) as doneTasks " +
                 "FROM projects p " +
-                "ORDER BY p.date_creation DESC LIMIT 4"
-            ).executeQuery();
+                "LEFT JOIN appartenance_equipe ae ON ae.id_equipe = p.idTeam " +
+                "WHERE ae.id_utilisateur = ? OR p.idCreateur = ? OR p.idSM = ? OR p.idPO = ? " +
+                "GROUP BY p.id_project " +
+                "ORDER BY p.date_creation DESC LIMIT 4");
+            ps.setInt(1, userId); ps.setInt(2, userId); ps.setInt(3, userId); ps.setInt(4, userId);
+            rs = ps.executeQuery();
             while (rs.next()) {
                 Map<String, Object> rp = new HashMap<>();
                 rp.put("id", rs.getInt("id_project"));
@@ -421,7 +491,7 @@ public class MetricsDAO {
                 rp.put("status", rs.getInt("isArchived") == 0 ? "EN COURS" : "TERMINÉ");
                 recentProjects.add(rp);
             }
-            rs.close();
+            rs.close(); ps.close();
             data.put("recentProjects", recentProjects);
 
         } catch (SQLException e) {
