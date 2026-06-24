@@ -22,14 +22,18 @@ const STATUS_CONFIG = {
   done: { className: "story-status s-done", label: "Terminé" },
   "terminé": { className: "story-status s-done", label: "Terminé" },
   "termine": { className: "story-status s-done", label: "Terminé" },
+  "termin": { className: "story-status s-done", label: "Terminé" },
+  "terminee": { className: "story-status s-done", label: "Terminé" },
+  "terminée": { className: "story-status s-done", label: "Terminé" },
   review: { className: "story-status s-rev", label: "En revue" },
   "en revue": { className: "story-status s-rev", label: "En revue" },
 };
 
 const TAG_CONFIG = {
+  story: { className: "tag t-feat", label: "Story" },
   feature: { className: "tag t-feat", label: "Feature" },
+  request: { className: "tag t-tech", label: "Request" },
   bug: { className: "tag t-bug", label: "Bug" },
-  tech: { className: "tag t-tech", label: "Tech" },
 };
 
 function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick }) {
@@ -47,18 +51,17 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
     e.stopPropagation();
     if (!onTagChange) return;
 
-    const types = ["Feature", "Bug", "Tech"];
+    const types = ["Story", "Feature", "Request", "Bug"];
     let currentTag = (tags[tagIdx] || "").toLowerCase();
     if (currentTag === "fonctionnalité" || currentTag === "fonctionnalite") currentTag = "feature";
     else if (currentTag === "anomalie") currentTag = "bug";
-    else if (currentTag === "technique") currentTag = "tech";
 
-    let nextType = "Feature";
+    let nextType = "Story";
     const currentIndex = types.findIndex(t => t.toLowerCase() === currentTag);
     if (currentIndex !== -1) {
       nextType = types[(currentIndex + 1) % types.length];
     } else {
-      nextType = "Feature";
+      nextType = "Story";
     }
 
     onTagChange(nextType, tagIdx);

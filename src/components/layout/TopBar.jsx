@@ -6,12 +6,20 @@ import { useNavigate } from "react-router-dom";
 export default function TopBar({user}) {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && search.trim()) {
+      navigate(`/search?q=${encodeURIComponent(search.trim())}`);
+    }
+  };
+
   return (
     <header className={s.topbar}>
       <div className={s.topbarSearch}>
         <span className={s.searchIcon}><Search size={14} /></span>
         <input type="text" placeholder="Rechercher des taches, projets, équipes..." value={search}
-                onChange={(e) => setSearch(e.target.value)} />
+                onChange={(e) => setSearch(e.target.value)} 
+                onKeyDown={handleKeyDown} />
       </div>
 
       <div className={s.topbarActions}>

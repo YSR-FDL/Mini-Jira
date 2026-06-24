@@ -12,19 +12,24 @@ import { resolveRoles, taskPermissions } from "../../services/roles";
 
 const TYPE_OPTIONS = [
   {
+    value: "Story",
+    label: "Story",
+    icon: <FaBookmark color="#579DFF" style={{ marginRight: "8px" }} />,
+  },
+  {
     value: "Feature",
     label: "Feature",
     icon: <FaBookmark color="#579DFF" style={{ marginRight: "8px" }} />,
   },
   {
+    value: "Request",
+    label: "Request",
+    icon: <FaTasks color="#4BCE97" style={{ marginRight: "8px" }} />,
+  },
+  {
     value: "Bug",
     label: "Bug",
     icon: <FaBug color="#F15B50" style={{ marginRight: "8px" }} />,
-  },
-  {
-    value: "Tech",
-    label: "Tech",
-    icon: <FaTasks color="#4BCE97" style={{ marginRight: "8px" }} />,
   },
 ];
 
@@ -64,7 +69,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
 
   const [editedTask, setEditedTask] = useState({
     ...task,
-    type: task.tags && task.tags.length > 0 ? task.tags[0] : "Feature",
+    type: task.tags && task.tags.length > 0 ? task.tags[0] : "Story",
   });
   const [isClosing, setIsClosing] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
@@ -79,6 +84,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const [newSubtask, setNewSubtask] = useState("");
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState("comments"); // "comments" or "history"
+  const [showAllItems, setShowAllItems] = useState(false);
 
   // Livrable (lien GitHub) — pour les sous-tâches.
   const [deliverableLink, setDeliverableLink] = useState(task?.deliverableLink || "");
@@ -392,7 +398,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     if (onSave) {
       onSave({
         ...editedTask,
-        tags: [editedTask.type || "Feature"],
+        tags: [editedTask.type || "Story"],
       });
     }
   };
@@ -753,11 +759,11 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
               {/* COMMENTS & HISTORY TABS (existing tasks only) */}
               {task.id !== "NEW" && (
                 <div className="comments-section">
-                  <div style={{ display: "flex", gap: "16px", marginBottom: "16px", borderBottom: "1px solid var(--border-mid)", paddingBottom: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px", borderBottom: "1px solid var(--border-mid)", paddingBottom: "8px" }}>
                     <h3 
                       className="section-title" 
                       style={{ cursor: "pointer", color: activeTab === "comments" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
-                      onClick={() => setActiveTab("comments")}
+                      onClick={() => { setActiveTab("comments"); setShowAllItems(false); }}
                     >
                       <FiMessageSquare style={{ marginRight: "8px" }} />
                       Commentaires {comments.length > 0 && `(${comments.length})`}
@@ -765,11 +771,12 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                     <h3 
                       className="section-title" 
                       style={{ cursor: "pointer", color: activeTab === "history" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
-                      onClick={() => setActiveTab("history")}
+                      onClick={() => { setActiveTab("history"); setShowAllItems(false); }}
                     >
                       Historique
                     </h3>
                   </div>
+
 
                   {activeTab === "comments" ? (
                   <>
@@ -779,7 +786,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         Aucun commentaire pour le moment.
                       </p>
                     ) : (
-                      comments.map((c) => {
+                      (showAllItems ? comments : comments.slice(0, 3)).map((c) => {
                         const canDeleteComment =
                           isSM ||
                           (c.authorId != null && c.authorId === currentUserId);
@@ -819,6 +826,17 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         );
                       })
                     )}
+                    {comments.length > 3 && (
+                      <div style={{ textAlign: "center", marginTop: "12px", marginBottom: "8px" }}>
+                        <button
+                          className="btn-link"
+                          onClick={() => setShowAllItems(!showAllItems)}
+                          style={{ color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: 0 }}
+                        >
+                          {showAllItems ? "Voir moins" : `Voir plus de commentaires (${comments.length - 3})`}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="comment-compose">
@@ -847,7 +865,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                   </>
                   ) : (
                     <div className="activity-timeline" style={{ marginTop: "16px" }}>
-                      {activities.length > 0 ? activities.map((event) => {
+                      {activities.length > 0 ? (showAllItems ? activities : activities.slice(0, 3)).map((event) => {
                         let actionText = "";
                         let suffixText = "";
                         switch (event.actionType) {
@@ -894,6 +912,17 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         );
                       }) : (
                         <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Aucun historique pour cette tâche.</p>
+                      )}
+                      {activities.length > 3 && (
+                        <div style={{ textAlign: "center", marginTop: "12px" }}>
+                          <button
+                            className="btn-link"
+                            onClick={() => setShowAllItems(!showAllItems)}
+                            style={{ color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: 0 }}
+                          >
+                            {showAllItems ? "Voir moins" : `Voir plus d'historique (${activities.length - 3})`}
+                          </button>
+                        </div>
                       )}
                     </div>
                   )}
@@ -953,7 +982,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         <select
                           className="ui-input"
                           style={{ height: "32px", padding: "0 8px" }}
-                          value={editedTask.type || "Feature"}
+                          value={editedTask.type || "Story"}
                           disabled={!canEditType}
                           onChange={(e) =>
                             handleFieldChange("type", e.target.value)
@@ -989,6 +1018,34 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                       </select>
                     </div>
                   </div>
+
+                  {/* EPIC PARENT (disponible à la création pour le PO) */}
+                  {task.id === "NEW" && (
+                    <div className="metadata-group">
+                      <div className="metadata-label">Epic parent</div>
+                      <div className="metadata-value no-hover">
+                        <select
+                          className="ui-input"
+                          style={{ height: "32px", padding: "0 8px", width: "100%" }}
+                          value={editedTask.parentId || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditedTask({
+                              ...editedTask,
+                              parentId: val === "" ? null : parseInt(val, 10),
+                            });
+                          }}
+                        >
+                          <option value="">Aucun</option>
+                          {epics.map((ep) => (
+                            <option key={ep.id} value={ep.rawId}>
+                              {ep.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   {task.id !== "NEW" && (
                     <>

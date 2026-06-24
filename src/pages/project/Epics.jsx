@@ -7,14 +7,15 @@ import { taskService } from "../../services/taskService";
 import { epicService } from "../../services/epicService";
 import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
-import { FiChevronRight, FiChevronDown, FiPlus, FiX } from "react-icons/fi";
+import { FiChevronRight, FiChevronDown, FiPlus, FiX, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FaBookmark, FaBug, FaTasks } from "react-icons/fa";
 import "../../styles/Project/Epics.css";
 
 const TYPE_ICON = {
-  Bug: <FaBug color="#F15B50" />,
-  Tech: <FaTasks color="#4BCE97" />,
+  Story: <FaBookmark color="#579DFF" />,
   Feature: <FaBookmark color="#579DFF" />,
+  Request: <FaTasks color="#4BCE97" />,
+  Bug: <FaBug color="#F15B50" />,
 };
 
 const isDone = (status) => {
@@ -286,6 +287,16 @@ export default function Epics() {
                       <span className="epic-stat epic-stat-pts">
                         {epic.donePoints}/{epic.totalPoints} pts
                       </span>
+                      {canManage && (
+                        <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                          <button className="epic-detach" onClick={() => setSelectedTaskId(epic.id)} title="Modifier l'epic">
+                            <FiEdit2 size={14} color="var(--text-light)"/>
+                          </button>
+                          <button className="epic-detach" onClick={() => handleDeleteTask(epic.id)} title="Supprimer l'epic">
+                            <FiTrash2 size={14} color="var(--text-light)" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -312,7 +323,7 @@ export default function Epics() {
                             className={`epic-child-row ${isDone(c.status) ? "is-done" : ""}`}
                           >
                             <span className="epic-child-type">
-                              {TYPE_ICON[c.tags?.[0]] || TYPE_ICON.Feature}
+                              {TYPE_ICON[c.tags?.[0]] || TYPE_ICON.Story}
                             </span>
                             <span
                               className="epic-child-title"

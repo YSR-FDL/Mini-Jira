@@ -20,6 +20,8 @@ import ReportsPage from "./pages/global/ReportsPage.jsx"
 import UsersPage from "./pages/global/UsersPage.jsx";
 import DashboardPage from "./pages/global/DashboardPage.jsx"
 
+import SearchPage from "./pages/global/SearchPage.jsx";
+
 function App() {
   return (
     <>
@@ -45,6 +47,7 @@ function App() {
             <Route path="/project-reports" element={<ProjectReports />} />
             <Route path="/users" element={<UsersPage/>} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/search" element={<SearchPage />} />
         </Routes>
       </BrowserRouter>
     </>

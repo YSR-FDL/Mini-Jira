@@ -155,7 +155,7 @@
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   color: var(--color-text-tertiary);
-  width: 44px;
+  width: 60px;
   flex-shrink: 0;
 }
 .story-title {

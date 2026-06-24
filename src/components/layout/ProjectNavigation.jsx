@@ -40,7 +40,6 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
     { id: "board", label: "Board", icon: "dashboard" },
     { id: "epics", label: "Epics", icon: "mountain_flag" },
     { id: "reports", label: "Reports", icon: "bar_chart", path: "/project-reports" },
-    { id: "calendar", label: "Calendar", icon: "calendar_today" },
   ];
 
   return (
@@ -55,7 +54,7 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
           <Link
             key={item.id}
             to={to}
-            className={`nav-link ${isActive ? "active" : ""}`}
+            className={`nav-link${isActive ? " active" : ""}`}
             onClick={() => {
               if (onTabChange) onTabChange(item.id);
             }}
@@ -72,7 +71,7 @@ const ProjectNavigation = ({ activeTab, onTabChange }) => {
       {showSettings && (
         <Link
           to="/settings"
-          className={`nav-link nav-settings ${location.pathname === "/settings" || activeTab === "settings" ? "active" : ""}`}
+          className={`nav-link nav-settings${location.pathname === "/settings" || activeTab === "settings" ? " active" : ""}`}
           onClick={() => {
             if (onTabChange) onTabChange("settings");
           }}
