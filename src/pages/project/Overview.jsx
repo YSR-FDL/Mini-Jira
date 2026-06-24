@@ -60,6 +60,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   useEffect(() => {
     const rawId = localStorage.getItem("selectedProjectId");
@@ -402,7 +403,7 @@ export default function Overview() {
           <section className="overview-section activity-section">
             <h2 className="section-title">Activité récente</h2>
             <div className="activity-timeline">
-              {activities.length > 0 ? activities.map((event) => {
+              {activities.length > 0 ? (showAllActivity ? activities : activities.slice(0, 3)).map((event) => {
                 let actionText = "";
                 let suffixText = "";
                 switch (event.actionType) {
@@ -436,6 +437,17 @@ export default function Overview() {
                 );
               }) : (
                 <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Aucune activité récente.</p>
+              )}
+              {activities.length > 3 && (
+                <div style={{ textAlign: "center", marginTop: "12px" }}>
+                  <button
+                    className="btn-link"
+                    onClick={() => setShowAllActivity(!showAllActivity)}
+                    style={{ color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: 0 }}
+                  >
+                    {showAllActivity ? "Voir moins" : `Voir plus d'historique (${activities.length - 3})`}
+                  </button>
+                </div>
               )}
             </div>
           </section>

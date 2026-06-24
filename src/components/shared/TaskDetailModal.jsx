@@ -79,7 +79,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const [newSubtask, setNewSubtask] = useState("");
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState("comments"); // "comments" or "history"
-  const [isActivityExpanded, setIsActivityExpanded] = useState(true);
+  const [showAllItems, setShowAllItems] = useState(false);
 
   // Livrable (lien GitHub) — pour les sous-tâches.
   const [deliverableLink, setDeliverableLink] = useState(task?.deliverableLink || "");
@@ -755,20 +755,10 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
               {task.id !== "NEW" && (
                 <div className="comments-section">
                   <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px", borderBottom: "1px solid var(--border-mid)", paddingBottom: "8px" }}>
-                    <div
-                      style={{ cursor: "pointer", display: "flex", alignItems: "center", color: "var(--text-soft)" }}
-                      onClick={() => setIsActivityExpanded(!isActivityExpanded)}
-                    >
-                      {isActivityExpanded ? (
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 8 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-                      ) : (
-                        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ marginRight: 8 }}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                      )}
-                    </div>
                     <h3 
                       className="section-title" 
                       style={{ cursor: "pointer", color: activeTab === "comments" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
-                      onClick={() => { setActiveTab("comments"); setIsActivityExpanded(true); }}
+                      onClick={() => { setActiveTab("comments"); setShowAllItems(false); }}
                     >
                       <FiMessageSquare style={{ marginRight: "8px" }} />
                       Commentaires {comments.length > 0 && `(${comments.length})`}
@@ -776,13 +766,13 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                     <h3 
                       className="section-title" 
                       style={{ cursor: "pointer", color: activeTab === "history" ? "var(--color-primary)" : "var(--text-soft)", margin: 0 }}
-                      onClick={() => { setActiveTab("history"); setIsActivityExpanded(true); }}
+                      onClick={() => { setActiveTab("history"); setShowAllItems(false); }}
                     >
                       Historique
                     </h3>
                   </div>
 
-                  {isActivityExpanded && (
+
                   activeTab === "comments" ? (
                   <>
                   <div className="comment-list">
@@ -791,7 +781,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         Aucun commentaire pour le moment.
                       </p>
                     ) : (
-                      comments.map((c) => {
+                      (showAllItems ? comments : comments.slice(0, 3)).map((c) => {
                         const canDeleteComment =
                           isSM ||
                           (c.authorId != null && c.authorId === currentUserId);
@@ -831,6 +821,17 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         );
                       })
                     )}
+                    {comments.length > 3 && (
+                      <div style={{ textAlign: "center", marginTop: "12px", marginBottom: "8px" }}>
+                        <button
+                          className="btn-link"
+                          onClick={() => setShowAllItems(!showAllItems)}
+                          style={{ color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: 0 }}
+                        >
+                          {showAllItems ? "Voir moins" : `Voir plus de commentaires (${comments.length - 3})`}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="comment-compose">
@@ -859,7 +860,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                   </>
                   ) : (
                     <div className="activity-timeline" style={{ marginTop: "16px" }}>
-                      {activities.length > 0 ? activities.map((event) => {
+                      {activities.length > 0 ? (showAllItems ? activities : activities.slice(0, 3)).map((event) => {
                         let actionText = "";
                         let suffixText = "";
                         switch (event.actionType) {
@@ -907,9 +908,19 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                       }) : (
                         <p style={{ color: "var(--color-text-secondary)", fontSize: "14px" }}>Aucun historique pour cette tâche.</p>
                       )}
+                      {activities.length > 3 && (
+                        <div style={{ textAlign: "center", marginTop: "12px" }}>
+                          <button
+                            className="btn-link"
+                            onClick={() => setShowAllItems(!showAllItems)}
+                            style={{ color: "var(--color-primary)", background: "none", border: "none", cursor: "pointer", fontSize: "14px", padding: 0 }}
+                          >
+                            {showAllItems ? "Voir moins" : `Voir plus d'historique (${activities.length - 3})`}
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  )}
+                  )
                 </div>
               )}
             </div>
