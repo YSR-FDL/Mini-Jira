@@ -773,7 +773,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                   </div>
 
 
-                  activeTab === "comments" ? (
+                  {activeTab === "comments" ? (
                   <>
                   <div className="comment-list">
                     {comments.length === 0 ? (
@@ -920,7 +920,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         </div>
                       )}
                     </div>
-                  )
+                  )}
                 </div>
               )}
             </div>
