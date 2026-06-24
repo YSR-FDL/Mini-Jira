@@ -22,6 +22,9 @@ const STATUS_CONFIG = {
   done: { className: "story-status s-done", label: "Terminé" },
   "terminé": { className: "story-status s-done", label: "Terminé" },
   "termine": { className: "story-status s-done", label: "Terminé" },
+  "termin": { className: "story-status s-done", label: "Terminé" },
+  "terminee": { className: "story-status s-done", label: "Terminé" },
+  "terminée": { className: "story-status s-done", label: "Terminé" },
   review: { className: "story-status s-rev", label: "En revue" },
   "en revue": { className: "story-status s-rev", label: "En revue" },
 };
@@ -30,6 +33,8 @@ const TAG_CONFIG = {
   feature: { className: "tag t-feat", label: "Feature" },
   bug: { className: "tag t-bug", label: "Bug" },
   tech: { className: "tag t-tech", label: "Tech" },
+  chore: { className: "tag t-feat", label: "Chore" }, // Using feat style or maybe neutral gray
+  spike: { className: "tag t-bug", label: "Spike" },  // Using bug style or custom
 };
 
 function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick }) {
@@ -47,11 +52,13 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
     e.stopPropagation();
     if (!onTagChange) return;
 
-    const types = ["Feature", "Bug", "Tech"];
+    const types = ["Feature", "Bug", "Tech", "Chore", "Spike"];
     let currentTag = (tags[tagIdx] || "").toLowerCase();
     if (currentTag === "fonctionnalité" || currentTag === "fonctionnalite") currentTag = "feature";
     else if (currentTag === "anomalie") currentTag = "bug";
     else if (currentTag === "technique") currentTag = "tech";
+    else if (currentTag === "chore") currentTag = "chore";
+    else if (currentTag === "spike") currentTag = "spike";
 
     let nextType = "Feature";
     const currentIndex = types.findIndex(t => t.toLowerCase() === currentTag);

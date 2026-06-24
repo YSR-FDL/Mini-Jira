@@ -7,7 +7,7 @@ import { taskService } from "../../services/taskService";
 import { epicService } from "../../services/epicService";
 import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
-import { FiChevronRight, FiChevronDown, FiPlus, FiX } from "react-icons/fi";
+import { FiChevronRight, FiChevronDown, FiPlus, FiX, FiEdit2, FiTrash2 } from "react-icons/fi";
 import { FaBookmark, FaBug, FaTasks } from "react-icons/fa";
 import "../../styles/Project/Epics.css";
 
@@ -286,6 +286,16 @@ export default function Epics() {
                       <span className="epic-stat epic-stat-pts">
                         {epic.donePoints}/{epic.totalPoints} pts
                       </span>
+                      {canManage && (
+                        <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                          <button className="epic-detach" onClick={() => setSelectedTaskId(epic.id)} title="Modifier l'epic">
+                            <FiEdit2 size={14} color="var(--text-light)"/>
+                          </button>
+                          <button className="epic-detach" onClick={() => handleDeleteTask(epic.id)} title="Supprimer l'epic">
+                            <FiTrash2 size={14} color="var(--text-light)" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
