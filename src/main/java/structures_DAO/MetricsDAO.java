@@ -136,16 +136,16 @@ public class MetricsDAO {
             e.printStackTrace();
         }
 
-        // Exclude parent tasks that have children in the same sprint to avoid
-        // double-counting story points (the children already carry the velocity).
+        // Only count points from stories (non sub-tasks). Sub-tasks are a checklist
+        // inside the story and their points don't count independently.
         String sql = "SELECT " +
             "COUNT(*) AS total, " +
             "SUM(CASE WHEN statut = ? THEN 1 ELSE 0 END) AS completed, " +
-            "COALESCE(SUM(CASE WHEN id_task NOT IN " +
-                "(SELECT DISTINCT id_parent FROM tasks WHERE id_parent IS NOT NULL AND id_sprint = ?) " +
+            "COALESCE(SUM(CASE WHEN (type_tache IS NULL OR type_tache <> 'Sub-task') " +
+                "AND (id_parent IS NULL OR id_parent NOT IN (SELECT id_task FROM tasks WHERE id_sprint = ?)) " +
                 "THEN story_points ELSE 0 END), 0) AS totalPoints, " +
-            "COALESCE(SUM(CASE WHEN statut = ? AND id_task NOT IN " +
-                "(SELECT DISTINCT id_parent FROM tasks WHERE id_parent IS NOT NULL AND id_sprint = ?) " +
+            "COALESCE(SUM(CASE WHEN statut = ? AND (type_tache IS NULL OR type_tache <> 'Sub-task') " +
+                "AND (id_parent IS NULL OR id_parent NOT IN (SELECT id_task FROM tasks WHERE id_sprint = ?)) " +
                 "THEN story_points ELSE 0 END), 0) AS completedPoints " +
             "FROM tasks WHERE id_sprint = ?";
         try {
