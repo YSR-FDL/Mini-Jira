@@ -16,7 +16,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks }) {
 
   const prio = PRIORITY_CONFIG[priority?.toLowerCase()] ?? 'low';
   const isDone = status?.toLowerCase() === 'done';
-  const primaryTag = tags.length > 0 ? tags[0].toLowerCase() : 'feature';
+  const primaryTag = tags.length > 0 ? tags[0].toLowerCase() : 'story';
 
   // Sub-task progress: count children of this task that are "done".
   const rawId = parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
@@ -58,7 +58,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks }) {
 
           <div className="kanban-card-footer">
             <span className={`kanban-card-tag ${primaryTag}`}>
-              {tags.length > 0 ? tags[0] : 'Feature'}
+              {tags.length > 0 ? tags[0] : 'Story'}
             </span>
 
             {subtaskTotal > 0 && (

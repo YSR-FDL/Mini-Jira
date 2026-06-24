@@ -1,7 +1,7 @@
 import React from 'react';
 import '../../styles/Board/BoardControlBar.css';
 
-const TYPE_FILTERS = ['Toutes', 'Feature', 'Bug', 'Tech'];
+const TYPE_FILTERS = ['Toutes', 'Story', 'Feature', 'Request', 'Bug'];
 
 function FilterBar({ search, onSearch, activeFilter, onFilter, sortConfig, onSortChange, assignees, activeAssignees, onToggleAssignee }) {
     

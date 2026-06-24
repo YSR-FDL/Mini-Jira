@@ -118,8 +118,19 @@ export default function Backlog() {
         s.completedIssuesCount = sTasks.filter(
           (i) => i.status === "done",
         ).length;
+        // Sub-tasks are a checklist — exclude them from point totals
+        const sTaskIds = new Set(sTasks.map(t => {
+          const parts = t.id ? t.id.split('-') : [];
+          return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : null;
+        }).filter(Boolean));
         s.totalPoints = sTasks
-          .filter((i) => i.status === "done")
+          .filter((i) => {
+            if (i.status !== "done") return false;
+            const tags = i.tags || [];
+            if (tags.includes('Sub-task') || tags.includes('Subtask')) return false;
+            if (i.parentId && sTaskIds.has(i.parentId)) return false;
+            return true;
+          })
           .reduce((acc, i) => acc + (i.points || 0), 0);
       });
       setCompletedSprints(completed);

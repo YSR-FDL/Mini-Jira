@@ -30,11 +30,10 @@ const STATUS_CONFIG = {
 };
 
 const TAG_CONFIG = {
+  story: { className: "tag t-feat", label: "Story" },
   feature: { className: "tag t-feat", label: "Feature" },
+  request: { className: "tag t-tech", label: "Request" },
   bug: { className: "tag t-bug", label: "Bug" },
-  tech: { className: "tag t-tech", label: "Tech" },
-  chore: { className: "tag t-feat", label: "Chore" }, // Using feat style or maybe neutral gray
-  spike: { className: "tag t-bug", label: "Spike" },  // Using bug style or custom
 };
 
 function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick }) {
@@ -52,20 +51,17 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
     e.stopPropagation();
     if (!onTagChange) return;
 
-    const types = ["Feature", "Bug", "Tech", "Chore", "Spike"];
+    const types = ["Story", "Feature", "Request", "Bug"];
     let currentTag = (tags[tagIdx] || "").toLowerCase();
     if (currentTag === "fonctionnalité" || currentTag === "fonctionnalite") currentTag = "feature";
     else if (currentTag === "anomalie") currentTag = "bug";
-    else if (currentTag === "technique") currentTag = "tech";
-    else if (currentTag === "chore") currentTag = "chore";
-    else if (currentTag === "spike") currentTag = "spike";
 
-    let nextType = "Feature";
+    let nextType = "Story";
     const currentIndex = types.findIndex(t => t.toLowerCase() === currentTag);
     if (currentIndex !== -1) {
       nextType = types[(currentIndex + 1) % types.length];
     } else {
-      nextType = "Feature";
+      nextType = "Story";
     }
 
     onTagChange(nextType, tagIdx);

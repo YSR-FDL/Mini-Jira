@@ -12,19 +12,24 @@ import { resolveRoles, taskPermissions } from "../../services/roles";
 
 const TYPE_OPTIONS = [
   {
+    value: "Story",
+    label: "Story",
+    icon: <FaBookmark color="#579DFF" style={{ marginRight: "8px" }} />,
+  },
+  {
     value: "Feature",
     label: "Feature",
     icon: <FaBookmark color="#579DFF" style={{ marginRight: "8px" }} />,
   },
   {
+    value: "Request",
+    label: "Request",
+    icon: <FaTasks color="#4BCE97" style={{ marginRight: "8px" }} />,
+  },
+  {
     value: "Bug",
     label: "Bug",
     icon: <FaBug color="#F15B50" style={{ marginRight: "8px" }} />,
-  },
-  {
-    value: "Tech",
-    label: "Tech",
-    icon: <FaTasks color="#4BCE97" style={{ marginRight: "8px" }} />,
   },
 ];
 
@@ -64,7 +69,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
 
   const [editedTask, setEditedTask] = useState({
     ...task,
-    type: task.tags && task.tags.length > 0 ? task.tags[0] : "Feature",
+    type: task.tags && task.tags.length > 0 ? task.tags[0] : "Story",
   });
   const [isClosing, setIsClosing] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
@@ -393,7 +398,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     if (onSave) {
       onSave({
         ...editedTask,
-        tags: [editedTask.type || "Feature"],
+        tags: [editedTask.type || "Story"],
       });
     }
   };
@@ -977,7 +982,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         <select
                           className="ui-input"
                           style={{ height: "32px", padding: "0 8px" }}
-                          value={editedTask.type || "Feature"}
+                          value={editedTask.type || "Story"}
                           disabled={!canEditType}
                           onChange={(e) =>
                             handleFieldChange("type", e.target.value)
@@ -1013,6 +1018,34 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                       </select>
                     </div>
                   </div>
+
+                  {/* EPIC PARENT (disponible à la création pour le PO) */}
+                  {task.id === "NEW" && (
+                    <div className="metadata-group">
+                      <div className="metadata-label">Epic parent</div>
+                      <div className="metadata-value no-hover">
+                        <select
+                          className="ui-input"
+                          style={{ height: "32px", padding: "0 8px", width: "100%" }}
+                          value={editedTask.parentId || ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditedTask({
+                              ...editedTask,
+                              parentId: val === "" ? null : parseInt(val, 10),
+                            });
+                          }}
+                        >
+                          <option value="">Aucun</option>
+                          {epics.map((ep) => (
+                            <option key={ep.id} value={ep.rawId}>
+                              {ep.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   {task.id !== "NEW" && (
                     <>

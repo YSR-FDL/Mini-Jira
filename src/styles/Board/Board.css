@@ -151,7 +151,7 @@
     font-size: 10px;
     font-weight: 500;
 }
-.kanban-card-tag.feature {
+.kanban-card-tag.story, .kanban-card-tag.feature {
     background-color: var(--color-primary-blue-light);
     color: var(--color-primary-blue);
 }
@@ -159,7 +159,7 @@
     background-color: var(--color-danger-red-light);
     color: var(--color-danger-red);
 }
-.kanban-card-tag.tech {
+.kanban-card-tag.request {
     background-color: var(--color-gray-100);
     color: var(--color-gray-700);
 }

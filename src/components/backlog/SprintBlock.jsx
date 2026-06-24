@@ -35,12 +35,28 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
     }
 
     // LOGIQUE DES POINTS ET DE LA CAPACITÉ
-    // 1. Somme des Story Points affectes a ce sprint
-    const totalPoints = sprintTasks.reduce((sum, task) => sum + (task.points || 0), 0);
+    // Les sous-tâches (checklist) ne comptent pas dans les points du sprint.
+    // Seules les stories/features/bugs/tech comptent.
+    const sprintTaskIds = new Set(sprintTasks.map(t => {
+        const parts = t.id ? t.id.split('-') : [];
+        return parts.length > 1 ? parseInt(parts[parts.length - 1], 10) : null;
+    }).filter(Boolean));
+
+    const countableTasks = sprintTasks.filter(task => {
+        // Sub-tasks are a checklist — their points don't count independently
+        const tags = task.tags || [];
+        if (tags.includes('Sub-task') || tags.includes('Subtask')) return false;
+        // Also exclude any task whose parent is in this sprint (defensive fallback)
+        if (task.parentId && sprintTaskIds.has(task.parentId)) return false;
+        return true;
+    });
+
+    // 1. Somme des Story Points (stories uniquement)
+    const totalPoints = countableTasks.reduce((sum, task) => sum + (task.points || 0), 0);
 
     // 2. Sommer les Story Points des tâches terminées uniquement
     const doneStatusId = columns && columns.length > 0 ? columns[columns.length - 1].id : 'done';
-    const donePoints = sprintTasks
+    const donePoints = countableTasks
         .filter(task => task.status === doneStatusId || task.status === 'done')
         .reduce((sum, task) => sum + (task.points || 0), 0);
 

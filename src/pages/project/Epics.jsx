@@ -12,9 +12,10 @@ import { FaBookmark, FaBug, FaTasks } from "react-icons/fa";
 import "../../styles/Project/Epics.css";
 
 const TYPE_ICON = {
-  Bug: <FaBug color="#F15B50" />,
-  Tech: <FaTasks color="#4BCE97" />,
+  Story: <FaBookmark color="#579DFF" />,
   Feature: <FaBookmark color="#579DFF" />,
+  Request: <FaTasks color="#4BCE97" />,
+  Bug: <FaBug color="#F15B50" />,
 };
 
 const isDone = (status) => {
@@ -322,7 +323,7 @@ export default function Epics() {
                             className={`epic-child-row ${isDone(c.status) ? "is-done" : ""}`}
                           >
                             <span className="epic-child-type">
-                              {TYPE_ICON[c.tags?.[0]] || TYPE_ICON.Feature}
+                              {TYPE_ICON[c.tags?.[0]] || TYPE_ICON.Story}
                             </span>
                             <span
                               className="epic-child-title"
