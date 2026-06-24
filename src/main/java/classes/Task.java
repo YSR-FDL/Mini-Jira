@@ -15,6 +15,7 @@ public class Task {
     private Integer idParent;
     private String typeTache;
     private String lienLivrable;
+    private String poValidation = "NONE";
 
     public Task() {
         this.typeTache = "Feature";
@@ -61,5 +62,8 @@ public class Task {
 
     public String getLienLivrable() { return lienLivrable; }
     public void setLienLivrable(String lienLivrable) { this.lienLivrable = lienLivrable; }
+
+    public String getPoValidation() { return poValidation; }
+    public void setPoValidation(String poValidation) { this.poValidation = poValidation; }
     
 }

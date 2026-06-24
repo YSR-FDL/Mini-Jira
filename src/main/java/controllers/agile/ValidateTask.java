@@ -7,6 +7,9 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import structures_DAO.TaskDAO;
+import structures_DAO.ProjectDAO;
+import structures_DAO.TeamDao;
+import structures_DAO.ActivityDAO;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,23 +18,18 @@ import java.io.PrintWriter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-/**
- * MoveTask — The fastest possible endpoint for Board drag-and-drop.
- * Only updates the task's status column, nothing else.
- * Expects: { "taskId": 5, "newStatus": "in-progress" }
- */
-@WebServlet("/MoveTask")
-public class MoveTask extends HttpServlet {
+@WebServlet("/ValidateTask")
+public class ValidateTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
-    private structures_DAO.ProjectDAO projectDAO;
-    private structures_DAO.TeamDao teamDao;
+    private ProjectDAO projectDAO;
+    private TeamDao teamDao;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
-        projectDAO = new structures_DAO.ProjectDAO();
-        teamDao = new structures_DAO.TeamDao();
+        projectDAO = new ProjectDAO();
+        teamDao = new TeamDao();
     }
 
     @Override
@@ -62,56 +60,54 @@ public class MoveTask extends HttpServlet {
         response.setCharacterEncoding("UTF-8");
         PrintWriter out = response.getWriter();
 
-        if (body == null || !body.has("taskId") || body.get("taskId").isJsonNull()
-                || !body.has("newStatus") || body.get("newStatus").isJsonNull()) {
+        if (body == null || !body.has("taskId") || body.get("taskId").isJsonNull()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Missing taskId or newStatus\"}");
+            out.print("{\"message\":\"error\",\"error\":\"Missing taskId\"}");
             return;
         }
 
         int taskId = body.get("taskId").getAsInt();
-        String newStatus = body.get("newStatus").getAsString();
 
-        // RBAC: board movement → Scrum Master, or the Développeur who owns the
-        // story/sub-task. Epics may only be moved by the Product Owner.
         Integer requesterId = utils.RequestUtils.getRequesterId(body);
         if (requesterId == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
             return;
         }
+
         classes.Task existing = taskDAO.getTaskById(taskId);
         if (existing == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
             return;
         }
+
         classes.Project project = projectDAO.getProjectById(existing.getIdProject());
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
-        classes.Task incoming = new classes.Task();
-        incoming.setIdTask(taskId);
-        incoming.setStatut(newStatus);
-        classes.Task parent = utils.Rbac.isSubtask(existing) && existing.getIdParent() != null
-                ? taskDAO.getTaskById(existing.getIdParent()) : null;
-        String denial = utils.Rbac.authorizeTaskUpdate(
-                roles, project, existing, incoming, java.util.Collections.singleton("statut"), parent);
-        if (denial != null) {
-            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+
+        // Seul le PO peut valider une Story formellement
+        if (!roles.isPO) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "Seul le Product Owner peut valider une user story.");
             return;
         }
 
-        int nb = taskDAO.updateTaskStatus(taskId, newStatus);
+        if ("APPROVED".equals(existing.getPoValidation())) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "La tâche est déjà validée.");
+            return;
+        }
+
+        int nb = taskDAO.updateTaskValidation(taskId, "APPROVED");
 
         if (nb > 0) {
-            new structures_DAO.ActivityDAO().logActivity(
+            new ActivityDAO().logActivity(
                 taskId,
                 existing.getIdProject(),
                 requesterId,
-                "STATUS_CHANGE",
-                existing.getStatut(),
-                newStatus
+                "PO_VALIDATION_APPROVED",
+                existing.getPoValidation() != null ? existing.getPoValidation() : "NONE",
+                "APPROVED"
             );
-            out.print("{\"message\":\"success\"}");
+            out.print("{\"message\":\"success\", \"newValidation\":\"APPROVED\"}");
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.print("{\"message\":\"error\"}");
         }
     }

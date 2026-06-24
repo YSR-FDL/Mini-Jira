@@ -300,7 +300,7 @@ public final class Rbac {
      *                      stripped of {@code idTask}/{@code requesterId})
      * @param parent        parent of {@code existing} when it is a Sub-task (may be null)
      */
-    public static String authorizeTaskUpdate(Roles roles, Task existing, Task incoming,
+    public static String authorizeTaskUpdate(Roles roles, Project project, Task existing, Task incoming,
                                              Set<String> changedFields, Task parent) {
         if (roles == null || existing == null || !roles.isMember) {
             return "Action non autorisée.";
@@ -332,7 +332,7 @@ public final class Rbac {
 
         //  Standard Story
         for (String field : changedFields) {
-            String denial = authorizeStoryField(roles, existing, incoming, field);
+            String denial = authorizeStoryField(roles, project, existing, incoming, field);
             if (denial != null) {
                 return denial;
             }
@@ -341,7 +341,7 @@ public final class Rbac {
     }
 
     /** Per-field rule for editing a Story. Returns null if the field edit is allowed. */
-    private static String authorizeStoryField(Roles roles, Task existing, Task incoming, String field) {
+    private static String authorizeStoryField(Roles roles, Project project, Task existing, Task incoming, String field) {
         switch (field) {
             // Scope definition & prioritisation → Product Owner.
             case "titre":
@@ -385,6 +385,21 @@ public final class Rbac {
             // Board movement (status) → Scrum Master, ou tout Développeur
             // (responsabilité collective de l'équipe face à l'objectif du sprint).
             case "statut": {
+                String newStatus = incoming.getStatut();
+                if (newStatus != null && project != null) {
+                    java.util.List<String> etats = project.getEtats();
+                    if (etats != null && !etats.isEmpty()) {
+                        String finalStatus = etats.get(etats.size() - 1).trim();
+                        if (newStatus.equalsIgnoreCase(finalStatus)) {
+                            if (!"APPROVED".equals(existing.getPoValidation())) {
+                                return "Impossible de déplacer vers " + finalStatus + " : la tâche doit d'abord être validée (voyant vert) par le Product Owner.";
+                            }
+                        }
+                    }
+                }
+                if (roles.isPO) {
+                    return null;
+                }
                 if (roles.isSM) {
                     return null;
                 }

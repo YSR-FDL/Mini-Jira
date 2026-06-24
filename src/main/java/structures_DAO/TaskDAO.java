@@ -37,6 +37,7 @@ public class TaskDAO {
 
         task.setTypeTache(rs.getString("type_tache"));
         task.setLienLivrable(rs.getString("lien_livrable"));
+        task.setPoValidation(rs.getString("po_validation"));
         return task;
     }
 
@@ -76,6 +77,7 @@ public class TaskDAO {
         map.put("tags", tags);
         map.put("typeTache", typeTache);
         map.put("lienLivrable", rs.getString("lien_livrable"));
+        map.put("poValidation", rs.getString("po_validation"));
 
         return map;
     }
@@ -108,8 +110,8 @@ public class TaskDAO {
             e.printStackTrace();
         }
 
-        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache, lien_livrable) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache, lien_livrable, po_validation) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, task.getTitre());
@@ -140,6 +142,7 @@ public class TaskDAO {
             } else {
                 ps.setNull(12, java.sql.Types.VARCHAR);
             }
+            ps.setString(13, task.getPoValidation() != null ? task.getPoValidation() : "NONE");
             nb = ps.executeUpdate();
             if (nb > 0) {
                 ResultSet keys = ps.getGeneratedKeys();
@@ -312,6 +315,23 @@ public class TaskDAO {
         return nb;
     }
 
+    public int updateTaskValidation(int taskId, String validationStatus) {
+        int nb = 0;
+        DBInteraction.connect();
+        String sql = "UPDATE tasks SET po_validation = ? WHERE id_task = ?";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setString(1, validationStatus);
+            ps.setInt(2, taskId);
+            nb = ps.executeUpdate();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return nb;
+    }
+
     public Task getTaskById(int taskId) {
         Task task = null;
         DBInteraction.connect();
@@ -337,6 +357,7 @@ public class TaskDAO {
                 task.setIdParent(rs.wasNull() ? null : parentId);
                 task.setTypeTache(rs.getString("type_tache"));
                 task.setLienLivrable(rs.getString("lien_livrable"));
+                task.setPoValidation(rs.getString("po_validation"));
             }
             rs.close();
             ps.close();
@@ -438,11 +459,14 @@ public class TaskDAO {
         // lienLivrable: present semantics. Omitted = keep current; present null = clear.
         if (hasPresence ? !providedFields.contains("lienLivrable") : task.getLienLivrable() == null)
             task.setLienLivrable(existing.getLienLivrable());
+            
+        if (hasPresence ? !providedFields.contains("poValidation") : task.getPoValidation() == null)
+            task.setPoValidation(existing.getPoValidation());
 
         int nb = 0;
         DBInteraction.connect();
         String sql = "UPDATE tasks SET titre = ?, description = ?, statut = ?, priorite = ?, " +
-                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ?, lien_livrable = ? WHERE id_task = ?";
+                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ?, lien_livrable = ?, po_validation = ? WHERE id_task = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setString(1, task.getTitre());
@@ -471,7 +495,8 @@ public class TaskDAO {
             } else {
                 ps.setNull(10, java.sql.Types.VARCHAR);
             }
-            ps.setInt(11, task.getIdTask());
+            ps.setString(11, task.getPoValidation());
+            ps.setInt(12, task.getIdTask());
             nb = ps.executeUpdate();
             ps.close();
         } catch (SQLException e) {
