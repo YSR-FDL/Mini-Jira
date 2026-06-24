@@ -14,6 +14,7 @@ function KanbanColumn({
   isSM,
   onDeleteColumn,
   isDragDisabled,
+  isValidationColumn,
   dragHandleProps,
 }) {
   const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -160,6 +161,8 @@ function KanbanColumn({
                 isDragDisabled={isDragDisabled}
                 onClick={() => onTaskClick && onTaskClick(task.id)}
                 allTasks={allTasks}
+                isPO={isPO}
+                isValidationColumn={isValidationColumn}
               />
             ))}
 

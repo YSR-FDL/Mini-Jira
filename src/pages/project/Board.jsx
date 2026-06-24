@@ -184,6 +184,8 @@ export default function Board() {
       .updateTaskStatus(draggableId, destination.droppableId)
       .catch((err) => {
         console.error("Erreur lors du changement de statut:", err);
+        alert(err.response?.data?.error || "Action non autorisée.");
+        window.location.reload();
       });
   };
 
@@ -455,6 +457,7 @@ export default function Board() {
                           isPO={isPO}
                           isSM={isSM}
                           isDragDisabled={!canDragOnBoard}
+                          isValidationColumn={index === columns.length - 2}
                           onDeleteColumn={handleDeleteColumn}
                           dragHandleProps={isSM ? prov.dragHandleProps : undefined}
                         />
