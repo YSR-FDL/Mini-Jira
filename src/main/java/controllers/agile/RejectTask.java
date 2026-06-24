@@ -7,6 +7,11 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import structures_DAO.TaskDAO;
+import structures_DAO.ProjectDAO;
+import structures_DAO.TeamDao;
+import structures_DAO.ActivityDAO;
+import structures_DAO.CommentaireDAO;
+import classes.Commentaire;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,23 +20,20 @@ import java.io.PrintWriter;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-/**
- * MoveTask — The fastest possible endpoint for Board drag-and-drop.
- * Only updates the task's status column, nothing else.
- * Expects: { "taskId": 5, "newStatus": "in-progress" }
- */
-@WebServlet("/MoveTask")
-public class MoveTask extends HttpServlet {
+@WebServlet("/RejectTask")
+public class RejectTask extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TaskDAO taskDAO;
-    private structures_DAO.ProjectDAO projectDAO;
-    private structures_DAO.TeamDao teamDao;
+    private ProjectDAO projectDAO;
+    private TeamDao teamDao;
+    private CommentaireDAO commentaireDAO;
 
     @Override
     public void init(ServletConfig config) throws ServletException {
         taskDAO = new TaskDAO();
-        projectDAO = new structures_DAO.ProjectDAO();
-        teamDao = new structures_DAO.TeamDao();
+        projectDAO = new ProjectDAO();
+        teamDao = new TeamDao();
+        commentaireDAO = new CommentaireDAO();
     }
 
     @Override
@@ -63,55 +65,62 @@ public class MoveTask extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         if (body == null || !body.has("taskId") || body.get("taskId").isJsonNull()
-                || !body.has("newStatus") || body.get("newStatus").isJsonNull()) {
+                || !body.has("reason") || body.get("reason").isJsonNull()) {
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            out.print("{\"message\":\"error\",\"error\":\"Missing taskId or newStatus\"}");
+            out.print("{\"message\":\"error\",\"error\":\"Missing taskId or reason\"}");
             return;
         }
 
         int taskId = body.get("taskId").getAsInt();
-        String newStatus = body.get("newStatus").getAsString();
+        String reason = body.get("reason").getAsString();
 
-        // RBAC: board movement → Scrum Master, or the Développeur who owns the
-        // story/sub-task. Epics may only be moved by the Product Owner.
         Integer requesterId = utils.RequestUtils.getRequesterId(body);
         if (requesterId == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");
             return;
         }
+
         classes.Task existing = taskDAO.getTaskById(taskId);
         if (existing == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "Tâche introuvable.");
             return;
         }
+
         classes.Project project = projectDAO.getProjectById(existing.getIdProject());
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, teamDao);
-        classes.Task incoming = new classes.Task();
-        incoming.setIdTask(taskId);
-        incoming.setStatut(newStatus);
-        classes.Task parent = utils.Rbac.isSubtask(existing) && existing.getIdParent() != null
-                ? taskDAO.getTaskById(existing.getIdParent()) : null;
-        String denial = utils.Rbac.authorizeTaskUpdate(
-                roles, project, existing, incoming, java.util.Collections.singleton("statut"), parent);
-        if (denial != null) {
-            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
+
+        // Seul le PO peut rejeter une Story formellement
+        if (!roles.isPO) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "Seul le Product Owner peut rejeter une user story.");
             return;
         }
 
-        int nb = taskDAO.updateTaskStatus(taskId, newStatus);
+        if ("REJECTED".equals(existing.getPoValidation())) {
+            utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_BAD_REQUEST, "La tâche est déjà rejetée.");
+            return;
+        }
+
+        int nb = taskDAO.updateTaskValidation(taskId, "REJECTED");
 
         if (nb > 0) {
-            new structures_DAO.ActivityDAO().logActivity(
+            // Ajouter le motif du rejet comme commentaire
+            Commentaire comment = new Commentaire();
+            comment.setIdTask(taskId);
+            comment.setIdAuteur(requesterId);
+            comment.setContenu("Rejeté : " + reason);
+            commentaireDAO.add(comment);
+
+            new ActivityDAO().logActivity(
                 taskId,
                 existing.getIdProject(),
                 requesterId,
-                "STATUS_CHANGE",
-                existing.getStatut(),
-                newStatus
+                "PO_VALIDATION_REJECTED",
+                existing.getPoValidation() != null ? existing.getPoValidation() : "NONE",
+                "REJECTED"
             );
-            out.print("{\"message\":\"success\"}");
+            out.print("{\"message\":\"success\", \"newValidation\":\"REJECTED\"}");
         } else {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             out.print("{\"message\":\"error\"}");
         }
     }

@@ -85,7 +85,7 @@ public class UpdateTask extends HttpServlet {
         java.util.Set<String> changedFields = utils.Rbac.computeChangedTaskFields(presentKeys, existing, task);
         classes.Task parent = utils.Rbac.isSubtask(existing) && existing.getIdParent() != null
                 ? taskDAO.getTaskById(existing.getIdParent()) : null;
-        String denial = utils.Rbac.authorizeTaskUpdate(roles, existing, task, changedFields, parent);
+        String denial = utils.Rbac.authorizeTaskUpdate(roles, project, existing, task, changedFields, parent);
         if (denial != null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
             return;
