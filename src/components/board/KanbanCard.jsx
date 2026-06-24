@@ -9,7 +9,7 @@ const PRIORITY_CONFIG = {
   low: 'low',
 };
 
-function KanbanCard({ task, index, onClick, isDragDisabled, allTasks }) {
+function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isValidationColumn }) {
   if (!task) return null;
 
   const { id, title, priority, status, tags = [], points, assignee } = task;
@@ -17,6 +17,19 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks }) {
   const prio = PRIORITY_CONFIG[priority?.toLowerCase()] ?? 'low';
   const isDone = status?.toLowerCase() === 'done';
   const primaryTag = tags.length > 0 ? tags[0].toLowerCase() : 'story';
+  const isStory = primaryTag !== 'epic' && primaryTag !== 'subtask';
+
+  const poValidation = task.poValidation || 'NONE';
+  let validationClass = '';
+  if (isStory && isValidationColumn && !isDone) {
+    if (poValidation === 'APPROVED') {
+      validationClass = 'glow-po-green';
+    } else if (poValidation === 'REJECTED') {
+      validationClass = 'glow-po-red';
+    } else {
+      validationClass = 'glow-po-blue'; // Waiting for PO
+    }
+  }
 
   // Sub-task progress: count children of this task that are "done".
   const rawId = parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
@@ -34,7 +47,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks }) {
     <Draggable draggableId={id} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card kanban-card-${prio} ${isDone ? 'done' : ''}`}
+          className={`kanban-card kanban-card-${prio} ${isDone ? 'done' : ''} ${validationClass}`}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}

@@ -34,7 +34,8 @@ export const taskService = {
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
                 sprintId: t.idSprint !== undefined ? t.idSprint : null,
                 parentId: t.idParent !== undefined ? t.idParent : null,
-                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null
+                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null,
+                poValidation: t.poValidation || 'NONE'
             }));
         } catch (error) {
             console.error("Error fetching tasks:", error);
@@ -52,7 +53,8 @@ export const taskService = {
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
                 sprintId: sprintId !== undefined ? sprintId : null,
                 parentId: t.idParent !== undefined ? t.idParent : null,
-                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null
+                deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null,
+                poValidation: t.poValidation || 'NONE'
             }));
             return { tasks: formattedTasks, columns: response.data.columns };
         } catch (error) {
@@ -152,6 +154,18 @@ export const taskService = {
         const targetSprint = (newSprintId === null || newSprintId === 'null' || newSprintId === 'backlog') ? null : parseInt(newSprintId, 10);
         const response = await axiosInstance.post('/AssignTaskToSprint', { taskId: rawTaskId, sprintId: targetSprint, requesterId: getRequesterId() });
         return response.data.message === 'success';
+    },
+
+    validateTask: async (taskId) => {
+        const rawId = toRawId(taskId);
+        const response = await axiosInstance.post('/ValidateTask', { taskId: rawId, requesterId: getRequesterId() });
+        return response.data;
+    },
+
+    rejectTask: async (taskId, reason) => {
+        const rawId = toRawId(taskId);
+        const response = await axiosInstance.post('/RejectTask', { taskId: rawId, reason: reason, requesterId: getRequesterId() });
+        return response.data;
     },
 
     updateTaskTag: async (taskId, newTag, tagIndex = 0) => {

@@ -437,6 +437,37 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     saveChanges(editedTask);
   };
 
+  const handleValidateTask = () => {
+    if (window.confirm("Êtes-vous sûr de vouloir valider cette Story ?")) {
+      taskService.validateTask(task.id).then((res) => {
+        if (res.message === 'success') {
+          setEditedTask({ ...editedTask, poValidation: res.newValidation });
+          if (onSave) onSave({ ...editedTask, poValidation: res.newValidation });
+          alert("Story validée !");
+        }
+      }).catch(err => {
+          console.error(err);
+          alert(err.response?.data?.error || "Erreur lors de la validation.");
+      });
+    }
+  };
+
+  const handleRejectTask = () => {
+    const reason = window.prompt("Motif du rejet :");
+    if (reason && reason.trim() !== "") {
+      taskService.rejectTask(task.id, reason.trim()).then((res) => {
+        if (res.message === 'success') {
+          setEditedTask({ ...editedTask, poValidation: res.newValidation });
+          if (onSave) onSave({ ...editedTask, poValidation: res.newValidation });
+          alert("Story rejetée !");
+        }
+      }).catch(err => {
+          console.error(err);
+          alert(err.response?.data?.error || "Erreur lors du rejet.");
+      });
+    }
+  };
+
   if (!task) return null;
 
   return (
@@ -462,6 +493,16 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
             className="header-actions"
             style={{ display: "flex", gap: "8px", alignItems: "center" }}
           >
+            {editedTask.id !== "NEW" && isStory && isPO && !isStatusDone(editedTask.status) && (
+              <ActionBtn variant="primary" style={{ backgroundColor: '#10b981', color: '#fff', borderColor: '#10b981' }} onClick={handleValidateTask}>
+                Valider
+              </ActionBtn>
+            )}
+            {editedTask.id !== "NEW" && isStory && isPO && !isStatusDone(editedTask.status) && (
+              <ActionBtn variant="danger" onClick={handleRejectTask}>
+                Rejeter
+              </ActionBtn>
+            )}
             {editedTask.id !== "NEW" && onDelete && canDelete && (
               <ActionBtn variant="danger" onClick={handleDeleteTask}>
                 Supprimer
