@@ -101,6 +101,12 @@ public class MoveTask extends HttpServlet {
         int nb = taskDAO.updateTaskStatus(taskId, newStatus);
 
         if (nb > 0) {
+            java.util.List<String> etats = project.getEtats();
+            String finalStatus = (etats != null && !etats.isEmpty()) ? etats.get(etats.size() - 1).trim() : null;
+            if (finalStatus != null && !newStatus.equalsIgnoreCase(finalStatus)) {
+                taskDAO.updateTaskValidation(taskId, "NONE");
+            }
+
             new structures_DAO.ActivityDAO().logActivity(
                 taskId,
                 existing.getIdProject(),
