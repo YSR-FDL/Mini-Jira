@@ -49,6 +49,36 @@ public class TeamDao {
 	    return teams;
 	}
 
+	public List<Team> getAllTeams() {
+	    List<Team> teams = new ArrayList<Team>();
+	    DBInteraction.connect();
+	    String sql = "select *, (SELECT COUNT(*) FROM projects p WHERE p.idTeam = equipes.id) as projetsCount from equipes order by isArchived, dateCreation desc";
+	    try {
+	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+	        ResultSet rs = ps.executeQuery();
+	        while(rs.next()) {
+	            Team team = new Team();
+	            team.setId(rs.getInt("id"));
+	            team.setIdCreateur(rs.getInt("idCreateur"));
+	            team.setNom(rs.getString("nom"));
+	            team.setObjectif(rs.getString("objectif"));
+	            team.setArchived(rs.getBoolean("isArchived"));
+	            team.setDateCreation(rs.getString("dateCreation"));
+	            team.setProjetsCount(rs.getInt("projetsCount"));
+	            // Note: we don't necessarily need to load all members for all teams just for a dropdown, but keeping it consistent
+	            team.setMembres(getAllMembres(team.getId()));
+	            teams.add(team);
+	        }
+	        rs.close();
+	        ps.close();
+	    }
+	    catch(SQLException e) {
+	        e.printStackTrace();
+	    }
+	    DBInteraction.disconnect();
+	    return teams;
+	}
+
 	public List<Utilisateur> getAllMembres(int idTeam) {
 	    List<Utilisateur> membres = new ArrayList<Utilisateur>();
 	    String sql = "select u.* from utilisateurs u join appartenance_equipe ae on u.id = ae.id_utilisateur where ae.id_equipe = ?";

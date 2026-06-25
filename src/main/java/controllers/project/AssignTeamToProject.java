@@ -56,7 +56,7 @@ public class AssignTeamToProject extends HttpServlet {
         }
         classes.Project project = PDAO.getProjectById(projectId);
         utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-        String denial = utils.Rbac.authorizeProjectAdmin(roles, "assigner une équipe au projet");
+        String denial = utils.Rbac.authorizeTeamAssignment(roles);
         if (denial != null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
             return;
