@@ -60,10 +60,7 @@ export default function Settings() {
 
       // Fetch available teams
       if (loggedInUser) {
-        const teamsRes = await axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", {
-          id: loggedInUser.id,
-          type_utilisateur: loggedInUser.type_utilisateur,
-        });
+        const teamsRes = await axios.get("http://localhost:8080/Backend_PFA/GetAllTeams");
         setAvailableTeams(teamsRes.data || []);
       }
     } catch (err) {
