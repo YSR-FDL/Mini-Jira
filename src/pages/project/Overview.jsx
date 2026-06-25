@@ -89,41 +89,63 @@ export default function Overview() {
     const fetchMembers = async () => {
       try {
         const projectData = await projectService.getProjectById(projectId);
-        if (projectData && projectData.idTeam) {
+        if (!projectData) return;
+
+        let teamMembers = [];
+        if (projectData.idTeam > 0) {
           const response = await axios.get(`http://localhost:8080/Backend_PFA/GetTeam?id=${projectData.idTeam}`);
           if (response.data && response.data.membres) {
-            setMembers(
-              response.data.membres.map((m) => {
-                const nom = m.nom || "";
-                const prenom = m.prenom || "";
-                const fullName = nom + " " + prenom;
-                const initials =
-                  ((nom[0] || "") + (prenom[0] || "")).toUpperCase() || "U";
-
-                let role = "Développeur";
-                if (m.id === projectData.idSM) {
-                  role = "Scrum Master (SM)";
-                } else if (m.id === projectData.idPO) {
-                  role = "Product Owner (PO)";
-                } else if (m.id === projectData.idCreateur) {
-                  role = "Créateur / Chef de projet";
-                }
-
-                const colors = getAvatarColor(nom);
-                return {
-                  id: m.id,
-                  name: fullName,
-                  role: role,
-                  initials: initials,
-                  bgColor: colors.bg,
-                  textColor: colors.color,
-                };
-              }),
-            );
+             teamMembers = response.data.membres;
           }
-        } else {
-          setMembers([]);
         }
+
+        const usersResponse = await axios.get("http://localhost:8080/Backend_PFA/GetAllUsers");
+        const allUsers = usersResponse.data || [];
+
+        const membersMap = new Map();
+        
+        teamMembers.forEach((m) => {
+          membersMap.set(m.id, { ...m, role: "Développeur" });
+        });
+
+        const rolesToAdd = [
+          { id: projectData.idCreateur, role: "Créateur / Chef de projet" },
+          { id: projectData.idSM, role: "Scrum Master (SM)" },
+          { id: projectData.idPO, role: "Product Owner (PO)" }
+        ];
+
+        rolesToAdd.forEach((r) => {
+          if (r.id) {
+            const existing = membersMap.get(r.id);
+            if (existing) {
+               existing.role = r.role;
+            } else {
+               const u = allUsers.find(x => x.id === r.id);
+               if (u) {
+                 membersMap.set(u.id, { ...u, role: r.role });
+               }
+            }
+          }
+        });
+
+        const finalMembersList = Array.from(membersMap.values()).map((m) => {
+          const nom = m.nom || "";
+          const prenom = m.prenom || "";
+          const fullName = nom + " " + prenom;
+          const initials = ((nom[0] || "") + (prenom[0] || "")).toUpperCase() || "U";
+          const colors = getAvatarColor(nom);
+          return {
+            id: m.id,
+            name: fullName,
+            role: m.role,
+            initials: initials,
+            bgColor: colors.bg,
+            textColor: colors.color,
+          };
+        });
+
+        setMembers(finalMembersList);
+
       } catch (e) {
         console.error("Error fetching members", e);
       }
