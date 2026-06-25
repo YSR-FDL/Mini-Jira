@@ -1,13 +1,12 @@
 import React from "react";
-import { stats } from "../../data/mockData";
 import s from "../../styles/Profile/Profile.module.css";
 
-export default function Statistics() {
+export default function Statistics({ user }) {
   const boxes = [
-    { label: "TACHES",    value: stats.taches,    highlight: false },
-    { label: "PROJECTS", value: stats.projets, highlight: false },
-    { label: "COLLABS",  value: stats.collabs,  highlight: false },
-    { label: "SCORE",    value: stats.score,    highlight: true  },
+    { label: "TACHES",    value: user?.tachesCount || 0,    highlight: false },
+    { label: "PROJECTS", value: user?.projetsCount || 0, highlight: false },
+    { label: "COLLABS",  value: user?.collabsCount || 0,  highlight: false },
+    { label: "SCORE",    value: user?.score || 0,    highlight: true  },
   ];
 
   return (

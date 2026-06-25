@@ -14,9 +14,6 @@ export default function ProjectCard({ project }) {
   const navigate = useNavigate();
   // Workspace-level actions (edit/archive/delete) belong to the project creator (Admin).
   const isCreator = getRequesterId() != null && parseInt(project.idCreateur, 10) === getRequesterId();
-  const progress = 50;
-  const progressColor = progress >= 100 ? 'var(--green)' : progress >= 50  ? 'var(--blue)' :
-    progress >= 25  ? '#F79009' : 'var(--red)'
 
   return (
     <div className={styles.card}>
@@ -38,20 +35,13 @@ export default function ProjectCard({ project }) {
           )}
         </div>
       </div>
-      <p className={styles.desc}>{project.cle}</p>
-      <div className={styles.progressSection}>
-        <div className={styles.progressLabel}>
-          <span>Progress</span>
-          <span>{progress}%</span>
-        </div>
-        <div className={styles.progressTrack}>
-          <div className={styles.progressBar} style={{ width: `${progress}%`, background: progressColor }}/>
-        </div>
-      </div>
+      <div className={styles.desc}>{project.cle}</div>
+
       <div className={styles.meta}>
-        <span className={styles.members}>  0 Member{project.members !== 1 ? 's' : ''}</span>
-        <span className={styles.tasks}>✓ 0/20 tâches</span>
+        <span className={styles.members}> {project.membresCount || 0} Member{(project.membresCount || 0) !== 1 ? 's' : ''}</span>
+        <span className={styles.tasks}>✓ {project.completedTasks || 0}/{project.totalTasks || 0} tâches</span>
       </div>
+
       <div className={styles.footer}>
         <span className={styles.due}>Créé le : {project.dateCreation}</span>
         {project.isArchived? (

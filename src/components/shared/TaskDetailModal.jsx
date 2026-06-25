@@ -94,7 +94,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
   const isEpic = /epic/i.test(editedTask.type || "");
-  const isSubtask = /subtask/i.test(editedTask.type || "");
+  const isSubtask = /subtask|sub-task|sous-tâche/i.test(editedTask.type || "");
   // Une "story" est une issue standard : ni epic, ni sous-tâche.
   const isStory = !isEpic && !isSubtask;
 
@@ -244,7 +244,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     taskService
       .createDetailedTask({
         title: newSubtask.trim(),
-        tags: ["Subtask"],
+        tags: ["Sous-tâche"],
         parentId: parentRawId,
         sprintId: null,
         status: todoStatus,

@@ -45,7 +45,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
     const countableTasks = sprintTasks.filter(task => {
         // Sub-tasks are a checklist — their points don't count independently
         const tags = task.tags || [];
-        if (tags.includes('Sub-task') || tags.includes('Subtask')) return false;
+        if (tags.includes('Sub-task') || tags.includes('Subtask') || tags.includes('Sous-tâche')) return false;
         // Also exclude any task whose parent is in this sprint (defensive fallback)
         if (task.parentId && sprintTaskIds.has(task.parentId)) return false;
         return true;

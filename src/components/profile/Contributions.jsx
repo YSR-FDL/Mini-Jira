@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Clock, Code2, Palette, CheckSquare} from "lucide-react";
-import { contributions, completedContributions } from "../../data/mockData";
 import s from "../../styles/Profile/Profile.module.css";
 
 const statusStyles = {
@@ -21,7 +20,7 @@ const statusStyles = {
 };
 
 function ContribItem({ item, user }) {
-  const iconStyle = statusStyles[item.status];
+  const iconStyle = statusStyles[item.status] || {bg:"#eee", color:"#333"};
   return (
     <div className={s.contribItem}>
       <div className={s.contribItemTop}>
@@ -33,17 +32,17 @@ function ContribItem({ item, user }) {
         </span>
       </div>
 
-      <div className={s.contribItemTitle}>ttttttttttttttttttttttttttttttttt</div>
-      <div className={s.contribItemDesc}>Lorem ipsum dolor sit, amet </div>
+      <div className={s.contribItemTitle}>{item.title}</div>
+      <div className={s.contribItemDesc}>{item.description}</div>
 
       <div className={s.progressRow}>
         <div className={s.progressTrack}>
           <div
             className={s.progressFill}
-            style={{ width: `${item.progress}%`, background: item.progressColor }}
+            style={{ width: `${item.progress || 0}%`, background: item.progressColor }}
           />
         </div>
-        <span className={s.progressPct}>{item.progress}%</span>
+        <span className={s.progressPct}>{item.progress || 0}%</span>
       </div>
 
       <div className={s.contribItemFooter}>
@@ -56,9 +55,9 @@ function ContribItem({ item, user }) {
   );
 }
 
-export default function Contributions() {
+export default function Contributions({ user }) {
   const [activeTab, setActiveTab] = useState("active");
-  const list = activeTab === "active" ? contributions : completedContributions;
+  const list = activeTab === "active" ? (user?.contributions || []) : (user?.completedContributions || []);
 
   return (
     <div className={s.contribCard}>

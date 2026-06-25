@@ -14,10 +14,6 @@ export default function TeamCard({ team, onDelete, onUpdate, onArchive}) {
     navigate(`/detailsTeam/${team.id}`)
   }
 
-  const progressColor =
-    team.progression >= 80 ? "var(--blue)" : team.progression >= 50 ? "var(--blue)"
-      : team.isArchived ? "var(--border-mid)" : "var(--blue)"
-
   return (
     <>
     <div className={ s.teamCard + (team.isArchived ? ` ${s.teamCardArchived}` : "")}>
@@ -53,23 +49,7 @@ export default function TeamCard({ team, onDelete, onUpdate, onArchive}) {
 
         <div>
           <span className={s.teamCardMetaLabel}> Projets </span>
-          <span className={s.teamCardMetaValue}> {team.projets} projets </span>
-        </div>
-      </div>
-
-      <div className={s.teamCardProgressSection}>
-        <div className={s.teamCardProgressHeader}>
-          <span className={s.teamCardProgressLabel}> Progression d'activité </span>
-          <span className={s.teamCardProgressPct}> {team.progression}0% </span>
-        </div>
-
-        <div className={s.teamCardProgressTrack}>
-          <div className={s.teamCardProgressBar}
-            style={{
-              width: `${team.progression}%`,
-              background: progressColor,
-            }}
-          />
+          <span className={s.teamCardMetaValue}> {team.projetsCount || 0} projets </span>
         </div>
       </div>
 

@@ -127,7 +127,7 @@ export default function Backlog() {
           .filter((i) => {
             if (i.status !== "done") return false;
             const tags = i.tags || [];
-            if (tags.includes('Sub-task') || tags.includes('Subtask')) return false;
+            if (tags.includes('Sub-task') || tags.includes('Subtask') || tags.includes('Sous-tâche')) return false;
             if (i.parentId && sTaskIds.has(i.parentId)) return false;
             return true;
           })
@@ -418,7 +418,7 @@ export default function Backlog() {
     // Les epics (conteneurs) et les sous-tâches (gérées dans leur story parente)
     // ne s'affichent pas dans le backlog/sprints.
     const type = task.tags && task.tags[0];
-    if (type === "Epic" || type === "Subtask") return false;
+    if (type === "Epic" || type === "Subtask" || type === "Sub-task" || type === "Sous-tâche") return false;
     const matchesSearch = task.title
       .toLowerCase()
       .includes(search.toLowerCase());
