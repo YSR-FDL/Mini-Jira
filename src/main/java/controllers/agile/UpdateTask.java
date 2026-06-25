@@ -110,6 +110,11 @@ public class UpdateTask extends HttpServlet {
                         action = "STATUS_CHANGE";
                         oldVal = existing.getStatut();
                         newVal = task.getStatut();
+                        java.util.List<String> etats = project.getEtats();
+                        String finalStatus = (etats != null && !etats.isEmpty()) ? etats.get(etats.size() - 1).trim() : null;
+                        if (finalStatus != null && !newVal.equalsIgnoreCase(finalStatus)) {
+                            taskDAO.updateTaskValidation(task.getIdTask(), "NONE");
+                        }
                         break;
                     case "idAssignee":
                         action = "ASSIGNEE_CHANGE";
