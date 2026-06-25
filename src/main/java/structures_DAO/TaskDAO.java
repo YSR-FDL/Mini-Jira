@@ -612,7 +612,7 @@ public class TaskDAO {
             "       t.story_points, t.date_creation, t.id_project, t.id_sprint, " +
             "       t.id_assignee, t.id_parent, t.type_tache, " +
             "       u.nom AS nom_assignee, u.prenom AS prenom_assignee, " +
-            "       p.nom_projet " +
+            "       p.nom_projet, p.etats " +
             "FROM tasks t " +
             "LEFT JOIN utilisateurs u ON t.id_assignee = u.id " +
             "LEFT JOIN projects p ON t.id_project = p.id_project " +
@@ -633,6 +633,7 @@ public class TaskDAO {
                 map.put("dateCreation", rs.getString("date_creation"));
                 map.put("idProject", rs.getInt("id_project"));
                 map.put("nomProjet", rs.getString("nom_projet"));
+                map.put("etats", rs.getString("etats"));
 
                 int sprintId = rs.getInt("id_sprint");
                 map.put("idSprint", rs.wasNull() ? null : sprintId);

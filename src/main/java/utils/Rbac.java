@@ -102,6 +102,14 @@ public final class Rbac {
         return "Seul l'administrateur du projet peut " + action + ".";
     }
 
+    // Board columns management (Admin or Scrum Master)
+    public static String authorizeBoardManagement(Roles roles) {
+        if (roles != null && (roles.isAdmin || roles.isSM)) {
+            return null;
+        }
+        return "Seul l'administrateur ou le Scrum Master peut modifier les colonnes du projet.";
+    }
+
     // Sprints (Scrum Master only)
     public static String authorizeSprintManagement(Roles roles) {
         if (roles != null && roles.isSM) {

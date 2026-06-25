@@ -69,7 +69,7 @@ public class UpdateProjectStates extends HttpServlet {
             }
             classes.Project project = projectDAO.getProjectById(projectId);
             utils.Rbac.Roles roles = utils.Rbac.resolve(requesterId, project, null);
-            String denial = utils.Rbac.authorizeProjectAdmin(roles, "modifier les colonnes du projet");
+            String denial = utils.Rbac.authorizeBoardManagement(roles);
             if (denial != null) {
                 utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, denial);
                 return;
