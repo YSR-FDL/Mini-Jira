@@ -171,9 +171,11 @@ export default function Board() {
       const taskIndex = prevTasks.findIndex((t) => t.id === draggableId);
       if (taskIndex === -1) return prevTasks;
       const newTasks = [...prevTasks];
+      const isFinalStatus = columns.length > 0 && destination.droppableId === columns[columns.length - 1].id;
       const draggedTask = {
         ...newTasks[taskIndex],
         status: destination.droppableId,
+        poValidation: !isFinalStatus ? 'NONE' : newTasks[taskIndex].poValidation,
       };
       newTasks.splice(taskIndex, 1);
       newTasks.splice(destination.index, 0, draggedTask);
@@ -218,10 +220,16 @@ export default function Board() {
   const handleUpdateTask = (updatedTask) => {
     // Auto-save: persist and reflect locally, but keep the modal open.
     // The modal is only dismissed via its explicit close (X / overlay).
+    const isFinalStatus = columns.length > 0 && updatedTask.status === columns[columns.length - 1].id;
+    const taskToSave = {
+      ...updatedTask,
+      poValidation: !isFinalStatus && updatedTask.status !== (tasks.find(t=>t.id===updatedTask.id)||{}).status ? 'NONE' : updatedTask.poValidation
+    };
+
     setTasks((prev) =>
-      prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)),
+      prev.map((t) => (t.id === taskToSave.id ? taskToSave : t)),
     );
-    taskService.updateTask(updatedTask.id, updatedTask);
+    taskService.updateTask(taskToSave.id, taskToSave);
   };
 
   const handleDeleteTask = (taskId) => {
