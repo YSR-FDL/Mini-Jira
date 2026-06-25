@@ -1,9 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { UserCircle, Pencil } from "lucide-react";
-import { userProfile } from "../../data/mockData";
 import s from "../../styles/Profile/Profile.module.css";
 import { useNavigate } from "react-router-dom";
-
 const rolesLabels = {
   scrum: "Scrum Master",
   po: "Product Owner",
@@ -13,8 +11,6 @@ const rolesLabels = {
 }
 
 export default function ProfileHeader({user}) {
-  const [name, setName] = useState(userProfile.fullName);
-  const [role, setRole] = useState(userProfile.role);
   const navigate = useNavigate();
 
   return (

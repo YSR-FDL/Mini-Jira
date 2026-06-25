@@ -1,6 +1,5 @@
 import React from "react";
 import { Hash, Users, AtSign, User, Mail, Phone, Info, Calendar} from "lucide-react";
-import { userProfile } from "../../data/mockData";
 import s from "../../styles/Profile/Profile.module.css";
 
 const rolesLabels = {
@@ -14,15 +13,17 @@ const rolesLabels = {
 const ROWS = [
   /*{ Icon: GraduationCap, value: (p) => p.status},*/
   { Icon: Hash, value: (p) => p.id},
-  { Icon: User,value: (p) => `${p.nom} ${p.prenom}`},
+  { Icon: User,value: (p) => `${p.nom || ''} ${p.prenom || ''}`},
   { Icon: AtSign, value: (p) => p.login},
-  { Icon: Calendar, value: (p) => p.dateCreationCompte},
+  { Icon: Calendar, value: (p) => p.date_creation_compte || "Non défini"},
   { Icon: Mail, value: (p) => p.email},
   {
     Icon: Users,
-    value: (p) => (<div> {p.experiences.map((role, index) => ( <div key={index}>{rolesLabels[role]}</div> ))}</div>)
+    value: (p) => (<div> {p.experiences?.map((role, index) => ( <div key={index}>{rolesLabels[role] || role}</div> ))} 
+      {(!p.experiences || p.experiences.length === 0) && "Aucun rôle"}
+      {p.type_utilisateur === "ADMIN" && <div style={{marginTop: 5, fontSize: "0.85em", background: "#f59e0b", color: "white", padding: "2px 6px", borderRadius: "4px", display: "inline-block"}}>Admin</div>}
+    </div>)
   }
-  //{ Icon: Phone, value: (p) => p.phone},
 ];
 
 export default function About({user}) {

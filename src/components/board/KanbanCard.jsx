@@ -17,7 +17,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
   const prio = PRIORITY_CONFIG[priority?.toLowerCase()] ?? 'low';
   const isDone = status?.toLowerCase() === 'done';
   const primaryTag = tags.length > 0 ? tags[0].toLowerCase() : 'story';
-  const isStory = primaryTag !== 'epic' && primaryTag !== 'subtask';
+  const isStory = primaryTag !== 'epic' && primaryTag !== 'subtask' && primaryTag !== 'sub-task' && primaryTag !== 'sous-tâche';
 
   const poValidation = task.poValidation || 'NONE';
   let validationClass = '';
@@ -34,7 +34,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
   // Sub-task progress: count children of this task that are "done".
   const rawId = parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
   const subtasks = (allTasks || []).filter(
-    (t) => t.parentId === rawId && t.tags && t.tags[0] === 'Subtask'
+    (t) => t.parentId === rawId && t.tags && (t.tags[0] === 'Subtask' || t.tags[0] === 'Sub-task' || t.tags[0] === 'Sous-tâche')
   );
   const subtaskTotal = subtasks.length;
   const subtaskDone = subtasks.filter(

@@ -9,7 +9,19 @@ import { useNavigate } from "react-router-dom";
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const user = JSON.parse(localStorage.getItem("user"));
+  const userFromStorage = JSON.parse(localStorage.getItem("user"));
+  const [stats, setStats] = useState({});
+
+  useEffect(() => {
+    if (userFromStorage?.id) {
+      fetch(`http://localhost:8080/Backend_PFA/GetUserStats?idUser=${userFromStorage.id}`)
+        .then((res) => res.json())
+        .then((data) => setStats(data))
+        .catch((err) => console.error("Error fetching user stats:", err));
+    }
+  }, [userFromStorage?.id]);
+
+  const user = { ...userFromStorage, ...stats };
 
   return (
       <Layout activeNav="profile" pageTitle="Page profil">
@@ -17,7 +29,7 @@ export default function ProfilePage() {
             <ProfileHeader user={user}/>
             
             <div className={s.profileBody}>
-              <Statistics />
+              <Statistics user={user} />
               <div className={s.bottomColumns}>
                 <About user={user} />
                 <Contributions user={user} />

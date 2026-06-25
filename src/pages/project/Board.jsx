@@ -339,7 +339,7 @@ export default function Board() {
       // Sub-tasks don't appear as cards on the board — they're shown as
       // progress indicators on their parent story's card.
       const type = task.tags && task.tags[0];
-      if (type === "Subtask") return false;
+      if (type === "Subtask" || type === "Sub-task" || type === "Sous-tâche") return false;
 
       const matchesSearch =
         search === "" ||
