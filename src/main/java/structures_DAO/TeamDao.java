@@ -17,10 +17,10 @@ public class TeamDao {
 	    DBInteraction.connect();
 	    String sql = "";
 	    if(type_utilisateur.equals("ADMIN")) {
-	        sql = "select * from equipes where idCreateur = " + idUser 
+	        sql = "select *, (SELECT COUNT(*) FROM projects p WHERE p.idTeam = equipes.id) as projetsCount from equipes where idCreateur = " + idUser 
 	        		 + " order by isArchived, dateCreation desc";
 	    } else {
-	    	sql = "select distinct e.* from equipes e left join appartenance_equipe ae on e.id = ae.id_equipe "
+	    	sql = "select distinct e.*, (SELECT COUNT(*) FROM projects p WHERE p.idTeam = e.id) as projetsCount from equipes e left join appartenance_equipe ae on e.id = ae.id_equipe "
 	    			+ "where ae.id_utilisateur = " + idUser + " or e.idCreateur = " + idUser + 
 	    			" order by e.isArchived, e.dateCreation desc";
 	    }
@@ -35,6 +35,7 @@ public class TeamDao {
 	            team.setObjectif(rs.getString("objectif"));
 	            team.setArchived(rs.getBoolean("isArchived"));
 	            team.setDateCreation(rs.getString("dateCreation"));
+	            team.setProjetsCount(rs.getInt("projetsCount"));
 	            team.setMembres(getAllMembres(team.getId()));
 	            teams.add(team);
 	        }
@@ -119,7 +120,7 @@ public class TeamDao {
 	public Team getTeamById(int idTeam) {
 	    Team team = null;
 	    DBInteraction.connect();
-	    String sql = "select * from equipes where id = ?";
+	    String sql = "select *, (SELECT COUNT(*) FROM projects p WHERE p.idTeam = equipes.id) as projetsCount from equipes where id = ?";
 	    try {
 	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
 	        ps.setInt(1, idTeam);
@@ -132,6 +133,7 @@ public class TeamDao {
 	            team.setObjectif(rs.getString("objectif"));
 	            team.setArchived(rs.getBoolean("isArchived"));
 	            team.setDateCreation(rs.getString("dateCreation"));
+	            team.setProjetsCount(rs.getInt("projetsCount"));
 	            team.setMembres(getAllMembres(idTeam));
 	        }
 	        rs.close();

@@ -10,6 +10,7 @@ public class Team {
     private boolean isArchived;
     private String dateCreation;
     private List<Utilisateur> membres;
+    private int projetsCount;
     
     public Team() {
 		this.membres = new ArrayList<Utilisateur>();
@@ -72,6 +73,9 @@ public class Team {
 	public void setMembres(List<Utilisateur> membres) {
 		this.membres = new ArrayList<Utilisateur>(membres);
 	}
+	
+	public int getProjetsCount() { return projetsCount; }
+	public void setProjetsCount(int projetsCount) { this.projetsCount = projetsCount; }
 	
 	public boolean isArchived() {
 	    return isArchived;

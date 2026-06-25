@@ -39,7 +39,11 @@ public class ProjectDAO {
 	public List<Project> getUserProjects(int idUser) {
 		    List<Project> projects = new ArrayList<Project>();
 		    DBInteraction.connect();
-		    String sql = "select distinct p.* from projects p left join appartenance_equipe ae on p.idTeam = ae.id_equipe "
+		    String sql = "select distinct p.*, "
+		    		+ "(SELECT COUNT(DISTINCT ae2.id_utilisateur) FROM appartenance_equipe ae2 WHERE ae2.id_equipe = p.idTeam) as membresCount, "
+		    		+ "(SELECT COUNT(*) FROM tasks t WHERE t.id_project = p.id_project) as totalTasks, "
+		    		+ "(SELECT COUNT(*) FROM tasks t2 WHERE t2.id_project = p.id_project AND (LOWER(t2.statut) LIKE '%termin%' OR LOWER(t2.statut) LIKE '%done%')) as completedTasks "
+		    		+ "from projects p left join appartenance_equipe ae on p.idTeam = ae.id_equipe "
 		    		+ "where p.idCreateur = ? or p.idSM = ? or p.idPO = ? or ae.id_utilisateur = ? order by p.date_creation desc;";
 		    try {
 		        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
@@ -60,6 +64,9 @@ public class ProjectDAO {
 		            project.setIdTeam(rs.getInt("idTeam"));
 		            project.setIdSM(rs.getInt("idSM"));
 		            project.setIdPO(rs.getInt("idPO"));
+		            project.setMembresCount(rs.getInt("membresCount"));
+		            project.setTotalTasks(rs.getInt("totalTasks"));
+		            project.setCompletedTasks(rs.getInt("completedTasks"));
 		            String etatsString = rs.getString("etats");
 		            if(etatsString != null && !etatsString.isEmpty()) {
 		                project.setEtats(
@@ -81,7 +88,11 @@ public class ProjectDAO {
 	public Project getProjectById(int projectId) {
 		Project project = null;
 		DBInteraction.connect();
-		String sql = "SELECT * FROM projects WHERE id_project = ?";
+		String sql = "SELECT p.*, "
+		    		+ "(SELECT COUNT(DISTINCT ae2.id_utilisateur) FROM appartenance_equipe ae2 WHERE ae2.id_equipe = p.idTeam) as membresCount, "
+		    		+ "(SELECT COUNT(*) FROM tasks t WHERE t.id_project = p.id_project) as totalTasks, "
+		    		+ "(SELECT COUNT(*) FROM tasks t2 WHERE t2.id_project = p.id_project AND (LOWER(t2.statut) LIKE '%termin%' OR LOWER(t2.statut) LIKE '%done%')) as completedTasks "
+		    		+ "FROM projects p WHERE p.id_project = ?";
 		try {
 			java.sql.PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
 			ps.setInt(1, projectId);
@@ -98,6 +109,9 @@ public class ProjectDAO {
 				project.setIdTeam(rs.getInt("idTeam"));
 				project.setIdSM(rs.getInt("idSM"));
 				project.setIdPO(rs.getInt("idPO"));
+				project.setMembresCount(rs.getInt("membresCount"));
+				project.setTotalTasks(rs.getInt("totalTasks"));
+				project.setCompletedTasks(rs.getInt("completedTasks"));
 				String etatsString = rs.getString("etats");
 				if (etatsString != null && !etatsString.isEmpty()) {
 					project.setEtats(java.util.Arrays.asList(etatsString.split(",")));
@@ -212,7 +226,11 @@ public class ProjectDAO {
 	public List<Project> getProjectsByTeam(int idTeam) {
 	    List<Project> projects = new ArrayList<>();
 	    DBInteraction.connect();
-	    String sql = "select * from projects where idTeam = ?";
+	    String sql = "select p.*, "
+	    		+ "(SELECT COUNT(DISTINCT ae2.id_utilisateur) FROM appartenance_equipe ae2 WHERE ae2.id_equipe = p.idTeam) as membresCount, "
+	    		+ "(SELECT COUNT(*) FROM tasks t WHERE t.id_project = p.id_project) as totalTasks, "
+	    		+ "(SELECT COUNT(*) FROM tasks t2 WHERE t2.id_project = p.id_project AND (LOWER(t2.statut) LIKE '%termin%' OR LOWER(t2.statut) LIKE '%done%')) as completedTasks "
+	    		+ "from projects p where p.idTeam = ?";
 	    try {
 	        PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
 	        ps.setInt(1, idTeam);
@@ -229,6 +247,9 @@ public class ProjectDAO {
 	            project.setIdSM(rs.getInt("idSM"));
 	            project.setIdPO(rs.getInt("idPO"));
 	            project.setIdCreateur(rs.getInt("idCreateur"));
+	            project.setMembresCount(rs.getInt("membresCount"));
+	            project.setTotalTasks(rs.getInt("totalTasks"));
+	            project.setCompletedTasks(rs.getInt("completedTasks"));
 	            projects.add(project);
 	        }
 	        rs.close();

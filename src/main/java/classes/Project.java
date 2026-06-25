@@ -14,6 +14,10 @@ public class Project {
     private int idTeam;
     private int idSM;
     private int idPO;
+    
+    private int membresCount;
+    private int completedTasks;
+    private int totalTasks;
 
     public Project() {
     	this.etats = new ArrayList<String>();
@@ -102,6 +106,13 @@ public class Project {
 	public void setIdPO(int idPO) {
 		this.idPO = idPO;
 	}
+	
+	public int getMembresCount() { return membresCount; }
+	public void setMembresCount(int membresCount) { this.membresCount = membresCount; }
+	public int getCompletedTasks() { return completedTasks; }
+	public void setCompletedTasks(int completedTasks) { this.completedTasks = completedTasks; }
+	public int getTotalTasks() { return totalTasks; }
+	public void setTotalTasks(int totalTasks) { this.totalTasks = totalTasks; }
 	@Override
 	public String toString() {
 		return "Project [idProject=" + idProject + ", nomProjet=" + nomProjet + ", cle=" + cle + ", etats=" + etats
