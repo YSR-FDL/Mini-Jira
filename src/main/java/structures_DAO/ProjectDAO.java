@@ -25,7 +25,11 @@ public class ProjectDAO {
 	        ps.setInt(4, project.getIdCreateur());
 	        ps.setInt(5, project.getIdSM() > 0 ? project.getIdSM() : project.getIdCreateur());
 	        ps.setInt(6, project.getIdPO() > 0 ? project.getIdPO() : project.getIdCreateur());
-	        ps.setInt(7, project.getIdTeam());
+	        if (project.getIdTeam() > 0) {
+	            ps.setInt(7, project.getIdTeam());
+	        } else {
+	            ps.setNull(7, java.sql.Types.INTEGER);
+	        }
 	        nb = ps.executeUpdate();
 	        ps.close();
 	    }
