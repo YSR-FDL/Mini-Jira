@@ -7,6 +7,7 @@ import "../../styles/Layout/ProjectHeader.css";
 export default function ProjectHeader() {
   const [project, setProject] = useState(null);
   const [team, setTeam] = useState(null);
+  const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -20,6 +21,12 @@ export default function ProjectHeader() {
       ? parseInt(rawId, 10)
       : 1;
   const loggedInUser = JSON.parse(localStorage.getItem("user"));
+
+  useEffect(() => {
+    axios.get("http://localhost:8080/Backend_PFA/GetAllUsers")
+      .then(res => setAllUsers(res.data || []))
+      .catch(err => console.error("Error fetching all users:", err));
+  }, []);
 
   const loadProjectData = async () => {
     try {
@@ -48,13 +55,10 @@ export default function ProjectHeader() {
 
   const fetchUserTeams = async () => {
     try {
-      const response = await axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", {
-        id: loggedInUser.id,
-        type_utilisateur: loggedInUser.type_utilisateur,
-      });
+      const response = await axios.get("http://localhost:8080/Backend_PFA/GetAllTeams");
       setAvailableTeams(response.data);
     } catch (error) {
-      console.error("Error fetching user teams:", error);
+      console.error("Error fetching all teams:", error);
     }
   };
 
@@ -109,10 +113,25 @@ export default function ProjectHeader() {
     );
   }
 
-  const isCreator =
-    loggedInUser &&
-    parseInt(loggedInUser.id, 10) === parseInt(project.idCreateur, 10);
-  const membersList = team && team.membres ? team.membres : [];
+  const isSM = loggedInUser && (loggedInUser.id === project.idSM || loggedInUser.id === project.idCreateur);
+
+  const teamMembers = team && team.membres ? team.membres : [];
+  const membersMap = new Map();
+  teamMembers.forEach(m => membersMap.set(m.id, m));
+  
+  if (allUsers.length > 0 && project) {
+    const rolesToAdd = [project.idCreateur, project.idSM, project.idPO];
+    rolesToAdd.forEach(roleId => {
+      if (roleId && !membersMap.has(roleId)) {
+        const user = allUsers.find(u => u.id === roleId);
+        if (user) {
+          membersMap.set(user.id, user);
+        }
+      }
+    });
+  }
+  
+  const membersList = Array.from(membersMap.values());
 
   return (
     <div className="project-header-container">
@@ -172,11 +191,11 @@ export default function ProjectHeader() {
                   marginRight: "8px",
                 }}
               >
-                Aucune équipe
+                Aucun membre
               </span>
             )}
 
-            {isCreator && (
+            {isSM && (
               <button
                 className="add-member-btn"
                 title="Associer une équipe"
