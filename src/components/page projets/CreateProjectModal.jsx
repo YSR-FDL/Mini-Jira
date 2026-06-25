@@ -15,24 +15,14 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
         "Terminé",
     ]);
 
-    const [teams, setTeams] = useState([]);
-    const [selectedTeamId, setSelectedTeamId] = useState("");
     const [selectedSMId, setSelectedSMId] = useState("");
     const [selectedPOId, setSelectedPOId] = useState("");
-    const [teamMembers, setTeamMembers] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
 
     useEffect(() => {
         if (isOpen && user) {
-            axios.post("http://localhost:8080/Backend_PFA/GetUserTeams", user)
-                .then(res => {
-                    setTeams(res.data || []);
-                    setSelectedTeamId("");
-                    setSelectedSMId("");
-                    setSelectedPOId("");
-                    setTeamMembers([]);
-                })
-                .catch(err => console.error("Error fetching teams:", err));
+            setSelectedSMId("");
+            setSelectedPOId("");
 
             axios.get("http://localhost:8080/Backend_PFA/GetAllUsers")
                 .then(res => {
@@ -41,20 +31,6 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
                 .catch(err => console.error("Error fetching all users:", err));
         }
     }, [isOpen]);
-
-    const handleTeamChange = (teamId) => {
-        setSelectedTeamId(teamId);
-        const selectedTeam = teams.find(t => String(t.id) === String(teamId));
-        if (selectedTeam && selectedTeam.membres) {
-            setTeamMembers(selectedTeam.membres);
-            setSelectedSMId("");
-            setSelectedPOId("");
-        } else {
-            setTeamMembers([]);
-            setSelectedSMId("");
-            setSelectedPOId("");
-        }
-    };
 
     const ajouterEtat = () => {setEtats([...etats, ""]);};
 
@@ -71,8 +47,8 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (!selectedTeamId || !selectedSMId || !selectedPOId) {
-            alert("Veuillez sélectionner une équipe, un Scrum Master et un Product Owner.");
+        if (!selectedSMId || !selectedPOId) {
+            alert("Veuillez sélectionner un Scrum Master et un Product Owner.");
             return;
         }
         onCreate({
@@ -80,7 +56,7 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
             cle, 
             etats, 
             idCreateur: user.id,
-            idTeam: parseInt(selectedTeamId, 10),
+            idTeam: 0,
             idSM: parseInt(selectedSMId, 10),
             idPO: parseInt(selectedPOId, 10)
         });
@@ -107,31 +83,15 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Équipe *</label>
-                        <select 
-                            className={styles.input} 
-                            value={selectedTeamId} 
-                            onChange={(e) => handleTeamChange(e.target.value)}
-                            required
-                        >
-                            <option value="">Sélectionner une équipe</option>
-                            {teams.map(t => (
-                                <option key={t.id} value={t.id}>{t.nom}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className={styles.formGroup}>
                         <label className={styles.label}>Product Owner (PO) *</label>
                         <select 
                             className={styles.input} 
                             value={selectedPOId} 
                             onChange={(e) => setSelectedPOId(e.target.value)}
-                            disabled={!selectedTeamId}
                             required
                         >
                             <option value="">Sélectionner un Product Owner</option>
-                            {teamMembers.map(m => (
+                            {allUsers.map(m => (
                                 <option key={m.id} value={m.id}>{m.prenom} {m.nom} ({m.login})</option>
                             ))}
                         </select>

@@ -344,13 +344,39 @@ export default function Settings() {
                   </div>
                 </section>
 
-                {/* 2. Rôles Scrum Master */}
+
+                {/* Save Footer for General Tab */}
+                <div className="settings-footer">
+                  {message && <span className="save-message">{message}</span>}
+                  {errorMsg && (
+                    <span
+                      className="save-message"
+                      style={{ color: "var(--red)" }}
+                    >
+                      {errorMsg}
+                    </span>
+                  )}
+                  {isCreator && (
+                    <ActionBtn type="submit" variant="primary" disabled={isSaving}>
+                      {isSaving
+                        ? "Enregistrement..."
+                        : "Enregistrer les modifications"}
+                    </ActionBtn>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* ACCES & MEMBRES TAB CONTENT (editable by Admin/Creator, read-only for SM) */}
+            {activeSettingsTab === "acces" && (
+              <>
+                {/* 1. Rôles (SM, PO, Créateur) */}
                 <section className="settings-section">
                   <h3 className="settings-section-title">
                     <FiUsers /> Rôles & Responsabilités
                   </h3>
                   <p className="settings-section-subtitle">
-                    Définissez le Scrum Master pour l'organisation du projet.
+                    Définissez les différents rôles organisationnels du projet.
                   </p>
 
                   <div className="form-grid">
@@ -389,44 +415,6 @@ export default function Settings() {
                         ))}
                       </select>
                     </div>
-                  </div>
-                </section>
-
-                {/* Save Footer for General Tab */}
-                <div className="settings-footer">
-                  {message && <span className="save-message">{message}</span>}
-                  {errorMsg && (
-                    <span
-                      className="save-message"
-                      style={{ color: "var(--red)" }}
-                    >
-                      {errorMsg}
-                    </span>
-                  )}
-                  {isCreator && (
-                    <ActionBtn type="submit" variant="primary" disabled={isSaving}>
-                      {isSaving
-                        ? "Enregistrement..."
-                        : "Enregistrer les modifications"}
-                    </ActionBtn>
-                  )}
-                </div>
-              </>
-            )}
-
-            {/* ACCES & MEMBRES TAB CONTENT (editable by Admin/Creator, read-only for SM) */}
-            {activeSettingsTab === "acces" && (
-              <>
-                {/* 1. Rôles Product Owner */}
-                <section className="settings-section">
-                  <h3 className="settings-section-title">
-                    <FiUsers /> Rôles & Responsabilités
-                  </h3>
-                  <p className="settings-section-subtitle">
-                    Définissez le Product Owner du projet (issu de l'équipe associée).
-                  </p>
-
-                  <div className="form-grid">
                     <div className="form-group full-width">
                       <label className="form-label">Product Owner (PO)</label>
                       <select
@@ -441,15 +429,11 @@ export default function Settings() {
                         disabled={!isCreator}
                       >
                         <option value="">-- Choisir un Product Owner --</option>
-                        {team && team.membres ? (
-                          team.membres.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.nom} {u.prenom} ({u.email})
-                            </option>
-                          ))
-                        ) : (
-                          <option disabled value="">Associez d'abord une équipe</option>
-                        )}
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.nom} {u.prenom} ({u.email})
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -464,7 +448,7 @@ export default function Settings() {
                     Liste des membres de l'équipe assignée à ce projet.
                   </p>
 
-                  {isCreator && (
+                  {(isCreator || isSM) && (
                     <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "12px" }}>
                       <label style={{ fontSize: "14px", fontWeight: "600", color: "var(--text-mid)" }}>Associer/Changer d'équipe :</label>
                       <select
@@ -585,8 +569,7 @@ export default function Settings() {
                         color: "var(--text-soft)",
                       }}
                     >
-                      Aucune équipe assignée à ce projet. Associez une équipe en
-                      cliquant sur le bouton "+" dans l'en-tête du projet.
+                      Aucune équipe de développement n'est assignée à ce projet. Sélectionnez-en une ci-dessus.
                     </div>
                   )}
                 </section>
