@@ -13,7 +13,7 @@ const statusStyles = {
     color: "#6b7280"
   },
 
-  "Terminé": {
+  "Termine": {
     bg: "#DCFCE7",
     color: "#16A34A"
   }

@@ -56,10 +56,10 @@ const sumPoints = (tasks) => tasks.reduce((acc, t) => acc + (t.points || 0), 0);
 
 /* ─── Config statuts pour la distribution ─────────────────────────────── */
 const STATUS_BUCKETS = [
-  { key: "todo", label: "À faire", color: "#94A3B8" },
+  { key: "todo", label: "A faire", color: "#94A3B8" },
   { key: "inprogress", label: "En cours", color: "#3B82F6" },
   { key: "review", label: "En revue", color: "#F59E0B" },
-  { key: "done", label: "Terminé", color: "#10B981" },
+  { key: "done", label: "Termine", color: "#10B981" },
 ];
 
 /* ─── Tooltips Recharts ───────────────────────────────────────────────── */
@@ -81,6 +81,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [sprints, setSprints] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [burndownMode, setBurndownMode] = useState("hours");
 
   useEffect(() => {
     const rawId = localStorage.getItem("selectedProjectId");
@@ -199,10 +200,22 @@ export default function Reports() {
     const end = parseDate(activeSprint.endDate);
     if (start && end) {
       const duration = Math.max(daysBetween(start, end), 1);
-      const total = capacityPoints;
-      const remaining = sumPoints(
-        activeTasks.filter((t) => normalizeStatus(t.status) !== "done"),
-      );
+      
+      const total = burndownMode === "hours"
+        ? activeTasks.reduce((acc, t) => acc + (t.estimatedHours || 0), 0)
+        : capacityPoints;
+        
+      const remaining = burndownMode === "hours"
+        ? activeTasks.reduce((acc, t) => {
+            const est = t.estimatedHours || 0;
+            const log = t.loggedHours || 0;
+            const status = normalizeStatus(t.status);
+            // Si la tâche est terminée, il ne reste plus d'heures. Sinon, on calcule la diff.
+            if (status === "done") return acc;
+            return acc + Math.max(0, est - log);
+          }, 0)
+        : sumPoints(activeTasks.filter((t) => normalizeStatus(t.status) !== "done"));
+
       const todayIndex = Math.min(
         Math.max(daysBetween(start, today), 0),
         duration,
@@ -213,12 +226,11 @@ export default function Reports() {
         date.setDate(start.getDate() + d);
         // Courbe idéale : descente linéaire du total à 0
         const ideal = Math.round((total * (1 - d / duration)) * 10) / 10;
-        // Courbe réelle : connue au départ (total) et aujourd'hui (restant).
-        // Les jours intermédiaires sont inconnus (pas d'historique de complétion)
-        // et reliés par connectNulls.
+        
         let actual = null;
         if (d === 0) actual = total;
         else if (d === todayIndex) actual = remaining;
+        
         burndownData.push({ label: fmtDay(date), ideal, actual });
       }
     }
@@ -319,7 +331,40 @@ export default function Reports() {
 
         {/* ── SECTION 2 : Burndown Chart ── */}
         <section className="overview-section">
-          <h2 className="section-title">Burndown du sprint</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 className="section-title" style={{ margin: 0 }}>Burndown du sprint</h2>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--border)",
+                  background: burndownMode === "points" ? "var(--blue)" : "transparent",
+                  color: burndownMode === "points" ? "#fff" : "var(--text-main)",
+                  cursor: "pointer",
+                }}
+                onClick={() => setBurndownMode("points")}
+              >
+                Points (Stories)
+              </button>
+              <button
+                style={{
+                  padding: "4px 12px",
+                  fontSize: "12px",
+                  borderRadius: "4px",
+                  border: "1px solid var(--border)",
+                  background: burndownMode === "hours" ? "var(--blue)" : "transparent",
+                  color: burndownMode === "hours" ? "#fff" : "var(--text-main)",
+                  cursor: "pointer",
+                }}
+                onClick={() => setBurndownMode("hours")}
+              >
+                Heures (Sous-taches)
+              </button>
+            </div>
+          </div>
+          
           {activeSprint && burndownData.length > 0 ? (
             <div style={{ height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -339,7 +384,7 @@ export default function Reports() {
                     axisLine={false}
                     tickLine={false}
                     label={{
-                      value: "Points restants",
+                      value: burndownMode === "hours" ? "Heures restantes" : "Points restants",
                       angle: -90,
                       position: "insideLeft",
                       style: { fontSize: 11, fill: "var(--text-faint)" },
@@ -469,7 +514,7 @@ export default function Reports() {
                       className="reports-legend-dot"
                       style={{ background: "#10B981" }}
                     />
-                    Terminées
+                    Terminees
                   </div>
                   <div className="reports-legend-item">
                     <span

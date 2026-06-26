@@ -102,3 +102,26 @@
 }
 
 /* Removed redundant button and input styles, using global UI classes instead */
+
+/* ── Report Bug button ─────────────────────────────────────── */
+.report-bug-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #DC2626;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: var(--font-body, inherit);
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.report-bug-btn:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    transform: translateY(-1px);
+}

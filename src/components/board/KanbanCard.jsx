@@ -1,5 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
+import { FaBookmark, FaBug, FaTasks } from 'react-icons/fa';
 import '../../styles/Board/Board.css';
 
 const PRIORITY_CONFIG = {
@@ -12,12 +13,14 @@ const PRIORITY_CONFIG = {
 function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isValidationColumn }) {
   if (!task) return null;
 
-  const { id, title, priority, status, tags = [], points, assignee } = task;
+  const { id, title, priority, status, tags = [], points, assignee, parentId } = task;
 
   const prio = PRIORITY_CONFIG[priority?.toLowerCase()] ?? 'low';
   const isDone = status?.toLowerCase() === 'done';
   const primaryTag = tags.length > 0 ? tags[0].toLowerCase() : 'story';
-  const isStory = primaryTag !== 'epic' && primaryTag !== 'subtask' && primaryTag !== 'sub-task' && primaryTag !== 'sous-tâche';
+  const isSubtask = primaryTag === 'subtask' || primaryTag === 'sub-task' || primaryTag === 'sous-tache';
+  const isEpic = primaryTag === 'epic';
+  const isStory = !isEpic && !isSubtask;
 
   const poValidation = task.poValidation || 'NONE';
   let validationClass = '';
@@ -34,12 +37,31 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
   // Sub-task progress: count children of this task that are "done".
   const rawId = parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
   const subtasks = (allTasks || []).filter(
-    (t) => t.parentId === rawId && t.tags && (t.tags[0] === 'Subtask' || t.tags[0] === 'Sub-task' || t.tags[0] === 'Sous-tâche')
+    (t) => t.parentId === rawId && t.tags && (t.tags[0] === 'Subtask' || t.tags[0] === 'Sub-task' || t.tags[0] === 'Sous-tache')
   );
   const subtaskTotal = subtasks.length;
   const subtaskDone = subtasks.filter(
     (s) => /(done|termin|released|closed|ferm)/i.test(s.status || '')
   ).length;
+
+  // Find parent story name for subtasks
+  const parentStory = isSubtask && parentId
+    ? (allTasks || []).find((t) => {
+        const tRawId = parseInt(String(t.id).replace(/^[A-Z]+-/, ''), 10);
+        return tRawId === parentId;
+      })
+    : null;
+
+  // Type icon
+  const getTypeIcon = () => {
+    if (isEpic) return <FaBookmark size={10} />;
+    if (isSubtask) return <FaTasks size={10} />;
+    if (primaryTag === 'bug') return <FaBug size={10} />;
+    return <FaBookmark size={10} />;
+  };
+
+  // Card type CSS class
+  const cardTypeClass = isSubtask ? 'kanban-card--subtask' : isEpic ? 'kanban-card--epic' : 'kanban-card--story';
 
   const getInitials = (name) => (name ? name.substring(0, 2).toUpperCase() : '—');
 
@@ -47,13 +69,12 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
     <Draggable draggableId={id} index={index} isDragDisabled={isDragDisabled}>
       {(provided, snapshot) => (
         <div
-          className={`kanban-card kanban-card-${prio} ${isDone ? 'done' : ''} ${validationClass}`}
+          className={`kanban-card kanban-card-${prio} ${isDone ? 'done' : ''} ${validationClass} ${cardTypeClass}`}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           style={{
             ...provided.draggableProps.style,
-            // Légère élévation si on est en train de la déplacer
             boxShadow: snapshot.isDragging ? '0 5px 15px rgba(0,0,0,0.15)' : undefined,
           }}
           onClick={onClick}
@@ -66,12 +87,21 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
             <div className={`kanban-prio-dot ${prio}`} />
           )}
 
+          {/* Parent story reference for subtasks */}
+          {isSubtask && parentId && (
+            <div className="kanban-card-parent-ref">
+              <FaBookmark size={9} />
+              <span>{parentStory ? `${parentStory.id} — ${parentStory.title}` : `Parent #${parentId}`}</span>
+            </div>
+          )}
+
           <div className="kanban-card-id">{id}</div>
           <div className="kanban-card-title">{title}</div>
 
           <div className="kanban-card-footer">
-            <span className={`kanban-card-tag ${primaryTag}`}>
-              {tags.length > 0 ? tags[0] : 'Story'}
+            <span className={`kanban-card-tag ${isSubtask ? 'subtask' : isEpic ? 'epic' : primaryTag}`}>
+              {getTypeIcon()}
+              <span style={{ marginLeft: '4px' }}>{isSubtask ? 'Sous-tache' : (tags.length > 0 ? tags[0] : 'Story')}</span>
             </span>
 
             {subtaskTotal > 0 && (
@@ -85,7 +115,11 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
             )}
 
             <div className="kanban-card-meta">
-              <span className="kanban-card-points">{points ? `${points} pts` : '-'}</span>
+              <span className="kanban-card-points">
+                {isSubtask
+                  ? `${task.loggedHours || 0} / ${task.estimatedHours || 0} h`
+                  : points ? `${points} pts` : '-'}
+              </span>
 
               {assignee ? (
                 <div

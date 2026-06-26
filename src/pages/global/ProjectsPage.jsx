@@ -39,7 +39,7 @@ export default function ProjectsPage() {
   const filteredProjects = projects.filter(p => {
     if (filter === 'Tout les projets') return true
     if (filter === 'En cours') return p.etat === 'EN COURS'
-    if (filter === 'Terminé') return p.status === 'TERMINÉ'
+    if (filter === 'Termine') return p.status === 'TERMINÉ'
     if (filter === 'Archivé') return p.archived
     return true
   })
@@ -84,7 +84,7 @@ export default function ProjectsPage() {
             <select className={styles.select} value={filter} onChange={e => setFilter(e.target.value)}>
               <option>Tout les projets</option>
               <option>En cours</option>
-              <option>Terminé</option>
+              <option>Termine</option>
               <option>Archivé</option>
             </select>
             <select className={styles.select} value={sort} onChange={e => setSort(e.target.value)}>

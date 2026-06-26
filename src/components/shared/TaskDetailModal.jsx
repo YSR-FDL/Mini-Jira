@@ -64,7 +64,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
             colorClass: "dot-progress",
           },
           { value: "review", label: "En Revue", colorClass: "dot-review" },
-          { value: "done", label: "Terminé", colorClass: "dot-done" },
+          { value: "done", label: "Termine", colorClass: "dot-done" },
         ];
 
   const [editedTask, setEditedTask] = useState({
@@ -79,14 +79,14 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
 
-  // Sous-tâches
+  // Sous-taches
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtask, setNewSubtask] = useState("");
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState("comments"); // "comments" or "history"
   const [showAllItems, setShowAllItems] = useState(false);
 
-  // Livrable (lien GitHub) — pour les sous-tâches.
+  // Livrable (lien GitHub) — pour les sous-taches.
   const [deliverableLink, setDeliverableLink] = useState(task?.deliverableLink || "");
   const [deliverableError, setDeliverableError] = useState("");
 
@@ -94,12 +94,12 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
   const isEpic = /epic/i.test(editedTask.type || "");
-  const isSubtask = /subtask|sub-task|sous-tâche/i.test(editedTask.type || "");
-  // Une "story" est une issue standard : ni epic, ni sous-tâche.
+  const isSubtask = /subtask|sub-task|sous-tache/i.test(editedTask.type || "");
+  // Une "story" est une issue standard : ni epic, ni sous-tache.
   const isStory = !isEpic && !isSubtask;
 
   // Statuts extrêmes du workflow projet (1re / dernière colonne), utilisés pour
-  // cocher/décocher une sous-tâche.
+  // cocher/décocher une sous-tache.
   const todoStatus = statusOptions[0]?.value || "todo";
   const doneStatus = statusOptions[statusOptions.length - 1]?.value || "done";
   const isStatusDone = (status) => {
@@ -123,7 +123,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const canEditDescription = perms.canEditDescription;
   const canEditPoints = perms.canEditPoints;
   const canEditParent = perms.canEditParent;
-  const canManageSubtasks = perms.canManageSubtasks; // créer / supprimer sous-tâches
+  const canManageSubtasks = perms.canManageSubtasks; // créer / supprimer sous-taches
   const canToggleSubtask = perms.canToggleSubtask;
   const canEditAssignee = perms.canEditAssignee;
   const canSubmitDeliverable = perms.canSubmitDeliverable;
@@ -220,7 +220,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     }
   }, [task]);
 
-  // Charge les sous-tâches (enfants) d'une story existante.
+  // Charge les sous-taches (enfants) d'une story existante.
   useEffect(() => {
     if (task && task.id !== "NEW" && isStory) {
       epicService
@@ -238,22 +238,33 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
       .catch((err) => console.error("Error refreshing subtasks:", err));
   };
 
+  const [subtaskError, setSubtaskError] = useState("");
+
   const handleAddSubtask = () => {
     if (!newSubtask.trim()) return;
+    setSubtaskError("");
     const parentRawId = parseInt(String(task.id).replace(/^[A-Z]+-/, ""), 10);
     taskService
       .createDetailedTask({
         title: newSubtask.trim(),
-        tags: ["Sous-tâche"],
+        tags: ["Sous-tache"],
         parentId: parentRawId,
         sprintId: null,
         status: todoStatus,
       })
-      .then(() => {
-        setNewSubtask("");
-        refreshSubtasks();
+      .then((success) => {
+        if (success) {
+          setNewSubtask("");
+          refreshSubtasks();
+        } else {
+          setSubtaskError("Échec de la création de la sous-tache.");
+        }
       })
-      .catch((err) => console.error("Error adding subtask:", err));
+      .catch((err) => {
+        const msg = err.response?.data?.error || "Échec de la création de la sous-tache.";
+        setSubtaskError(msg);
+        console.error("Error adding subtask:", err);
+      });
   };
 
   const handleToggleSubtask = (st) => {
@@ -280,7 +291,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
       .catch((err) => console.error("Error deleting subtask:", err));
   };
 
-  // Dépôt du livrable (lien GitHub) d'une sous-tâche.
+  // Dépôt du livrable (lien GitHub) d'une sous-tache.
   const handleSubmitDeliverable = () => {
     const link = (deliverableLink || "").trim();
     if (link && !/^https?:\/\/(www\.)?github\.com\/[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+(\/.*)?$/.test(link)) {
@@ -639,7 +650,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                   )
                 )}
               </div>
-              {/* LIVRABLE (sous-tâches existantes — visible par tous, éditable par le dev propriétaire) */}
+              {/* LIVRABLE (sous-taches existantes — visible par tous, éditable par le dev propriétaire) */}
               {task.id !== "NEW" && isSubtask && (
                 <div className="deliverable-section" style={{ marginBottom: "40px" }}>
                   <h3 className="section-title">
@@ -712,7 +723,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                       <>
                         <h3 className="section-title">
                           <FiCheckSquare style={{ marginRight: "8px" }} />
-                          Sous-tâches{" "}
+                          Sous-taches{" "}
                           {total > 0 && (
                             <span className="subtask-counter">
                               {doneCount}/{total}
@@ -760,7 +771,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                                 {canManageSubtasks && (
                                   <button
                                     className="subtask-delete"
-                                    title="Supprimer la sous-tâche"
+                                    title="Supprimer la sous-tache"
                                     onClick={() => handleDeleteSubtask(st.id)}
                                   >
                                     <FiTrash2 size={13} />
@@ -771,7 +782,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                           })}
                           {total === 0 && (
                             <p className="subtask-empty">
-                              Aucune sous-tâche. Découpez cette issue en
+                              Aucune sous-tache. Découpez cette issue en
                               étapes plus petites.
                             </p>
                           )}
@@ -782,14 +793,19 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                             <FiPlus className="subtask-add-icon" />
                             <input
                               className="subtask-add-input"
-                              placeholder="Ajouter une sous-tâche..."
+                              placeholder="Ajouter une sous-tache..."
                               value={newSubtask}
-                              onChange={(e) => setNewSubtask(e.target.value)}
+                              onChange={(e) => { setNewSubtask(e.target.value); setSubtaskError(""); }}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") handleAddSubtask();
                               }}
                             />
                           </div>
+                        )}
+                        {subtaskError && (
+                          <p style={{ color: 'var(--color-danger-red)', fontSize: '12px', margin: '4px 0 0 28px' }}>
+                            {subtaskError}
+                          </p>
                         )}
                       </>
                     );
@@ -1183,7 +1199,24 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                         </div>
                       )}
 
-                      {!isPO && (
+                      {/* STORY PARENT (sous-taches uniquement) */}
+                      {isSubtask && editedTask.parentId && (
+                        <div className="metadata-group">
+                          <div className="metadata-label">Story parente</div>
+                          <div className="metadata-value" style={{ color: 'var(--color-primary-blue)', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
+                            onClick={() => {
+                              const key = localStorage.getItem('selectedProjectKey') || 'MJ';
+                              const parentPrefixedId = `${key}-${editedTask.parentId}`;
+                              if (onOpenTask) onOpenTask(parentPrefixedId);
+                            }}
+                          >
+                            <FaBookmark size={11} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
+                            #{editedTask.parentId}
+                          </div>
+                        </div>
+                      )}
+
+                      {!isPO && !isSubtask && (
                         <div className="metadata-group">
                           <div className="metadata-label">Story points</div>
                           <div className="metadata-value no-hover">
@@ -1214,6 +1247,45 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                             )}
                           </div>
                         </div>
+                      )}
+
+                      {!isPO && isSubtask && (
+                        <>
+                          <div className="metadata-group">
+                            <div className="metadata-label">Heures estimées</div>
+                            <div className="metadata-value no-hover">
+                              {canEditPoints ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="ui-input"
+                                  style={{ minHeight: "auto", height: "32px", width: "60px", padding: "4px 8px", margin: 0 }}
+                                  value={editedTask.estimatedHours || 0}
+                                  onChange={(e) => handleFieldChange("estimatedHours", Math.max(0, parseInt(e.target.value) || 0))}
+                                />
+                              ) : (
+                                <span className="metadata-readonly">{editedTask.estimatedHours || 0} h</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="metadata-group">
+                            <div className="metadata-label">Heures consommées</div>
+                            <div className="metadata-value no-hover">
+                              {canEditPoints ? (
+                                <input
+                                  type="number"
+                                  min="0"
+                                  className="ui-input"
+                                  style={{ minHeight: "auto", height: "32px", width: "60px", padding: "4px 8px", margin: 0 }}
+                                  value={editedTask.loggedHours || 0}
+                                  onChange={(e) => handleFieldChange("loggedHours", Math.max(0, parseInt(e.target.value) || 0))}
+                                />
+                              ) : (
+                                <span className="metadata-readonly">{editedTask.loggedHours || 0} h</span>
+                              )}
+                            </div>
+                          </div>
+                        </>
                       )}
                     </>
                   )}

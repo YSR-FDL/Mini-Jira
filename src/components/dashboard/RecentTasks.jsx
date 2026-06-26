@@ -20,7 +20,7 @@ function StatusBadge({ status }) {
   let cls = "badge badgeTodo";
 
   if (s.includes("termin") || s.includes("done") || s.includes("releas")) {
-    label = "Terminé";
+    label = "Termine";
     cls = "badge badgeDone";
   } else if (s.includes("cours") || s.includes("progress") || s.includes("test") || s.includes("revue") || s.includes("review")) {
     label = "En Cours";

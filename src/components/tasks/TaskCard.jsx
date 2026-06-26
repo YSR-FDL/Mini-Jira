@@ -8,13 +8,13 @@ const PRIORITY_CONFIG = {
 };
 
 const STATUS_CONFIG = {
-    "TERMINÉ":  { label: "Terminé",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
-    "TERMINE":  { label: "Terminé",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
-    "TERMIN":   { label: "Terminé",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
-    "TERMINEE": { label: "Terminé",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
-    "DONE":     { label: "Terminé",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
+    "TERMINÉ":  { label: "Termine",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
+    "TERMINE":  { label: "Termine",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
+    "TERMIN":   { label: "Termine",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
+    "TERMINEE": { label: "Termine",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
+    "DONE":     { label: "Termine",  bg: "#E3FCEF", color: "#006644", border: "#ABF5D1" },
     "EN COURS": { label: "En cours", bg: "#EAF2FF", color: "#0052CC", border: "#B3D4FF" },
-    "À FAIRE":  { label: "À faire",  bg: "#F3F4F6", color: "#374151", border: "#E5E7EB" },
+    "À FAIRE":  { label: "A faire",  bg: "#F3F4F6", color: "#374151", border: "#E5E7EB" },
 };
 
 function getProgressColor(progress) {

@@ -16,15 +16,15 @@ const PRIORITY_CONFIG = {
 const STATUS_CONFIG = {
   "in-progress": { className: "story-status s-prog", label: "En cours" },
   "en cours": { className: "story-status s-prog", label: "En cours" },
-  todo: { className: "story-status s-todo", label: "À faire" },
-  "à faire": { className: "story-status s-todo", label: "À faire" },
-  "a faire": { className: "story-status s-todo", label: "À faire" },
-  done: { className: "story-status s-done", label: "Terminé" },
-  "terminé": { className: "story-status s-done", label: "Terminé" },
-  "termine": { className: "story-status s-done", label: "Terminé" },
-  "termin": { className: "story-status s-done", label: "Terminé" },
-  "terminee": { className: "story-status s-done", label: "Terminé" },
-  "terminée": { className: "story-status s-done", label: "Terminé" },
+  todo: { className: "story-status s-todo", label: "A faire" },
+  "à faire": { className: "story-status s-todo", label: "A faire" },
+  "a faire": { className: "story-status s-todo", label: "A faire" },
+  done: { className: "story-status s-done", label: "Termine" },
+  "terminé": { className: "story-status s-done", label: "Termine" },
+  "termine": { className: "story-status s-done", label: "Termine" },
+  "termin": { className: "story-status s-done", label: "Termine" },
+  "terminee": { className: "story-status s-done", label: "Termine" },
+  "terminée": { className: "story-status s-done", label: "Termine" },
   review: { className: "story-status s-rev", label: "En revue" },
   "en revue": { className: "story-status s-rev", label: "En revue" },
 };
@@ -36,13 +36,25 @@ const TAG_CONFIG = {
   bug: { className: "tag t-bug", label: "Bug" },
 };
 
-function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick }) {
+function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled = false, onClick, allTasks = [] }) {
   if (!task) return null;
 
   const { id, title, priority, status, tags = [], points, assignee } = task;
 
   const prio = PRIORITY_CONFIG[priority?.toLowerCase()] ?? PRIORITY_CONFIG.low;
   const stat = STATUS_CONFIG[status?.toLowerCase()] ?? STATUS_CONFIG["todo"];
+
+  // Subtask progress badge: count children of this task
+  const rawId = parseInt(String(id).replace(/^[A-Z]+-/, ''), 10);
+  const subtasks = allTasks.filter((t) => {
+    if (t.parentId !== rawId) return false;
+    const type = t.tags && t.tags[0];
+    return type === 'Subtask' || type === 'Sub-task' || type === 'Sous-tache';
+  });
+  const subtaskTotal = subtasks.length;
+  const subtaskDone = subtasks.filter(
+    (s) => /(done|termin|released|closed|ferm)/i.test(s.status || '')
+  ).length;
 
   const getInitials = (name) =>
     name ? name.substring(0, 2).toUpperCase() : "—";
@@ -152,6 +164,17 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
           </div>
 
           <span className={stat.className}>{stat.label}</span>
+
+          {/* Subtask progress badge */}
+          {subtaskTotal > 0 && (
+            <span className="story-subtask-badge" title={`Sous-taches : ${subtaskDone}/${subtaskTotal} terminées`}>
+              <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ verticalAlign: 'middle', marginRight: '3px' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              {subtaskDone}/{subtaskTotal}
+            </span>
+          )}
+
           <span className="story-pts">{points ? `${points} pts` : "-"}</span>
 
           {assignee ? (

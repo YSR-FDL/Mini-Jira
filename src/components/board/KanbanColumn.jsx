@@ -48,7 +48,7 @@ function KanbanColumn({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h3>{/(done|termin|terminee|terminé)/i.test(title) ? "Terminé" : title}</h3>
+          <h3>{/(done|termin|terminee|terminé)/i.test(title) ? "Termine" : title}</h3>
           <span className="kanban-column-counter">{tasks.length}</span>
         </div>
         {isSM && onDeleteColumn && (
