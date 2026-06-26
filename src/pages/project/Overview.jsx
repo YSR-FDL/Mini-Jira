@@ -50,7 +50,7 @@ const fallbackActivity = [
     bgColor: "#185fa5",
     action: "a déplacé la tâche",
     issueName: "Configurer la base de données SQLite",
-    targetState: "Terminé",
+    targetState: "Termine",
     time: "Il y a 4 heures",
   },
 ];
@@ -255,7 +255,7 @@ export default function Overview() {
             <p className="metric-value">{metrics.totalIssues}</p>
           </div>
           <div className="metric-card">
-            <h3 className="metric-title">Terminées</h3>
+            <h3 className="metric-title">Terminees</h3>
             <p className="metric-value">{metrics.completed}</p>
             <span className="metric-subtitle">
               {metrics.totalIssues > 0
@@ -334,10 +334,10 @@ export default function Overview() {
               ) : (
                 <>
                   <span className="dist-item">
-                    <span className="dot dot-todo" style={{ backgroundColor: '#cbd5e1' }}></span> À faire (0)
+                    <span className="dot dot-todo" style={{ backgroundColor: '#cbd5e1' }}></span> A faire (0)
                   </span>
                   <span className="dist-item">
-                    <span className="dot dot-done" style={{ backgroundColor: '#10b981' }}></span> Terminé (0)
+                    <span className="dot dot-done" style={{ backgroundColor: '#10b981' }}></span> Termine (0)
                   </span>
                 </>
               )}

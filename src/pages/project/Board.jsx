@@ -4,6 +4,7 @@ import ProjectLayout from "../../components/layout/ProjectLayout";
 import KanbanColumn from "../../components/board/KanbanColumn";
 import BoardControlBar from "../../components/board/BoardControlBar";
 import TaskDetailModal from "../../components/shared/TaskDetailModal";
+import CreateBugReportModal from "../../components/reports/CreateBugReportModal";
 import { taskService } from "../../services/taskService";
 import { sprintService } from "../../services/sprintService";
 import { projectService } from "../../services/projectService";
@@ -20,6 +21,7 @@ export default function Board() {
   const [loading, setLoading] = useState(true);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
+  const [showBugModal, setShowBugModal] = useState(false);
 
   // Filters State
   const [search, setSearch] = useState("");
@@ -336,11 +338,6 @@ export default function Board() {
 
   const activeTasks = useMemo(() => {
     return tasks.filter((task) => {
-      // Sub-tasks don't appear as cards on the board — they're shown as
-      // progress indicators on their parent story's card.
-      const type = task.tags && task.tags[0];
-      if (type === "Subtask" || type === "Sub-task" || type === "Sous-tâche") return false;
-
       const matchesSearch =
         search === "" ||
         task.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -427,6 +424,7 @@ export default function Board() {
         sprint={activeSprint}
         onCompleteSprint={handleCompleteSprint}
         isSM={isSM}
+        onReportBug={() => setShowBugModal(true)}
       />
       {/* NOUVEAU BOUTON DE CRÉATION SUR LE BOARD */}
       <div className="kanban-board-container scroll">
@@ -574,6 +572,14 @@ export default function Board() {
           sprints={activeSprint ? [activeSprint] : []}
         />
       )}
+      <CreateBugReportModal
+        isOpen={showBugModal}
+        onClose={() => setShowBugModal(false)}
+        onCreated={() => {
+          setShowBugModal(false);
+          window.location.reload();
+        }}
+      />
     </ProjectLayout>
   );
 }

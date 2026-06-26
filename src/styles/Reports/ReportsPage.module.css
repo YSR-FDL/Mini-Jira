@@ -58,6 +58,29 @@
   background: var(--border);
 }
 
+/* ── Report Bug button ────────────────────────────────────── */
+.reportBugBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 9px;
+  background: #DC2626;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.reportBugBtn:hover {
+  background: #b91c1c;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+  transform: translateY(-1px);
+}
+
 /* ── Quick stats row ──────────────────────────────────────── */
 .statsRow {
   display: flex;

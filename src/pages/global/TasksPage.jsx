@@ -126,8 +126,8 @@ return (
               >
                 {f === "Toutes" ? "Toutes les tâches"
                   : f === "EN COURS" ? "En cours"
-                  : f === "À FAIRE" ? "À faire"
-                  : "Terminées"}
+                  : f === "À FAIRE" ? "A faire"
+                  : "Terminees"}
               </button>
             ))}
           </div>

@@ -32,6 +32,7 @@ export const taskService = {
                 id: `${key}-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
+                estimatedHours: t.estimatedHours, loggedHours: t.loggedHours,
                 sprintId: t.idSprint !== undefined ? t.idSprint : null,
                 parentId: t.idParent !== undefined ? t.idParent : null,
                 deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null,
@@ -51,6 +52,7 @@ export const taskService = {
                 id: `${key}-${t.idTask}`, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
+                estimatedHours: t.estimatedHours, loggedHours: t.loggedHours,
                 sprintId: sprintId !== undefined ? sprintId : null,
                 parentId: t.idParent !== undefined ? t.idParent : null,
                 deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null,
@@ -80,6 +82,11 @@ export const taskService = {
 
     createDetailedTask: async (taskData) => {
         const rawSprintId = (taskData.sprintId === 'null' || taskData.sprintId === null) ? null : parseInt(taskData.sprintId, 10);
+        // Normalize subtask type to "Sous-tache" for consistency with backend
+        let typeTache = taskData.tags && taskData.tags.length > 0 ? taskData.tags[0] : 'Feature';
+        if (/^(subtask|sub-task|sous-tache)$/i.test(typeTache)) {
+            typeTache = 'Sous-tache';
+        }
         const payload = {
             titre: taskData.title || 'Nouvelle tâche',
             description: taskData.description || '',
@@ -87,8 +94,10 @@ export const taskService = {
             idProject: taskData.projectId || ((localStorage.getItem('selectedProjectId') && localStorage.getItem('selectedProjectId') !== 'undefined' && localStorage.getItem('selectedProjectId') !== 'null') ? parseInt(localStorage.getItem('selectedProjectId'), 10) : 1),
             statut: taskData.status || 'todo',
             priorite: taskData.priority || 'medium',
-            typeTache: taskData.tags && taskData.tags.length > 0 ? taskData.tags[0] : 'Feature',
+            typeTache: typeTache,
             storyPoints: taskData.points || 0,
+            estimatedHours: taskData.estimatedHours || 0,
+            loggedHours: taskData.loggedHours || 0,
             idParent: (taskData.parentId === undefined || taskData.parentId === null || taskData.parentId === 'null') ? null : parseInt(taskData.parentId, 10),
             requesterId: getRequesterId()
         };
@@ -103,7 +112,7 @@ export const taskService = {
         return response.data.message === 'success';
     },
 
-    // Dépôt du livrable (lien GitHub) d'une sous-tâche par le développeur propriétaire.
+    // Dépôt du livrable (lien GitHub) d'une sous-tache par le développeur propriétaire.
     submitDeliverable: async (taskId, deliverableLink) => {
         const rawId = toRawId(taskId);
         const response = await axiosInstance.post('/SubmitDeliverable', {
@@ -136,6 +145,8 @@ export const taskService = {
             priorite: updatedData.priority, 
             typeTache: updatedData.tags ? updatedData.tags[0] : 'Feature', 
             storyPoints: updatedData.points,
+            estimatedHours: updatedData.estimatedHours,
+            loggedHours: updatedData.loggedHours,
             idSprint: (updatedData.sprintId !== undefined && updatedData.sprintId !== null && updatedData.sprintId !== 'null') ? parseInt(updatedData.sprintId, 10) : null,
             idAssignee: idAssignee,
             requesterId: getRequesterId()

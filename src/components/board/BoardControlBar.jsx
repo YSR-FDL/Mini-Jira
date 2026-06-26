@@ -1,4 +1,5 @@
 import React from 'react';
+import { Bug } from 'lucide-react';
 import '../../styles/Board/BoardControlBar.css';
 import ActionBtn from '../ui/ActionBtn';
 
@@ -11,7 +12,8 @@ function BoardControlBar({
   onClearFilters,
   sprint, 
   onCompleteSprint,
-  isSM
+  isSM,
+  onReportBug
 }) {
   return (
     <div className="board-control-bar">
@@ -62,6 +64,12 @@ function BoardControlBar({
 
       {/* DROITE : INFOS SPRINT ET ACTION */}
       <div className="board-controls-right">
+        {onReportBug && (
+          <button className="report-bug-btn" onClick={onReportBug}>
+            <Bug size={14} />
+            Signaler un bug
+          </button>
+        )}
         {sprint && (
           <div className="sprint-info">
             <span className="sprint-info-name">{sprint.name}</span>

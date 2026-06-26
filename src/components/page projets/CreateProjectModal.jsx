@@ -9,10 +9,10 @@ export default function CreateProjectModal({ isOpen, onClose, onCreate}) {
     const user = JSON.parse(localStorage.getItem("user"));
 
     const [etats, setEtats] = useState([
-        "À faire",
+        "A faire",
         "En cours",
         "En Revue",
-        "Terminé",
+        "Termine",
     ]);
 
     const [selectedSMId, setSelectedSMId] = useState("");

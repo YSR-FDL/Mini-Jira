@@ -18,7 +18,7 @@ const CARDS = [
   },
   {
     key: "completedTasks",
-    label: "Tâches Terminées",
+    label: "Tâches Terminees",
     icon: CheckCircle,
     iconBg: "rgba(0, 135, 90, 0.10)",
     iconColor: "var(--green)",

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import StoryRow from './StoryRow';
 
-export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick, onEditClick, columns = [] }) {
+export default function SprintBlock({ sprint, sprintTasks, allTasks, onAddTask, onTagChange, onPriorityChange, sortConfig, onTaskClick, isSM, isPO, onStartClick, onTerminateClick, onDeleteClick, onEditClick, columns = [] }) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
@@ -31,11 +31,11 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
         statusLabel = 'Actif';
     } else if (sprint.status === 'done' || sprint.status === 'completed' || sprint.status === 'terminee') {
         badgeClass = 'b-done';
-        statusLabel = 'Terminé';
+        statusLabel = 'Termine';
     }
 
     // LOGIQUE DES POINTS ET DE LA CAPACITÉ
-    // Les sous-tâches (checklist) ne comptent pas dans les points du sprint.
+    // Les sous-taches (checklist) ne comptent pas dans les points du sprint.
     // Seules les stories/features/bugs/tech comptent.
     const sprintTaskIds = new Set(sprintTasks.map(t => {
         const parts = t.id ? t.id.split('-') : [];
@@ -45,7 +45,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
     const countableTasks = sprintTasks.filter(task => {
         // Sub-tasks are a checklist — their points don't count independently
         const tags = task.tags || [];
-        if (tags.includes('Sub-task') || tags.includes('Subtask') || tags.includes('Sous-tâche')) return false;
+        if (tags.includes('Sub-task') || tags.includes('Subtask') || tags.includes('Sous-tache')) return false;
         // Also exclude any task whose parent is in this sprint (defensive fallback)
         if (task.parentId && sprintTaskIds.has(task.parentId)) return false;
         return true;
@@ -165,6 +165,7 @@ export default function SprintBlock({ sprint, sprintTasks, onAddTask, onTagChang
                                         task={task} 
                                         index={index}
                                         isDragDisabled={!!sortConfig || !(isSM || isPO)}
+                                        allTasks={allTasks}
                                         onTagChange={(newTag, tagIndex) => onTagChange && onTagChange(task.id, newTag, tagIndex)}
                                         onPriorityChange={(newPriority) => onPriorityChange && onPriorityChange(task.id, newPriority)}
                                         onClick={() => onTaskClick && onTaskClick(task.id)}

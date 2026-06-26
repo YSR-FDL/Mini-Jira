@@ -252,6 +252,21 @@
   text-align: right;
   margin-left: 6px;
 }
+
+/* Subtask progress badge */
+.story-subtask-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-primary-blue);
+  background: var(--color-primary-blue-light);
+  padding: 2px 7px;
+  border-radius: var(--border-radius-badge);
+  margin-left: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .story-av {
   width: 22px;
   height: 22px;

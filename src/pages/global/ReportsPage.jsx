@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Bug, Loader2 } from "lucide-react";
+import { Bug, Loader2, Plus } from "lucide-react";
 import Layout from "../../components/layout/Layout";
 import ProjectReportsSection from "../../components/reports/ProjectReportsSection";
+import CreateBugReportModal from "../../components/reports/CreateBugReportModal";
 import styles from "../../styles/Reports/ReportsPage.module.css";
 import { bugReportService } from "../../services/bugReportService";
 
@@ -25,16 +26,14 @@ export default function ReportsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // ── Fetch bug reports from backend ──
-  useEffect(() => {
-    let cancelled = false;
+  const fetchReports = () => {
     setLoading(true);
     bugReportService
       .getBugReports()
       .then((data) => {
-        if (cancelled) return;
-        // Map each report's priority to gravité label for UI display
         const mapped = (data.projects || []).map((project) => ({
           ...project,
           reports: (project.reports || []).map((r) => ({
@@ -46,15 +45,22 @@ export default function ReportsPage() {
         setError(null);
       })
       .catch((err) => {
-        if (cancelled) return;
         console.error("Failed to load bug reports:", err);
         setError("Impossible de charger les bug reports.");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       });
-    return () => { cancelled = true; };
+  };
+
+  useEffect(() => {
+    fetchReports();
   }, []);
+
+  const handleBugCreated = () => {
+    setShowModal(false);
+    fetchReports(); // refresh the list
+  };
 
   // ── Build the current user from localStorage ──
   const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -97,6 +103,14 @@ export default function ReportsPage() {
 
           {/* Résumé utilisateur */}
           <div className={styles.userSummary}>
+            <button
+              className={styles.reportBugBtn}
+              onClick={() => setShowModal(true)}
+            >
+              <Plus size={16} />
+              Signaler un bug
+            </button>
+            <div className={styles.summaryDivider} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
               <span style={{ fontSize: 20, fontWeight: 700, color: "var(--blue)", lineHeight: 1 }}>
                 {totalReports}
@@ -173,6 +187,13 @@ export default function ReportsPage() {
             ))
           )}
         </div>
+
+        {/* ── Modal de signalement de bug ── */}
+        <CreateBugReportModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onCreated={handleBugCreated}
+        />
 
       </div>
     </Layout>
