@@ -17,7 +17,7 @@ import com.google.gson.JsonObject;
 
 /**
  * SubmitDeliverable — Le développeur dépose le lien de son livrable (dépôt
- * GitHub) lorsqu'il termine une sous-tâche qui lui est assignée.
+ * GitHub) lorsqu'il termine une sous-tache qui lui est assignée.
  * Attend : { "taskId": 5, "lienLivrable": "https://github.com/...", "requesterId": 3 }
  * Un lien vide ou absent retire le livrable.
  */
@@ -83,7 +83,7 @@ public class SubmitDeliverable extends HttpServlet {
             return;
         }
 
-        // RBAC : seul le développeur propriétaire de la sous-tâche peut déposer le livrable.
+        // RBAC : seul le développeur propriétaire de la sous-tache peut déposer le livrable.
         Integer requesterId = utils.RequestUtils.getRequesterId(body);
         if (requesterId == null) {
             utils.RequestUtils.writeJsonError(response, HttpServletResponse.SC_UNAUTHORIZED, "Utilisateur non identifié.");

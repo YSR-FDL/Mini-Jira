@@ -98,11 +98,19 @@ public class MoveTask extends HttpServlet {
             return;
         }
 
+        java.util.List<String> etats = project.getEtats();
+        String finalStatus = (etats != null && !etats.isEmpty()) ? etats.get(etats.size() - 1).trim() : null;
+
+        if (finalStatus != null && newStatus.equalsIgnoreCase(finalStatus)) {
+            if (taskDAO.hasActiveSubtasks(taskId, finalStatus)) {
+                utils.RequestUtils.writeJsonError(response, 422, "Impossible de clôturer la Story, des sous-taches sont encore en cours.");
+                return;
+            }
+        }
+
         int nb = taskDAO.updateTaskStatus(taskId, newStatus);
 
         if (nb > 0) {
-            java.util.List<String> etats = project.getEtats();
-            String finalStatus = (etats != null && !etats.isEmpty()) ? etats.get(etats.size() - 1).trim() : null;
             if (finalStatus != null && !newStatus.equalsIgnoreCase(finalStatus)) {
                 taskDAO.updateTaskValidation(taskId, "NONE");
             }

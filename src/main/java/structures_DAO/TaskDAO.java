@@ -22,6 +22,8 @@ public class TaskDAO {
         task.setStatut(rs.getString("statut"));
         task.setPriorite(rs.getString("priorite"));
         task.setStoryPoints(rs.getInt("story_points"));
+        task.setEstimatedHours(rs.getInt("estimated_hours"));
+        task.setLoggedHours(rs.getInt("logged_hours"));
         task.setPosition(rs.getInt("position"));
         task.setDateCreation(rs.getString("date_creation"));
         task.setIdProject(rs.getInt("id_project"));
@@ -49,6 +51,8 @@ public class TaskDAO {
         map.put("statut", rs.getString("statut"));
         map.put("priorite", rs.getString("priorite"));
         map.put("storyPoints", rs.getInt("story_points"));
+        map.put("estimatedHours", rs.getInt("estimated_hours"));
+        map.put("loggedHours", rs.getInt("logged_hours"));
         map.put("position", rs.getInt("position"));
         map.put("dateCreation", rs.getString("date_creation"));
         map.put("idProject", rs.getInt("id_project"));
@@ -110,8 +114,8 @@ public class TaskDAO {
             e.printStackTrace();
         }
 
-        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, position, id_project, id_sprint, id_assignee, id_parent, type_tache, lien_livrable, po_validation) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO tasks(titre, description, statut, priorite, story_points, estimated_hours, logged_hours, position, id_project, id_sprint, id_assignee, id_parent, type_tache, lien_livrable, po_validation) " +
+                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
             ps.setString(1, task.getTitre());
@@ -119,30 +123,32 @@ public class TaskDAO {
             ps.setString(3, task.getStatut() != null ? task.getStatut() : "todo");
             ps.setString(4, task.getPriorite() != null ? task.getPriorite() : "medium");
             ps.setInt(5, task.getStoryPoints());
-            ps.setInt(6, nextPos);
-            ps.setInt(7, task.getIdProject());
+            ps.setInt(6, task.getEstimatedHours());
+            ps.setInt(7, task.getLoggedHours());
+            ps.setInt(8, nextPos);
+            ps.setInt(9, task.getIdProject());
             if (task.getIdSprint() != null) {
-                ps.setInt(8, task.getIdSprint());
-            } else {
-                ps.setNull(8, java.sql.Types.INTEGER);
-            }
-            if (task.getIdAssignee() != null) {
-                ps.setInt(9, task.getIdAssignee());
-            } else {
-                ps.setNull(9, java.sql.Types.INTEGER);
-            }
-            if (task.getIdParent() != null) {
-                ps.setInt(10, task.getIdParent());
+                ps.setInt(10, task.getIdSprint());
             } else {
                 ps.setNull(10, java.sql.Types.INTEGER);
             }
-            ps.setString(11, task.getTypeTache() != null ? task.getTypeTache() : "Feature");
-            if (task.getLienLivrable() != null) {
-                ps.setString(12, task.getLienLivrable());
+            if (task.getIdAssignee() != null) {
+                ps.setInt(11, task.getIdAssignee());
             } else {
-                ps.setNull(12, java.sql.Types.VARCHAR);
+                ps.setNull(11, java.sql.Types.INTEGER);
             }
-            ps.setString(13, task.getPoValidation() != null ? task.getPoValidation() : "NONE");
+            if (task.getIdParent() != null) {
+                ps.setInt(12, task.getIdParent());
+            } else {
+                ps.setNull(12, java.sql.Types.INTEGER);
+            }
+            ps.setString(13, task.getTypeTache() != null ? task.getTypeTache() : "Feature");
+            if (task.getLienLivrable() != null) {
+                ps.setString(14, task.getLienLivrable());
+            } else {
+                ps.setNull(14, java.sql.Types.VARCHAR);
+            }
+            ps.setString(15, task.getPoValidation() != null ? task.getPoValidation() : "NONE");
             nb = ps.executeUpdate();
             if (nb > 0) {
                 ResultSet keys = ps.getGeneratedKeys();
@@ -249,6 +255,30 @@ public class TaskDAO {
     }
 
     /**
+     * Vérifie si une tâche parent possède au moins une sous-tache dont le statut n'est pas "doneStatus".
+     */
+    public boolean hasActiveSubtasks(int parentId, String doneStatus) {
+        boolean hasActive = false;
+        DBInteraction.connect();
+        String sql = "SELECT COUNT(*) FROM tasks WHERE id_parent = ? AND LOWER(statut) != LOWER(?)";
+        try {
+            PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
+            ps.setInt(1, parentId);
+            ps.setString(2, doneStatus != null ? doneStatus : "");
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                hasActive = rs.getInt(1) > 0;
+            }
+            rs.close();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        DBInteraction.disconnect();
+        return hasActive;
+    }
+
+    /**
      * Retourne les epics d'un projet (type_tache = 'Epic') avec leurs stories
      * enfants et un cumul (roll-up) : nombre d'enfants, enfants terminés, points
      * totaux et points livrés. Permet à la page Epics d'afficher la progression
@@ -348,6 +378,8 @@ public class TaskDAO {
                 task.setStatut(rs.getString("statut"));
                 task.setPriorite(rs.getString("priorite"));
                 task.setStoryPoints(rs.getInt("story_points"));
+                task.setEstimatedHours(rs.getInt("estimated_hours"));
+                task.setLoggedHours(rs.getInt("logged_hours"));
                 task.setIdProject(rs.getInt("id_project"));
                 int sprintId = rs.getInt("id_sprint");
                 task.setIdSprint(rs.wasNull() ? null : sprintId);
@@ -391,7 +423,7 @@ public class TaskDAO {
 
     /**
      * Met à jour uniquement le lien du livrable (dépôt GitHub) d'une tâche.
-     * Utilisé lorsqu'un développeur dépose le livrable d'une sous-tâche.
+     * Utilisé lorsqu'un développeur dépose le livrable d'une sous-tache.
      */
     public int updateDeliverable(int taskId, String lienLivrable) {
         int nb = 0;
@@ -441,6 +473,10 @@ public class TaskDAO {
             task.setPriorite(existing.getPriorite());
         if (hasPresence ? !providedFields.contains("storyPoints") : task.getStoryPoints() == 0)
             task.setStoryPoints(existing.getStoryPoints());
+        if (hasPresence ? !providedFields.contains("estimatedHours") : task.getEstimatedHours() == 0)
+            task.setEstimatedHours(existing.getEstimatedHours());
+        if (hasPresence ? !providedFields.contains("loggedHours") : task.getLoggedHours() == 0)
+            task.setLoggedHours(existing.getLoggedHours());
         if (hasPresence ? !providedFields.contains("typeTache") : task.getTypeTache() == null)
             task.setTypeTache(existing.getTypeTache());
 
@@ -466,7 +502,7 @@ public class TaskDAO {
         int nb = 0;
         DBInteraction.connect();
         String sql = "UPDATE tasks SET titre = ?, description = ?, statut = ?, priorite = ?, " +
-                     "story_points = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ?, lien_livrable = ?, po_validation = ? WHERE id_task = ?";
+                     "story_points = ?, estimated_hours = ?, logged_hours = ?, id_sprint = ?, id_assignee = ?, id_parent = ?, type_tache = ?, lien_livrable = ?, po_validation = ? WHERE id_task = ?";
         try {
             PreparedStatement ps = DBInteraction.getConn().prepareStatement(sql);
             ps.setString(1, task.getTitre());
@@ -474,29 +510,31 @@ public class TaskDAO {
             ps.setString(3, task.getStatut());
             ps.setString(4, task.getPriorite());
             ps.setInt(5, task.getStoryPoints());
+            ps.setInt(6, task.getEstimatedHours());
+            ps.setInt(7, task.getLoggedHours());
             if (task.getIdSprint() != null) {
-                ps.setInt(6, task.getIdSprint());
-            } else {
-                ps.setNull(6, java.sql.Types.INTEGER);
-            }
-            if (task.getIdAssignee() != null) {
-                ps.setInt(7, task.getIdAssignee());
-            } else {
-                ps.setNull(7, java.sql.Types.INTEGER);
-            }
-            if (task.getIdParent() != null) {
-                ps.setInt(8, task.getIdParent());
+                ps.setInt(8, task.getIdSprint());
             } else {
                 ps.setNull(8, java.sql.Types.INTEGER);
             }
-            ps.setString(9, task.getTypeTache());
-            if (task.getLienLivrable() != null) {
-                ps.setString(10, task.getLienLivrable());
+            if (task.getIdAssignee() != null) {
+                ps.setInt(9, task.getIdAssignee());
             } else {
-                ps.setNull(10, java.sql.Types.VARCHAR);
+                ps.setNull(9, java.sql.Types.INTEGER);
             }
-            ps.setString(11, task.getPoValidation());
-            ps.setInt(12, task.getIdTask());
+            if (task.getIdParent() != null) {
+                ps.setInt(10, task.getIdParent());
+            } else {
+                ps.setNull(10, java.sql.Types.INTEGER);
+            }
+            ps.setString(11, task.getTypeTache());
+            if (task.getLienLivrable() != null) {
+                ps.setString(12, task.getLienLivrable());
+            } else {
+                ps.setNull(12, java.sql.Types.VARCHAR);
+            }
+            ps.setString(13, task.getPoValidation());
+            ps.setInt(14, task.getIdTask());
             nb = ps.executeUpdate();
             ps.close();
         } catch (SQLException e) {
@@ -609,7 +647,7 @@ public class TaskDAO {
         DBInteraction.connect();
         String sql =
             "SELECT t.id_task, t.titre, t.description, t.statut, t.priorite, " +
-            "       t.story_points, t.date_creation, t.id_project, t.id_sprint, " +
+            "       t.story_points, t.estimated_hours, t.logged_hours, t.date_creation, t.id_project, t.id_sprint, " +
             "       t.id_assignee, t.id_parent, t.type_tache, " +
             "       u.nom AS nom_assignee, u.prenom AS prenom_assignee, " +
             "       p.nom_projet, p.etats " +
@@ -630,6 +668,8 @@ public class TaskDAO {
                 map.put("statut", rs.getString("statut"));
                 map.put("priorite", rs.getString("priorite"));
                 map.put("storyPoints", rs.getInt("story_points"));
+                map.put("estimatedHours", rs.getInt("estimated_hours"));
+                map.put("loggedHours", rs.getInt("logged_hours"));
                 map.put("dateCreation", rs.getString("date_creation"));
                 map.put("idProject", rs.getInt("id_project"));
                 map.put("nomProjet", rs.getString("nom_projet"));

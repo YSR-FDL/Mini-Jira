@@ -7,6 +7,8 @@ public class Task {
     private String statut;
     private String priorite;
     private int storyPoints;
+    private int estimatedHours;
+    private int loggedHours;
     private int position;
     private String dateCreation;
     private int idProject;
@@ -38,6 +40,12 @@ public class Task {
 
     public int getStoryPoints() { return storyPoints; }
     public void setStoryPoints(int storyPoints) { this.storyPoints = storyPoints; }
+
+    public int getEstimatedHours() { return estimatedHours; }
+    public void setEstimatedHours(int estimatedHours) { this.estimatedHours = estimatedHours; }
+
+    public int getLoggedHours() { return loggedHours; }
+    public void setLoggedHours(int loggedHours) { this.loggedHours = loggedHours; }
 
     public int getPosition() { return position; }
     public void setPosition(int position) { this.position = position; }
