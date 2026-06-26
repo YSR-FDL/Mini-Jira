@@ -86,12 +86,19 @@ public final class Rbac {
     }
 
     public static boolean isSubtask(Task t) {
-        return t != null && "Subtask".equalsIgnoreCase(t.getTypeTache());
+        if (t == null || t.getTypeTache() == null) return false;
+        String type = t.getTypeTache().toLowerCase();
+        return type.equals("subtask") || type.equals("sub-task") || type.equals("sous-tache");
     }
 
-    /** A "Story" is any work item that is neither an Epic nor a Sub-task. */
+    /** A Bug report — any project member can signal one. */
+    public static boolean isBug(Task t) {
+        return t != null && "Bug".equalsIgnoreCase(t.getTypeTache());
+    }
+
+    /** A "Story" is any work item that is neither an Epic, a Sub-task, nor a Bug. */
     public static boolean isStory(Task t) {
-        return t != null && !isEpic(t) && !isSubtask(t);
+        return t != null && !isEpic(t) && !isSubtask(t) && !isBug(t);
     }
 
     //  Project workspace (Administrateur only)
@@ -174,10 +181,10 @@ public final class Rbac {
                 && eq(existing.getCapacite(), incoming.getCapacite());
     }
 
-    //  Livrable d'une sous-tâche (lien GitHub)
+    //  Livrable d'une sous-tache (lien GitHub)
     /**
-     * Dépôt/édition du livrable (dépôt GitHub) d'une sous-tâche. Seul le
-     * développeur propriétaire de la sous-tâche (assignée à lui, ou rattachée à
+     * Dépôt/édition du livrable (dépôt GitHub) d'une sous-tache. Seul le
+     * développeur propriétaire de la sous-tache (assignée à lui, ou rattachée à
      * une story qu'il possède) peut déposer son livrable. Le Product Owner peut
      * rejeter (supprimer) un livrable.
      */
@@ -186,7 +193,7 @@ public final class Rbac {
             return "Action non autorisée.";
         }
         if (!isSubtask(subtask)) {
-            return "Le livrable ne peut être déposé que sur une sous-tâche.";
+            return "Le livrable ne peut être déposé que sur une sous-tache.";
         }
         if (isRemoval && roles.isPO) {
             return null; // Product Owner may reject/remove the deliverable
@@ -194,7 +201,7 @@ public final class Rbac {
         if (roles.isDev && ownsTaskOrParent(roles, subtask, parent)) {
             return null;
         }
-        return "Seul le développeur propriétaire de la sous-tâche peut déposer le livrable.";
+        return "Seul le développeur propriétaire de la sous-tache peut déposer le livrable.";
     }
 
     //  Backlog reordering
@@ -228,18 +235,22 @@ public final class Rbac {
         }
         if (isSubtask(newTask)) {
             if (!roles.isDev) {
-                return "Seuls les développeurs peuvent créer des sous-tâches.";
+                return "Seuls les développeurs peuvent créer des sous-taches.";
             }
             // A developer may only add sub-tasks under a story assigned to them.
             if (parent == null) {
-                return "Une sous-tâche doit être rattachée à une story.";
+                return "Une sous-tache doit être rattachée à une story.";
             }
             if (parent.getIdAssignee() == null || parent.getIdAssignee() != roles.userId) {
-                return "Vous ne pouvez ajouter des sous-tâches qu'aux stories qui vous sont assignées.";
+                return "Vous ne pouvez ajouter des sous-taches qu'aux stories qui vous sont assignées.";
             }
             return null;
         }
-        // Standard Story
+        // Bug report: tout membre du projet peut signaler un bug.
+        if (isBug(newTask)) {
+            return null; // any project member can report a bug
+        }
+        // Standard Story (Feature, Tech, etc.) → Product Owner only.
         return roles.isPO ? null : "Seul le Product Owner peut créer des stories.";
     }
 
@@ -257,7 +268,17 @@ public final class Rbac {
             if (roles.isDev && ownsTaskOrParent(roles, existing, parent)) {
                 return null;
             }
-            return "Seul le développeur propriétaire peut supprimer cette sous-tâche.";
+            return "Seul le développeur propriétaire peut supprimer cette sous-tache.";
+        }
+        // Bug report: the SM, PO, or the assignee (reporter) can delete it.
+        if (isBug(existing)) {
+            if (roles.isSM || roles.isPO) {
+                return null;
+            }
+            if (roles.isDev && existing.getIdAssignee() != null && existing.getIdAssignee() == roles.userId) {
+                return null;
+            }
+            return "Seul le Scrum Master, le Product Owner ou l'assigné peut supprimer ce bug report.";
         }
         // Story: the Scrum Master removes rogue/invalid stories; the Product
         // Owner owns the story lifecycle.
@@ -333,18 +354,40 @@ public final class Rbac {
 
         if (isSubtask(existing)) {
             if (!roles.isDev) {
-                return "Les sous-tâches sont en lecture seule pour votre rôle.";
+                return "Les sous-taches sont en lecture seule pour votre rôle.";
             }
             if (!ownsTaskOrParent(roles, existing, parent)) {
-                return "Vous ne pouvez pas modifier une sous-tâche assignée à un autre développeur.";
+                return "Vous ne pouvez pas modifier une sous-tache assignée à un autre développeur.";
             }
             // A developer cannot reassign a sub-task to someone else.
             if (changedFields.contains("idAssignee")
                     && incoming.getIdAssignee() != null
                     && incoming.getIdAssignee() != roles.userId) {
-                return "Vous ne pouvez pas assigner une sous-tâche à un autre utilisateur.";
+                return "Vous ne pouvez pas assigner une sous-tache à un autre utilisateur.";
             }
             return null;
+        }
+
+        // Bug report: any project member can update a bug (status, description,
+        // priority, assignment). The PO/SM retain full control; Devs can
+        // self-assign or update status (same pull-system logic as stories).
+        if (isBug(existing)) {
+            if (roles.isPO || roles.isSM) {
+                return null; // full control
+            }
+            // Developers: same assignment rules as stories (self-assign only)
+            if (changedFields.contains("idAssignee")) {
+                boolean currentlyUnassigned = existing.getIdAssignee() == null;
+                boolean selfAssign = incoming.getIdAssignee() != null
+                        && incoming.getIdAssignee() == roles.userId;
+                boolean selfUnassign = existing.getIdAssignee() != null
+                        && existing.getIdAssignee() == roles.userId
+                        && incoming.getIdAssignee() == null;
+                if (!(currentlyUnassigned && selfAssign) && !selfUnassign) {
+                    return "Vous ne pouvez vous attribuer que des bugs non assignés.";
+                }
+            }
+            return null; // other fields (statut, description, priorite) are open
         }
 
         //  Standard Story

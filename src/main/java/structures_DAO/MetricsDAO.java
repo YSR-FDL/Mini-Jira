@@ -141,10 +141,10 @@ public class MetricsDAO {
         String sql = "SELECT " +
             "COUNT(*) AS total, " +
             "SUM(CASE WHEN statut = ? THEN 1 ELSE 0 END) AS completed, " +
-            "COALESCE(SUM(CASE WHEN (type_tache IS NULL OR type_tache <> 'Sub-task') " +
+            "COALESCE(SUM(CASE WHEN (type_tache IS NULL OR (type_tache <> 'Sub-task' AND type_tache <> 'Sous-tache')) " +
                 "AND (id_parent IS NULL OR id_parent NOT IN (SELECT id_task FROM tasks WHERE id_sprint = ?)) " +
                 "THEN story_points ELSE 0 END), 0) AS totalPoints, " +
-            "COALESCE(SUM(CASE WHEN statut = ? AND (type_tache IS NULL OR type_tache <> 'Sub-task') " +
+            "COALESCE(SUM(CASE WHEN statut = ? AND (type_tache IS NULL OR (type_tache <> 'Sub-task' AND type_tache <> 'Sous-tache')) " +
                 "AND (id_parent IS NULL OR id_parent NOT IN (SELECT id_task FROM tasks WHERE id_sprint = ?)) " +
                 "THEN story_points ELSE 0 END), 0) AS completedPoints " +
             "FROM tasks WHERE id_sprint = ?";

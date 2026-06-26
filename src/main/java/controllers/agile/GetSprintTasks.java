@@ -120,7 +120,7 @@ public class GetSprintTasks extends HttpServlet {
                 createColumn("todo", "À Faire"),
                 createColumn("in-progress", "En Cours"),
                 createColumn("review", "En Revue"),
-                createColumn("done", "Terminé")
+                createColumn("done", "Termine")
         );
     }
 
