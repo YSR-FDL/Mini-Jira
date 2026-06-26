@@ -12,6 +12,7 @@ const rolesLabels = {
 
 export default function ProfileHeader({user}) {
   const navigate = useNavigate();
+  const isAdmin = user?.type_utilisateur === "ADMIN";
 
   return (
     <>
@@ -25,7 +26,8 @@ export default function ProfileHeader({user}) {
 
           <div className={s.profileInfo}>
             <div className={s.profileName}>{user.nom} {user.prenom}</div>
-            <div className={s.profileRole}>
+            {!isAdmin && (
+              <div className={s.profileRole}>
                 {user.experiences.map((role, index) => (
                   <span key={index}>
                     {rolesLabels[role]}
@@ -33,11 +35,26 @@ export default function ProfileHeader({user}) {
                   </span>
                 ))}
             </div>
+            )}
+            
+            {isAdmin && (
+              <div className={s.profileRoleAdmin} >
+                {user.experiences.map((role, index) => (
+                  <span key={index}>
+                    {rolesLabels[role]}
+                    {index < user.experiences.length - 1 && ", "}
+                  </span>
+                ))}
+            </div>
+            )}
           </div>
-
-          <button className={s.editProfileBtn} onClick = {() => {navigate("/ProfileUpdate");}}>
-            <Pencil size={14} /> Modifier mon Profil
-          </button>
+          {!isAdmin &&  (
+              <button className={s.editProfileBtn} onClick = {() => {navigate("/ProfileUpdate");}}>
+                <Pencil size={14} /> Modifier mon Profil
+              </button>
+            )
+          }
+          
         </div>
       </div>
     </>

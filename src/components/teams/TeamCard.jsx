@@ -13,30 +13,33 @@ export default function TeamCard({ team, onDelete, onUpdate, onArchive}) {
   const handleConsulter = () => {
     navigate(`/detailsTeam/${team.id}`)
   }
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user?.type_utilisateur === "ADMIN";
 
   return (
     <>
     <div className={ s.teamCard + (team.isArchived ? ` ${s.teamCardArchived}` : "")}>
       <div className={s.teamCardHeader}>
         <h3 className={s.teamCardName}>{team.nom}</h3>
+        {isAdmin && (
+          <div className={s.teamCardMenuWrap}>
+            <button className={s.teamCardMenuBtn}  onClick={() => setMenuOpen((v) => !v)}>
+              <MoreVertical size={16} />
+            </button>
 
-        <div className={s.teamCardMenuWrap}>
-          <button className={s.teamCardMenuBtn}  onClick={() => setMenuOpen((v) => !v)}>
-            <MoreVertical size={16} />
-          </button>
-
-          {menuOpen && (
-            <div className={s.teamCardDropdown}>
-              {!team.isArchived && (
-                <>
-                  <button onClick={() => {setMenuOpen(false);setShowEditModal(true);}}>Modifier</button>
-                  <button onClick={() => {setMenuOpen(false);onArchive(team.id);}}>Archiver</button>
-                </>
-              )}
-              <button className={s.danger} onClick={() => {setMenuOpen(false);setShowDeleteConfirm(true);}}>Supprimer</button>
-            </div>
-          )}
-        </div>
+            {menuOpen && (
+              <div className={s.teamCardDropdown}>
+                {!team.isArchived && (
+                  <>
+                    <button onClick={() => {setMenuOpen(false);setShowEditModal(true);}}>Modifier</button>
+                    <button onClick={() => {setMenuOpen(false);onArchive(team.id);}}>Archiver</button>
+                  </>
+                )}
+                <button className={s.danger} onClick={() => {setMenuOpen(false);setShowDeleteConfirm(true);}}>Supprimer</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <p className={s.teamCardDesc}>{team.objectif}</p>

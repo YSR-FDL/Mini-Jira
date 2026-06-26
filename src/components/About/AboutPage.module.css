@@ -1,0 +1,340 @@
+/* AboutPage.module.css */
+
+/* ── Page wrapper ── */
+.page {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+  animation: fadeIn 0.22s ease;
+}
+
+/* ── Hero ── */
+.hero {
+  background: var(--gradient-left);
+  padding: 56px 48px 52px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  top: -120px;
+  right: -80px;
+  pointer-events: none;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  bottom: -60px;
+  left: 60px;
+  pointer-events: none;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.9);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--r-full);
+  letter-spacing: 0.5px;
+  margin-bottom: 18px;
+}
+
+.heroTitle {
+  font-family: var(--font-title);
+  font-size: 34px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 1;
+}
+.heroTitle span { color: rgba(255,255,255,0.7); }
+
+.heroDesc {
+  font-size: 15px;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.65;
+  max-width: 580px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Container ── */
+.container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 32px;
+}
+
+/* ── Sections ── */
+.section { padding: 44px 0; }
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 6px;
+}
+
+.sectionTitle {
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.3px;
+  margin-bottom: 10px;
+}
+
+.sectionDesc {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.65;
+  max-width: 620px;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0 32px;
+}
+
+/* ── Présentation ── */
+.presentationGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-top: 28px;
+  align-items: center;
+}
+
+.presentationText p {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+.pillList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: var(--blue-light);
+  color: var(--blue);
+  border: 1px solid var(--blue-subtle);
+  border-radius: var(--r-full);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.presentationVisual {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+}
+
+.visualHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.visualDot { width: 10px; height: 10px; border-radius: 50%; }
+
+.statsList { display: flex; flex-direction: column; gap: 12px; }
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statRowLabel {
+  font-size: 13px;
+  color: var(--text-mid);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.statRowValue { font-size: 13px; font-weight: 700; color: var(--text-dark); }
+
+.statBar {
+  margin-top: 4px;
+  height: 4px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.statBarFill {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.6s ease;
+}
+
+/* ── Features ── */
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.featureCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 22px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  animation: slideIn 0.25s ease both;
+}
+
+.featureCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  border-color: var(--border-mid);
+}
+
+.featureIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.featureTitle { font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
+.featureDesc  { font-size: 12.5px; color: var(--text-mid); line-height: 1.6; }
+
+/* ── FAQ Accordion ── */
+.faqList { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
+
+.faqItem {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+.faqItem:hover { box-shadow: var(--shadow-md); }
+.faqItem.open {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow), var(--shadow-sm);
+}
+
+.faqTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  gap: 12px;
+  text-align: left;
+  transition: background var(--transition);
+}
+.faqTrigger:hover               { background: var(--input-bg); }
+.faqItem.open .faqTrigger       { background: rgba(0,82,204,0.04); }
+
+.faqQuestion { font-size: 13.5px; font-weight: 600; color: var(--text-dark); line-height: 1.4; }
+.faqItem.open .faqQuestion      { color: var(--blue); }
+
+.faqChevron {
+  flex-shrink: 0;
+  color: var(--text-soft);
+  transition: transform var(--transition);
+}
+.faqItem.open .faqChevron       { transform: rotate(180deg); color: var(--blue); }
+
+.faqBody {
+  padding: 0 20px;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.32s cubic-bezier(.4,0,.2,1), padding 0.22s ease;
+}
+.faqItem.open .faqBody          { max-height: 300px; padding: 0 20px 18px; }
+
+.faqAnswer {
+  font-size: 13.5px;
+  color: var(--text-mid);
+  line-height: 1.65;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+/* ── Footer ── */
+.footer {
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  padding: 28px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.footerText { font-size: 13px; color: var(--text-soft); line-height: 1.6; max-width: 600px; }
+
+.footerBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: var(--blue-light);
+  color: var(--blue);
+  border: 1px solid var(--blue-subtle);
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .hero             { padding: 36px 24px 32px; }
+  .heroTitle        { font-size: 26px; }
+  .container        { padding: 0 16px; }
+  .presentationGrid { grid-template-columns: 1fr; }
+  .featuresGrid     { grid-template-columns: repeat(2, 1fr); }
+  .footer           { padding: 24px 20px; flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 560px) {
+  .featuresGrid     { grid-template-columns: 1fr; }
+}

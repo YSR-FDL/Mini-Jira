@@ -43,6 +43,9 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
   const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user?.type_utilisateur === "ADMIN";
+
   useEffect(() => {
     const checkSettingsAccess = async () => {
       const rawId = localStorage.getItem("selectedProjectId");
@@ -82,9 +85,23 @@ export default function Sidebar({ activeNav, collapsed, onToggle }) {
   };
 
   const filteredNavItems = navItems.filter((item) => {
+    if (isAdmin) {
+      return (
+        item.id === "users" ||
+        item.id === "profile" ||
+        item.id === "équipes" ||
+        item.id === "projets"
+      );
+    }
+
     if (item.id === "paramètres") {
       return showSettings;
     }
+
+    if (item.id === "users") {
+      return false;
+    }
+
     return true;
   });
 

@@ -19,10 +19,9 @@ export default function ProjectsPage() {
       setToast("");
     }, 2800);
   };
-
+  const user = JSON.parse(localStorage.getItem("user"));
   const fetchProjects = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
       const response = await axios.get(
         `http://localhost:8080/Backend_PFA/GetUserProjects?idUser=${user.id}`
       );
@@ -36,7 +35,7 @@ export default function ProjectsPage() {
   useEffect(() => {
     fetchProjects();
   }, []);
-
+  const isAdmin = user?.type_utilisateur === "ADMIN";
   const filteredProjects = projects.filter(p => {
     if (filter === 'Tout les projets') return true
     if (filter === 'En cours') return p.etat === 'EN COURS'
@@ -102,15 +101,18 @@ export default function ProjectsPage() {
               <ProjectCard project={project} />
             </div>
           ))}
+          {isAdmin && (
           <div className={styles.createCard} onClick={() => setShowModal(true)}>
             <div className={styles.createIcon}> <Plus size={24} /> </div>
             <h3 className={styles.createTitle}>Créer un projet</h3>
             <p className={styles.createSub}>Commencer un nouveau projet</p>
           </div>
+          )}
+          
         </div>
-
-        <button className={styles.fab} onClick={() => setShowModal(true)}>+</button>
-
+        {isAdmin && (
+          <button className={styles.fab} onClick={() => setShowModal(true)}>+</button>
+        )}
         {showModal && (
           <CreateProjectModal isOpen={showModal}
             onClose={() => setShowModal(false)} onCreate={handleCreateProject}

@@ -199,6 +199,14 @@
   margin-bottom: 10px;
 }
 
+.profileRoleAdmin {
+  font-size: 14px;
+  color: var(--blue);
+  font-weight: 500;
+  margin-bottom: 10px;
+  padding-top: 10px;
+}
+
 .editProfileBtn {
   padding: 8px 18px;
   background: var(--blue);

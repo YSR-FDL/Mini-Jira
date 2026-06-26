@@ -18,6 +18,7 @@ export default function TeamsPage() {
     }, 2800);
   };
   const user = JSON.parse(localStorage.getItem("user"));
+  const isAdmin = user?.type_utilisateur === "ADMIN";
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -122,9 +123,11 @@ export default function TeamsPage() {
 
               <p className={s.teamsPageSubtitle}> Visualisez et accédez à toutes les équipes dont vous êtes membre.</p>
             </div>
-            <button className={s.teamsPageCreateBtn} onClick={() => setShowModal(true)}>
-              <Plus size={16} />Créer une équipe
-            </button>
+            {isAdmin && (
+              <button className={s.teamsPageCreateBtn} onClick={() => setShowModal(true)}>
+                <Plus size={16} />Créer une équipe
+              </button>
+            )}
           </div>
 
           <div className={s.teamsGrid}>
@@ -132,7 +135,7 @@ export default function TeamsPage() {
               <TeamCard key={team.id} team={team} onDelete={handleDeleteTeam} onUpdate={handleUpdateTeam} 
                 onArchive={handleArchiveTeam} style={{ animationDelay: `${i * 0.06}s` }}/>
             ))}
-
+          {isAdmin &&  (
             <div className={s.teamCardCreate} onClick={() => setShowModal(true)}>
               <div className={s.teamCardCreateIcon}>
                 <Plus size={22} />
@@ -142,6 +145,7 @@ export default function TeamsPage() {
 
               <span className={s.teamCardCreateSub}>Commencer une nouvelle collaboration</span>
             </div>
+          )}
           </div>
         </div>
       </div>
@@ -150,7 +154,7 @@ export default function TeamsPage() {
         <CreateTeamModal onClose={() => setShowModal(false)} onCreate={handleCreate}/>
       )}
 
-      <CreateTeamButton onClick={() => setShowModal(true)} />
+      {isAdmin && (<CreateTeamButton onClick={() => setShowModal(true)} />)}
       {toast && (
           <div className={`${s.toast} ${toast === "Erreur lors de la création de l'équipe" || toast === "Erreur lors de la suppression" 
               || toast === "Erreur lors de la modification de l'équipe!" || toast === "Erreur lors de l'archivage" ? s.toastError : ""}`}>

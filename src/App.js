@@ -21,6 +21,7 @@ import UsersPage from "./pages/global/UsersPage.jsx";
 import DashboardPage from "./pages/global/DashboardPage.jsx"
 
 import SearchPage from "./pages/global/SearchPage.jsx";
+import AboutPage from "./components/About/AboutPage.jsx";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/users" element={<UsersPage/>} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/search" element={<SearchPage />} />
+            <Route path="/about" element={<AboutPage />} />
         </Routes>
       </BrowserRouter>
     </>

@@ -9,7 +9,7 @@
   transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
   animation: fadeUp 0.3s ease both;
   position: relative;
-  min-height: 250px;
+  min-height: 150px;
   justify-content: space-between;
 }
 
