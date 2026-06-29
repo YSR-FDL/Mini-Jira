@@ -30,6 +30,8 @@ const mapTask = (t) => {
         sprintId: t.idSprint !== undefined ? t.idSprint : null,
         parentId: t.idParent !== undefined ? t.idParent : null,
         deliverableLink: t.lienLivrable !== undefined ? t.lienLivrable : null,
+        estimatedHours: t.estimatedHours !== undefined ? t.estimatedHours : 0,
+        loggedHours: t.loggedHours !== undefined ? t.loggedHours : 0,
     };
 };
 

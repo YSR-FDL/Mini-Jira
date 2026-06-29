@@ -1,6 +1,6 @@
 import React from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { FaBookmark, FaBug, FaTasks } from 'react-icons/fa';
+import { FaBookmark, FaBug, FaTasks, FaCode } from 'react-icons/fa';
 import '../../styles/Board/Board.css';
 
 const PRIORITY_CONFIG = {
@@ -57,6 +57,7 @@ function KanbanCard({ task, index, onClick, isDragDisabled, allTasks, isPO, isVa
     if (isEpic) return <FaBookmark size={10} />;
     if (isSubtask) return <FaTasks size={10} />;
     if (primaryTag === 'bug') return <FaBug size={10} />;
+    if (primaryTag === 'tech') return <FaCode size={10} />;
     return <FaBookmark size={10} />;
   };
 

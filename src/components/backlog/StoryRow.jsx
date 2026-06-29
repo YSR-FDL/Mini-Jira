@@ -33,6 +33,7 @@ const TAG_CONFIG = {
   story: { className: "tag t-feat", label: "Story" },
   feature: { className: "tag t-feat", label: "Feature" },
   request: { className: "tag t-tech", label: "Request" },
+  tech: { className: "tag t-tech", label: "Tech" },
   bug: { className: "tag t-bug", label: "Bug" },
 };
 
@@ -63,7 +64,7 @@ function StoryRow({ task, onTagChange, onPriorityChange, index, isDragDisabled =
     e.stopPropagation();
     if (!onTagChange) return;
 
-    const types = ["Story", "Feature", "Request", "Bug"];
+    const types = ["Story", "Feature", "Request", "Tech", "Bug"];
     let currentTag = (tags[tagIdx] || "").toLowerCase();
     if (currentTag === "fonctionnalité" || currentTag === "fonctionnalite") currentTag = "feature";
     else if (currentTag === "anomalie") currentTag = "bug";

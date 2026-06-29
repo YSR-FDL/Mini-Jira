@@ -56,7 +56,7 @@ export const taskType = (task) => {
   const t =
     (task && (task.type || (task.tags && task.tags[0]))) || "Feature";
   if (/^epic$/i.test(t)) return "Epic";
-  if (/^subtask$/i.test(t)) return "Subtask";
+  if (/^(subtask|sub-task|sous-tache|sous-tâche)$/i.test(t)) return "Subtask";
   return "Story";
 };
 
@@ -161,7 +161,7 @@ export const taskPermissions = (roles, task, parentTask) => {
       canEditAssignee: roles.isDev,
       canDelete: owns || roles.isSM || roles.isPO,
       canToggleSubtask: canMove,
-      canSubmitDeliverable: roles.isDev || roles.isPO,
+      canSubmitDeliverable: owns,
       canRejectDeliverable: po,
       assigneeScope: roles.isDev ? "team" : "none",
     };

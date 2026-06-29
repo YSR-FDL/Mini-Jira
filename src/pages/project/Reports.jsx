@@ -16,6 +16,7 @@ import { AlertTriangle } from "lucide-react";
 import ProjectLayout from "../../components/layout/ProjectLayout";
 import { sprintService } from "../../services/sprintService";
 import { taskService } from "../../services/taskService";
+import { activityService } from "../../services/activityService";
 import "../../styles/Project/Overview.css";
 import "../../styles/Project/Reports.css";
 
@@ -81,6 +82,7 @@ export default function Reports() {
   const [loading, setLoading] = useState(true);
   const [sprints, setSprints] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [burndownMode, setBurndownMode] = useState("hours");
 
   useEffect(() => {
@@ -93,10 +95,15 @@ export default function Reports() {
     Promise.all([
       sprintService.getAll(projectId),
       taskService.getProjectTasks(projectId),
+      activityService.getProjectActivities(projectId, 1000).catch((err) => {
+        console.warn("Impossible de charger l'historique", err);
+        return [];
+      }),
     ])
-      .then(([sprintList, taskList]) => {
+      .then(([sprintList, taskList, actList]) => {
         setSprints(sprintList || []);
         setTasks(taskList || []);
+        setActivities(actList || []);
         setLoading(false);
       })
       .catch((err) => {
@@ -170,15 +177,17 @@ export default function Reports() {
 
   const overdueCount = overdueIssues.length;
 
-  // Vélocité par sprint (points livrés = points des tâches terminées)
+  // Vélocité par sprint (engagé = total points, livrés = points terminés)
   const velocityBySprint = sprints
-    .map((s) => ({
-      sprint: s,
-      start: parseDate(s.startDate),
-      delivered: sumPoints(
-        tasksOf(s).filter((t) => normalizeStatus(t.status) === "done"),
-      ),
-    }))
+    .map((s) => {
+      const allTasks = tasksOf(s);
+      return {
+        sprint: s,
+        start: parseDate(s.startDate),
+        committed: sumPoints(allTasks),
+        delivered: sumPoints(allTasks.filter((t) => normalizeStatus(t.status) === "done")),
+      };
+    })
     .sort((a, b) => (a.start && b.start ? a.start - b.start : 0));
 
   // Vélocité moyenne sur les 3 derniers sprints démarrés (ou terminés)
@@ -224,12 +233,60 @@ export default function Reports() {
       for (let d = 0; d <= duration; d++) {
         const date = new Date(start);
         date.setDate(start.getDate() + d);
+        
         // Courbe idéale : descente linéaire du total à 0
         const ideal = Math.round((total * (1 - d / duration)) * 10) / 10;
         
         let actual = null;
-        if (d === 0) actual = total;
-        else if (d === todayIndex) actual = remaining;
+        if (d <= todayIndex) {
+            // Fin de la journée ciblée
+            const endOfDay = new Date(date.getTime());
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            const remainingAtDay = burndownMode === "hours"
+              ? activeTasks.reduce((acc, t) => {
+                  const est = t.estimatedHours || 0;
+                  // Use t.rawId safely
+                  const rawId = t.rawId || parseInt(String(t.id).replace(/^[A-Z]+-/, ""), 10);
+                  
+                  const taskActs = activities.filter(a => 
+                      String(a.taskId) === String(rawId) && 
+                      a.actionType === "STATUS_CHANGE" && 
+                      parseDate(a.dateCreation) <= endOfDay
+                  );
+                  
+                  let status = "todo";
+                  if (taskActs.length > 0) {
+                      const lastAct = taskActs.sort((a, b) => parseDate(b.dateCreation) - parseDate(a.dateCreation))[0];
+                      status = normalizeStatus(lastAct.newValue);
+                  }
+                  
+                  if (status === "done") return acc;
+                  // If not done, we consider the full estimated hours remaining (or current remaining if today)
+                  const log = (d === todayIndex) ? (t.loggedHours || 0) : 0;
+                  return acc + Math.max(0, est - log);
+                }, 0)
+              : activeTasks.reduce((acc, t) => {
+                  const rawId = t.rawId || parseInt(String(t.id).replace(/^[A-Z]+-/, ""), 10);
+                  
+                  const taskActs = activities.filter(a => 
+                      String(a.taskId) === String(rawId) && 
+                      a.actionType === "STATUS_CHANGE" && 
+                      parseDate(a.dateCreation) <= endOfDay
+                  );
+                  
+                  let status = "todo";
+                  if (taskActs.length > 0) {
+                      const lastAct = taskActs.sort((a, b) => parseDate(b.dateCreation) - parseDate(a.dateCreation))[0];
+                      status = normalizeStatus(lastAct.newValue);
+                  }
+                  
+                  if (status !== "done") return acc + (t.points || 0);
+                  return acc;
+              }, 0);
+              
+            actual = remainingAtDay;
+        }
         
         burndownData.push({ label: fmtDay(date), ideal, actual });
       }
@@ -540,10 +597,12 @@ export default function Reports() {
                 <BarChart
                   data={velocityBySprint.map((v) => ({
                     name: v.sprint.name,
-                    points: v.delivered,
+                    committed: v.committed,
+                    delivered: v.delivered,
                   }))}
                   margin={{ top: 8, right: 16, left: -8, bottom: 0 }}
-                  barSize={42}
+                  barSize={20}
+                  barGap={4}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -565,35 +624,17 @@ export default function Reports() {
                     tick={{ fontSize: 11, fill: "var(--text-faint)" }}
                     axisLine={false}
                     tickLine={false}
-                    label={{
-                      value: "Points livrés",
-                      angle: -90,
-                      position: "insideLeft",
-                      style: { fontSize: 11, fill: "var(--text-faint)" },
-                    }}
                   />
                   <Tooltip
                     content={<ChartTooltip />}
                     cursor={{ fill: "rgba(0,0,0,0.04)" }}
                   />
-                  <Bar dataKey="points" name="Points livrés" radius={[5, 5, 0, 0]}>
-                    {velocityBySprint.map((v, i) => (
-                      <Cell
-                        key={i}
-                        fill={
-                          ACTIVE_STATUSES.includes(
-                            (v.sprint.status || "").toLowerCase(),
-                          )
-                            ? "var(--blue)"
-                            : DONE_SPRINT_STATUSES.includes(
-                                  (v.sprint.status || "").toLowerCase(),
-                                )
-                              ? "#10B981"
-                              : "#CBD5E1"
-                        }
-                      />
-                    ))}
-                  </Bar>
+                  <Legend 
+                    wrapperStyle={{ fontSize: 12, paddingTop: 10 }}
+                    iconType="circle"
+                  />
+                  <Bar dataKey="committed" name="Engagé" fill="#CBD5E1" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="delivered" name="Complété" fill="#10B981" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

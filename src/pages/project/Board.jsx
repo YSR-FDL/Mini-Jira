@@ -27,6 +27,10 @@ export default function Board() {
   const [search, setSearch] = useState("");
   const [activeAssignees, setActiveAssignees] = useState([]);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  // Gabarit de tâche pour l'ouverture en mode création (ex: nouvelle sous-tache
+  // ouverte depuis une story). Permet à la modale "NEW" de pré-remplir le type
+  // et le parent.
+  const [newTaskSeed, setNewTaskSeed] = useState(null);
 
   // RBAC State
   const [isSM, setIsSM] = useState(false);
@@ -545,11 +549,17 @@ export default function Board() {
                   priority: "medium",
                   tags: ["Feature"],
                   sprintId: activeSprint ? activeSprint.id : null,
+                  ...(newTaskSeed || {}),
                 }
               : tasks.find((t) => t.id === selectedTaskId)
           }
-          onClose={() => setSelectedTaskId(null)}
+          onClose={() => { setSelectedTaskId(null); setNewTaskSeed(null); }}
           onOpenTask={(id, taskObj) => {
+            if (id === "NEW") {
+              setNewTaskSeed(taskObj || null);
+              setSelectedTaskId("NEW");
+              return;
+            }
             if (taskObj && !tasks.find(t => t.id === id)) {
                setTasks(prev => [...prev, taskObj]);
             }

@@ -3,7 +3,7 @@ import ActionBtn from "../ui/ActionBtn";
 import StatusDropdown from "../ui/StatusDropdown";
 import "../../styles/Shared/TaskDetailModal.css";
 import { FiMoreHorizontal, FiX, FiAlignLeft, FiMessageSquare, FiTrash2, FiPlus, FiCheckSquare } from "react-icons/fi";
-import { FaBug, FaTasks, FaBookmark } from "react-icons/fa";
+import { FaBug, FaTasks, FaBookmark, FaCode } from "react-icons/fa";
 import { epicService } from "../../services/epicService";
 import { commentService } from "../../services/commentService";
 import { taskService } from "../../services/taskService";
@@ -25,6 +25,11 @@ const TYPE_OPTIONS = [
     value: "Request",
     label: "Request",
     icon: <FaTasks color="#4BCE97" style={{ marginRight: "8px" }} />,
+  },
+  {
+    value: "Tech",
+    label: "Tech",
+    icon: <FaCode color="#0891b2" style={{ marginRight: "8px" }} />,
   },
   {
     value: "Bug",
@@ -81,7 +86,11 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
 
   // Sous-taches
   const [subtasks, setSubtasks] = useState([]);
-  const [newSubtask, setNewSubtask] = useState("");
+  // Story parente (pour une sous-tache) : nécessaire pour déterminer la
+  // propriété quand la sous-tache n'est pas assignée (la propriété découle
+  // alors de la story parente). Sans elle, les droits du développeur
+  // propriétaire seraient bloqués à tort (priorité, titre, description...).
+  const [parentTask, setParentTask] = useState(null);
   const [activities, setActivities] = useState([]);
   const [activeTab, setActiveTab] = useState("comments"); // "comments" or "history"
   const [showAllItems, setShowAllItems] = useState(false);
@@ -94,7 +103,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
   const currentUserId = loggedInUser ? parseInt(loggedInUser.id, 10) : null;
 
   const isEpic = /epic/i.test(editedTask.type || "");
-  const isSubtask = /subtask|sub-task|sous-tache/i.test(editedTask.type || "");
+  const isSubtask = /subtask|sub-task|sous-tache|sous-tâche/i.test(editedTask.type || "");
   // Une "story" est une issue standard : ni epic, ni sous-tache.
   const isStory = !isEpic && !isSubtask;
 
@@ -111,7 +120,7 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
 
   // Centralised RBAC (mirrors backend utils.Rbac): controls appear per role.
   const roles = resolveRoles(project, teamMembers, currentUserId);
-  const perms = taskPermissions(roles, editedTask);
+  const perms = taskPermissions(roles, editedTask, parentTask);
   const isPO = roles.isPO;
   const isSM = roles.isSM;
 
@@ -231,6 +240,33 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task]);
 
+  // Charge la story parente d'une sous-tache afin de déterminer correctement la
+  // propriété (et donc les droits d'édition) lorsque la sous-tache n'est pas
+  // assignée directement au développeur.
+  useEffect(() => {
+    if (task && task.id !== "NEW" && isSubtask && editedTask.parentId) {
+      const rawId = localStorage.getItem("selectedProjectId");
+      const projectId =
+        rawId && rawId !== "undefined" && rawId !== "null"
+          ? parseInt(rawId, 10)
+          : 1;
+      taskService
+        .getProjectTasks(projectId)
+        .then((all) => {
+          const parent = (all || []).find(
+            (t) =>
+              parseInt(String(t.id).replace(/^[A-Z]+-/, ""), 10) ===
+              editedTask.parentId,
+          );
+          setParentTask(parent || null);
+        })
+        .catch((err) => console.error("Error fetching parent task:", err));
+    } else {
+      setParentTask(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [task, isSubtask, editedTask.parentId]);
+
   const refreshSubtasks = () => {
     epicService
       .getChildren(task.id)
@@ -238,33 +274,22 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
       .catch((err) => console.error("Error refreshing subtasks:", err));
   };
 
-  const [subtaskError, setSubtaskError] = useState("");
-
-  const handleAddSubtask = () => {
-    if (!newSubtask.trim()) return;
-    setSubtaskError("");
+  // Ouvre la modale de détail standard en mode création, pré-configurée comme
+  // une sous-tache de la story courante (même modale que pour les détails).
+  const handleOpenNewSubtask = () => {
+    if (!onOpenTask) return;
     const parentRawId = parseInt(String(task.id).replace(/^[A-Z]+-/, ""), 10);
-    taskService
-      .createDetailedTask({
-        title: newSubtask.trim(),
-        tags: ["Sous-tache"],
-        parentId: parentRawId,
-        sprintId: null,
-        status: todoStatus,
-      })
-      .then((success) => {
-        if (success) {
-          setNewSubtask("");
-          refreshSubtasks();
-        } else {
-          setSubtaskError("Échec de la création de la sous-tache.");
-        }
-      })
-      .catch((err) => {
-        const msg = err.response?.data?.error || "Échec de la création de la sous-tache.";
-        setSubtaskError(msg);
-        console.error("Error adding subtask:", err);
-      });
+    onOpenTask("NEW", {
+      id: "NEW",
+      title: "",
+      description: "",
+      status: todoStatus,
+      priority: "medium",
+      type: "Sous-tache",
+      tags: ["Sous-tache"],
+      parentId: parentRawId,
+      sprintId: null,
+    });
   };
 
   const handleToggleSubtask = (st) => {
@@ -721,13 +746,36 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                     const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
                     return (
                       <>
-                        <h3 className="section-title">
+                        <h3 className="section-title" style={{ display: "flex", alignItems: "center" }}>
                           <FiCheckSquare style={{ marginRight: "8px" }} />
                           Sous-taches{" "}
                           {total > 0 && (
                             <span className="subtask-counter">
                               {doneCount}/{total}
                             </span>
+                          )}
+                          {canManageSubtasks && onOpenTask && (
+                            <button
+                              type="button"
+                              className="subtask-add-btn"
+                              title="Ajouter une sous-tache"
+                              onClick={handleOpenNewSubtask}
+                              style={{
+                                marginLeft: "auto",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "1px solid var(--border-mid)",
+                                background: "var(--color-primary, #2563eb)",
+                                color: "#fff",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <FiPlus size={16} />
+                            </button>
                           )}
                         </h3>
 
@@ -787,26 +835,6 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                             </p>
                           )}
                         </div>
-
-                        {canManageSubtasks && (
-                          <div className="subtask-add">
-                            <FiPlus className="subtask-add-icon" />
-                            <input
-                              className="subtask-add-input"
-                              placeholder="Ajouter une sous-tache..."
-                              value={newSubtask}
-                              onChange={(e) => { setNewSubtask(e.target.value); setSubtaskError(""); }}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleAddSubtask();
-                              }}
-                            />
-                          </div>
-                        )}
-                        {subtaskError && (
-                          <p style={{ color: 'var(--color-danger-red)', fontSize: '12px', margin: '4px 0 0 28px' }}>
-                            {subtaskError}
-                          </p>
-                        )}
                       </>
                     );
                   })()}
@@ -1076,8 +1104,8 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                     </div>
                   </div>
 
-                  {/* EPIC PARENT (disponible à la création pour le PO) */}
-                  {task.id === "NEW" && (
+                  {/* EPIC PARENT (disponible à la création pour le PO, stories uniquement) */}
+                  {task.id === "NEW" && !isSubtask && (
                     <div className="metadata-group">
                       <div className="metadata-label">Epic parent</div>
                       <div className="metadata-value no-hover">
@@ -1100,6 +1128,23 @@ const TaskDetailModal = ({ task, onClose, onOpenTask, onSave, onDelete, columns 
                             </option>
                           ))}
                         </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* HEURES ESTIMÉES (création d'une sous-tache) */}
+                  {task.id === "NEW" && isSubtask && (
+                    <div className="metadata-group">
+                      <div className="metadata-label">Heures estimées</div>
+                      <div className="metadata-value no-hover">
+                        <input
+                          type="number"
+                          min="0"
+                          className="ui-input"
+                          style={{ minHeight: "auto", height: "32px", width: "60px", padding: "4px 8px", margin: 0 }}
+                          value={editedTask.estimatedHours || 0}
+                          onChange={(e) => handleFieldChange("estimatedHours", Math.max(0, parseInt(e.target.value) || 0))}
+                        />
                       </div>
                     </div>
                   )}

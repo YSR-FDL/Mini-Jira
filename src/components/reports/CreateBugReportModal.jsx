@@ -29,11 +29,12 @@ export default function CreateBugReportModal({ isOpen, onClose, onCreated }) {
     if (!userId) return;
 
     axios
-      .get(`${API}/GetBugReports?userId=${userId}`)
+      .get(`${API}/GetUserProjects?idUser=${userId}`)
       .then((res) => {
-        const projectList = (res.data.projects || []).map((p) => ({
-          id: p.id,
-          name: p.title,
+        const projectList = (res.data || []).map((p) => ({
+          id: p.idProject,
+          name: p.nomProjet,
+          etats: p.etats,
         }));
         setProjects(projectList);
         // If user had a selected project, pre-select it
@@ -74,13 +75,31 @@ export default function CreateBugReportModal({ isOpen, onClose, onCreated }) {
     setError(null);
 
     try {
+      let activeSprintId = null;
+      try {
+        const sprintsRes = await axios.get(`${API}/GetProjectSprints?projectId=${projectId}`);
+        const sprints = sprintsRes.data || [];
+        const activeSprint = sprints.find(s => s.statut === "active" || s.statut === "actif");
+        if (activeSprint) {
+          activeSprintId = activeSprint.idSprint;
+        }
+      } catch (err) {
+        console.warn("Erreur lors de la récupération des sprints", err);
+      }
+
+      const selectedProject = projects.find((p) => p.id === parseInt(projectId, 10));
+      const firstStatus = selectedProject && selectedProject.etats && selectedProject.etats.length > 0 
+        ? selectedProject.etats[0] 
+        : "todo";
+
       const payload = {
         titre: title.trim(),
         description: description.trim(),
         priorite: priority,
         typeTache: "Bug",
         idProject: parseInt(projectId, 10),
-        statut: "todo",
+        idSprint: activeSprintId,
+        statut: firstStatus,
         storyPoints: 0,
         requesterId: getRequesterId(),
       };

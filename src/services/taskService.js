@@ -29,7 +29,7 @@ export const taskService = {
             const response = await axiosInstance.get(`/GetProjectTasks?projectId=${projectId}`);
             const key = getProjectKey();
             return response.data.map(t => ({
-                id: `${key}-${t.idTask}`, title: t.titre, description: t.description,
+                id: `${key}-${t.idTask}`, rawId: t.idTask, title: t.titre, description: t.description,
                 status: t.statut, priority: t.priorite, points: t.storyPoints,
                 tags: t.typeTache ? [t.typeTache] : ['Feature'], assignee: t.assignee,
                 estimatedHours: t.estimatedHours, loggedHours: t.loggedHours,

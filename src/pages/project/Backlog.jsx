@@ -17,6 +17,9 @@ import "../../styles/Project/Sprints.css";
 export default function Backlog() {
   const [activeTab, setActiveTab] = useState("backlog");
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  // Gabarit pour l'ouverture en mode création (ex: nouvelle sous-tache ouverte
+  // depuis une story) afin de pré-remplir le type et le parent.
+  const [newTaskSeed, setNewTaskSeed] = useState(null);
   const [sprints, setSprints] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -471,7 +474,7 @@ export default function Backlog() {
           <ActionBtn
             size="sm"
             variant="secondary"
-            onClick={() => setSelectedTaskId("NEW")}
+            onClick={() => { setNewTaskSeed(null); setSelectedTaskId("NEW"); }}
           >
             + Créer un ticket
           </ActionBtn>
@@ -649,11 +652,17 @@ export default function Backlog() {
                   priority: "medium",
                   tags: ["Feature"],
                   sprintId: null,
+                  ...(newTaskSeed || {}),
                 }
               : tasks.find((t) => t.id === selectedTaskId)
           }
-          onClose={() => setSelectedTaskId(null)}
+          onClose={() => { setSelectedTaskId(null); setNewTaskSeed(null); }}
           onOpenTask={(id, taskObj) => {
+            if (id === "NEW") {
+              setNewTaskSeed(taskObj || null);
+              setSelectedTaskId("NEW");
+              return;
+            }
             if (taskObj && !tasks.find(t => t.id === id)) {
                setTasks(prev => [...prev, taskObj]);
             }
