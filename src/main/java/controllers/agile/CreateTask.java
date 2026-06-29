@@ -80,6 +80,13 @@ public class CreateTask extends HttpServlet {
             return;
         }
 
+        // Une sous-tache est, par défaut, assignée à son créateur (le développeur
+        // qui la crée), conformément au système pull Agile. Si aucun assigné
+        // n'est fourni, on rattache la sous-tache au demandeur.
+        if (utils.Rbac.isSubtask(task) && task.getIdAssignee() == null) {
+            task.setIdAssignee(requesterId);
+        }
+
         int nb = taskDAO.addTask(task);
 
         if (nb > 0) {

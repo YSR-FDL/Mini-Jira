@@ -3,12 +3,15 @@ package classes;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 public class Utilisateur {
 	private int id;
 	private String nom, prenom;
 	private String login, email;
 	private List<String> experiences;
 	private String password;
+	@SerializedName("date_creation_compte")
 	private String dateCreationCompte;
 	private String type_utilisateur;
 	
