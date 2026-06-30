@@ -1,0 +1,88 @@
+.page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pageHeader {
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.pageSubtitle {
+  font-size: 14px;
+  color: var(--text-light);
+}
+
+.section {
+  margin-bottom: 32px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.sectionHeader {
+  padding: 16px 20px;
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item:hover {
+  background-color: var(--bg-hover);
+}
+
+.itemTitle {
+  font-weight: 500;
+  color: var(--text-dark);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.itemDesc {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.itemMeta {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+.emptyState {
+  padding: 48px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 15px;
+}

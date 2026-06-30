@@ -1,0 +1,127 @@
+/* src/styles/BoardControlBar.css */
+
+.board-control-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background-color: var(--color-background-primary);
+    border-bottom: 1px solid var(--color-border-secondary);
+}
+
+.board-controls-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+/* Removed .search-local, now using .ui-input */
+
+.board-filters-avatars {
+    display: flex;
+    align-items: center;
+    gap: -4px; /* Chevauchement léger */
+}
+
+.board-filter-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 2px solid var(--color-background-primary);
+    margin-left: -8px; /* Chevauchement */
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.board-filter-avatar:first-child {
+    margin-left: 0;
+}
+
+.board-filter-avatar:hover {
+    transform: translateY(-2px);
+    z-index: 10;
+}
+
+.board-filter-avatar.active {
+    box-shadow: 0 0 0 2px var(--color-primary-blue);
+    z-index: 10;
+}
+
+.board-filter-avatar.inactive {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.board-clear-filters {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    margin-left: 12px;
+}
+.board-clear-filters:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+}
+
+.board-controls-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.sprint-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.sprint-info-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.sprint-info-dates {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sprint-info-dates svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Removed redundant button and input styles, using global UI classes instead */
+
+/* ── Report Bug button ─────────────────────────────────────── */
+.report-bug-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    background: #DC2626;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: var(--font-body, inherit);
+    cursor: pointer;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.report-bug-btn:hover {
+    background: #b91c1c;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+    transform: translateY(-1px);
+}

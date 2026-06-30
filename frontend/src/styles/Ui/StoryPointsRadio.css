@@ -1,0 +1,81 @@
+.radio-inputs {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  border-radius: 6px;
+  background-color: var(--color-background-secondary);
+  box-sizing: border-box;
+  border: 1px solid var(--color-border-secondary);
+  padding: 4px;
+  font-size: 13.5px;
+}
+
+.radio-inputs .radio {
+  flex: 1 1 auto;
+  text-align: center;
+  margin: 0;
+}
+
+.radio-inputs .radio input {
+  display: none;
+}
+
+.radio-inputs .radio .name {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: none;
+  padding: 6px 16px;
+  color: var(--color-text-secondary);
+  transition: all 0.15s ease-in-out;
+}
+
+.radio-inputs .radio input:checked + .name {
+  background-color: var(--color-background-primary);
+  font-weight: 600;
+  color: var(--color-primary-blue);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  animation: select 0.3s ease;
+}
+
+.radio-inputs .radio:hover .name {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes select {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Particules dynamiques */
+.radio-inputs .radio input:checked + .name::before,
+.radio-inputs .radio input:checked + .name::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-primary-blue);
+  opacity: 0;
+  animation: particles 0.5s ease forwards;
+}
+
+.radio-inputs .radio input:checked + .name::before {
+  top: -4px; left: 50%; transform: translateX(-50%);
+  --direction: -10px;
+}
+
+.radio-inputs .radio input:checked + .name::after {
+  bottom: -4px; left: 50%; transform: translateX(-50%);
+  --direction: 10px;
+}
+
+@keyframes particles {
+  0% { opacity: 0; transform: translateX(-50%) translateY(0); }
+  50% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(calc(1px * var(--direction))); }
+}

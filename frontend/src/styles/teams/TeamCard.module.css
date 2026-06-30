@@ -1,0 +1,261 @@
+*{
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+.teamCard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  animation: fadeUp 0.3s ease both;
+  position: relative;
+  min-height: 250px;
+  justify-content: space-between;
+}
+
+.teamCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-mid);
+}
+
+.teamCardArchived {
+  opacity: 0.75;
+}
+
+.teamCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.teamCardName {
+  font-family: var(--font-title);
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 2;
+}
+
+.teamCardMenuWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.teamCardMenuBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  transition: background var(--transition), color var(--transition);
+}
+
+.teamCardMenuBtn:hover {
+  background: var(--gray-100);
+  color: var(--text-mid);
+}
+
+.teamCardDropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  z-index: 20;
+  min-width: 140px;
+  animation: fadeScale .15s ease;
+}
+
+.teamCardDropdown button {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text-mid);
+  border-radius: var(--r-sm);
+  transition: background var(--transition);
+}
+
+.teamCardDropdown button:hover {
+  background: var(--gray-100);
+}
+
+.teamCardDropdown button.danger {
+  color: var(--red);
+}
+
+.teamCardDropdown button.danger:hover {
+  background: var(--red-light);
+}
+
+.teamCardDesc {
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.teamCardMeta {
+  display: flex;
+  gap: 32px;
+}
+
+.teamCardMetaLabel {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+
+.teamCardMetaValue {
+  display: block;
+  font-size: 13px;
+  color: var(--text-mid);
+  font-weight: 500;
+}
+
+.teamCardProgressSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.teamCardProgressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teamCardProgressLabel {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.teamCardProgressPct {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-mid);
+}
+
+.teamCardProgressTrack {
+  height: 5px;
+  background: var(--gray-200);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.teamCardProgressBar {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.6s cubic-bezier(.4,0,.2,1);
+}
+
+.teamCardBtn {
+  width: 100%;
+  padding: 9px 0;
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  margin-top: 4px;
+}
+
+.teamCardBtn:hover {
+  background: var(--blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--blue-glow);
+}
+
+.teamCardBtn:active {
+  transform: translateY(0);
+}
+
+.teamCardBtnArchived {
+  background: var(--gray-200);
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+.teamCardBtnArchived:hover {
+  background: var(--gray-200);
+  transform: none;
+  box-shadow: none;
+}
+
+/*---Confirmation suppression---*/
+.modalOverlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  animation: fadeIn 0.15s ease;
+}
+
+.deleteModal {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: 100%; max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  animation: fadeUp 0.2s ease;
+}
+
+.deleteModal h3 {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 20px;
+}
+
+.deleteModal p {
+  font-size: 14px; 
+  color: var(--text-mid); 
+  line-height: 1.6; 
+  margin-bottom: 4px;
+}
+
+.modalActions {
+  display: flex; justify-content: flex-end; gap: 10px;
+  margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--border);
+}
+
+.cancelBtn {
+  padding: 9px 18px; border: 1px solid var(--border); background: var(--white);
+  border-radius: var(--r-md); font-size: 13px; color: var(--text-mid);
+  transition: background var(--transition); font-family: var(--font-body);
+}
+
+.deleteBtn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #dc2626;
+  color: white;
+  cursor: pointer;
+}

@@ -1,0 +1,195 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  animation: fadeUp 0.3s ease both;
+  position: relative;
+  min-height: 150px;
+  justify-content: space-between;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-mid);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-family: var(--font-title);
+  font-size: 12pt;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 2;
+}
+
+.menuBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  transition: background var(--transition), color var(--transition);
+}
+
+.menuBtn:hover {
+  background: var(--gray-100);
+  color: var(--text-mid);
+}
+
+.desc {
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+  display: -webkit-box;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.progressSection { display: flex; flex-direction: column; gap: 6px; }
+
+.progressLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.progressTrack {
+  height: 6px;
+  background: var(--border);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.8s cubic-bezier(.4,0,.2,1);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.due {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.openBtn {
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  border-radius: var(--r-md);
+  padding: 8px 16px;
+  font-size: 10pt;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.openBtn:hover {
+  background: var(--blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--blue-glow);
+}
+
+
+.menuWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  z-index: 20;
+  min-width: 140px;
+  animation: fadeScale .15s ease;
+}
+
+.dropdown button {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--text-mid);
+  border-radius: var(--r-sm);
+  transition: background var(--transition);
+}
+
+.dropdown button:hover {
+  background: var(--gray-100);
+}
+
+.danger {
+  color: var(--red) !important;
+}
+
+.danger:hover {
+  background: var(--red-light) !important;
+}
+
+.projectCardBtnArchived {
+  background: var(--gray-200);
+  color: var(--text-soft);
+  cursor: not-allowed;
+}
+
+.projectCardBtnArchived:hover {
+  background: var(--gray-200);
+  transform: none;
+  box-shadow: none;
+}

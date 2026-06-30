@@ -1,0 +1,103 @@
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+  font-family: 'Inter', sans-serif;
+}
+
+.dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  color: var(--color-text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 140px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-trigger:hover, .dropdown-trigger:focus {
+  border-color: var(--color-primary-blue-light);
+  background-color: var(--color-background-secondary);
+}
+
+.dropdown-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  color: var(--color-text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 10;
+  background-color: var(--color-background-primary);
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 100%;
+  animation: fadeSlideDown 0.15s ease-out;
+}
+
+.dropdown-list {
+  list-style: none;
+  padding: 4px;
+  margin: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+}
+
+.dropdown-item.selected {
+  background-color: var(--color-primary-blue-light);
+  color: var(--color-primary-blue);
+  font-weight: 600;
+}
+
+/* Petits points de couleur pour les statuts */
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+.dot-todo { background-color: var(--color-text-tertiary); }
+.dot-progress { background-color: var(--color-primary-blue); }
+.dot-review { background-color: var(--color-warning-orange); }
+.dot-done { background-color: var(--color-success-green); }
+.dot-custom { background-color: var(--color-gray-600, #4b5563); }
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

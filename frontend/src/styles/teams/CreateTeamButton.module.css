@@ -1,0 +1,27 @@
+.createbtn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-full);
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 82, 204, 0.38);
+  z-index: 50;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.createbtn:hover {
+  background: var(--blue-hover);
+  transform: scale(1.1) translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 82, 204, 0.45);
+}
+
+.createbtn:active {
+  transform: scale(0.97);
+}

@@ -1,0 +1,36 @@
+import React, { useState } from "react";
+import { Search, Bell, HelpCircle, Settings } from "lucide-react";
+import s from "../../styles/Profile/Profile.module.css";
+import { useNavigate } from "react-router-dom";
+
+export default function TopBar({user}) {
+  const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+  const isAdmin = user?.type_utilisateur === "ADMIN";
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && search.trim()) {
+      navigate(`/search?q=${encodeURIComponent(search.trim())}`);
+    }
+  };
+
+  return (
+    <header className={s.topbar}>
+      <div className={s.topbarSearch}>
+        <span className={s.searchIcon}><Search size={14} /></span>
+        <input type="text" placeholder="Rechercher des taches, projets, équipes..." value={search}
+                onChange={(e) => setSearch(e.target.value)} 
+                onKeyDown={handleKeyDown} />
+      </div>
+
+      <div className={s.topbarActions}>
+        <button className={s.iconBtn} title="Aide" onClick = {() => {navigate("/about");}}><HelpCircle size={17} /></button>
+        {!isAdmin && (<button className={s.iconBtn} title="Paramètres" onClick = {() => {navigate("/ProfileUpdate");}}><Settings size={17} /></button>)}
+        
+        <div className={s.topbarAvatar} title="Mon profil" onClick = {() => {navigate("/profile");}}>
+          {`${user?.prenom?.charAt(0) || ""}${user?.nom?.charAt(0) || ""}`.toUpperCase()}
+        </div>
+      </div>
+    </header>
+  );
+}

@@ -1,0 +1,193 @@
+/* ─── TEAM PROJECT CARD ──────────────────────────────────────────────────── */
+
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  animation: slideUp 0.4s ease both;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-mid);
+}
+
+/* ── En-tête badges ── */
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ── Badges génériques ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* ── Statuts ── */
+.statusActive {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.statusInProgress {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statusDone {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.statusPaused {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+/* ── Priorités ── */
+.priorityHigh {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.priorityMedium {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.priorityLow {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+/* ── Corps ── */
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.projectTitle {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+
+.projectDesc {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Barre de progression ── */
+.progressWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progressLabel {
+  font-size: 12px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.progressValue {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.progressTrack {
+  height: 6px;
+  background: var(--gray-100);
+  border-radius: var(--r-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.6s cubic-bezier(.4,0,.2,1);
+}
+
+/* ── Pied ── */
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.dueDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.dueDate svg {
+  color: var(--text-faint);
+}
+
+/* ── Bouton consulter ── */
+.btnView {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-md);
+  background: var(--gradient-btn);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.btnView:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

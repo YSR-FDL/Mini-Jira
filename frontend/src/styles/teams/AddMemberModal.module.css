@@ -1,0 +1,255 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(23, 43, 77, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+  animation: fadeScale 0.18s ease;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 15px;
+  transition: background var(--transition), color var(--transition);
+}
+.closeBtn:hover {
+  background: var(--surface);
+  color: var(--text-dark);
+}
+
+/* ── Input ── */
+.input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+  color: var(--text-dark);
+  background: var(--white);
+  outline: none;
+  font-family: inherit;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  box-sizing: border-box;
+}
+.input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-glow);
+}
+
+/* ── Liste résultats ── */
+.userList {
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--white);
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  animation: fadeIn 0.15s ease;
+}
+
+.userItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.userItem:last-child { border-bottom: none; }
+.userItem:hover { background: #F8FAFF; }
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.userName {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.addBtn {
+  padding: 5px 12px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--blue);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  min-width: 70px;
+  transition: background var(--transition);
+}
+.addBtn:hover:not(:disabled) { background: var(--blue-hover); }
+.addBtn:disabled {
+  background: #86EFAC;
+  color: #fff;
+  cursor: default;
+}
+
+.emptyList {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+/* ── Membres sélectionnés ── */
+.selectedSection {
+  margin-top: 18px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.selectedSection h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: var(--blue-light);
+  color: var(--blue);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.selectedItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #F0F7FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+}
+
+.removeBtn {
+  border: none;
+  background: transparent;
+  color: var(--red, #dc2626);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+.removeBtn:hover { opacity: 0.7; }
+
+/* ── Actions ── */
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.cancelBtn {
+  padding: 9px 20px;
+  border-radius: var(--r-md);
+  background: var(--white);
+  color: var(--text-mid);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.cancelBtn:hover { background: var(--surface); }
+
+.confirmBtn {
+  padding: 9px 20px;
+  border-radius: var(--r-md);
+  background: var(--blue);
+  color: var(--white);
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), opacity var(--transition);
+}
+.confirmBtn:hover:not(:disabled) { background: var(--blue-hover); }
+.confirmBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}

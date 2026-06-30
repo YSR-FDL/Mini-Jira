@@ -1,0 +1,64 @@
+.action-btn {
+  --color: var(--color-primary-blue);
+  font-family: 'Inter', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+  font-weight: 600;
+  z-index: 1;
+  color: var(--color);
+  border: 2px solid var(--color);
+  border-radius: 6px;
+  position: relative;
+  background: transparent;
+  transition: color 0.3s ease;
+}
+
+/* Sizes */
+.action-btn.md {
+  padding: 0 16px;
+  height: 36px;
+  font-size: 13.5px;
+}
+
+.action-btn.sm {
+  padding: 0 12px;
+  height: 28px;
+  font-size: 12px;
+}
+
+/* Variante secondaire (pour le bouton Annuler) */
+.action-btn.secondary {
+  --color: var(--color-text-tertiary);
+  border-color: var(--color-border-secondary);
+  color: var(--color-text-secondary);
+}
+
+/* Variante danger */
+.action-btn.danger {
+  --color: #dc2626;
+}
+
+.action-btn::before {
+  position: absolute;
+  content: "";
+  background: var(--color);
+  width: 150%;
+  padding-bottom: 150%;
+  z-index: -1;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.3s ease-out;
+}
+
+.action-btn:hover {
+  color: white;
+}
+
+.action-btn:hover::before {
+  transform: translate(-50%, -50%) scale(1);
+}

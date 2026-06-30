@@ -1,0 +1,184 @@
+.header {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp 0.35s ease both;
+}
+
+.topRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.teamIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--r-lg);
+  background: var(--gradient-btn);
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: 26px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.teamInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.teamName {
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.domain {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--blue);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--text-mid);
+  line-height: 1.6;
+  max-width: 620px;
+  margin-bottom: 14px;
+}
+
+.metaList {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.metaItem svg {
+  color: var(--text-faint);
+}
+
+.metaSeparator {
+  color: var(--border-mid);
+  font-size: 14px;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.statusActive {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.statusInactive {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.statusArchived {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btnPrimary,
+.btnSecondary,
+.btnDanger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btnPrimary:hover,
+.btnSecondary:hover,
+.btnDanger:hover {
+  transform: translateY(-1px);
+}
+
+.btnPrimary {
+  background: var(--gradient-btn);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.btnPrimary:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.btnSecondary {
+  background: var(--white);
+  color: var(--text-dark);
+  border-color: var(--border);
+}
+
+.btnSecondary:hover {
+  background: var(--input-bg);
+  border-color: var(--border-mid);
+}
+
+.btnDanger {
+  background: var(--red-light);
+  color: var(--red-text);
+  border-color: var(--red-border);
+}
+
+.btnDanger:hover {
+  background: #fee2e2;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

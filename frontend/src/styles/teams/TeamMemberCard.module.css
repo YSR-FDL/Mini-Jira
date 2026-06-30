@@ -1,0 +1,160 @@
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 18px 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  animation: slideUp 0.35s ease both;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--border-mid);
+}
+
+.cardTop {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-full);
+  color: #fff;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.14);
+}
+
+.memberInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.memberName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberRole {
+  font-size: 12px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.inactive {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.emailRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-soft);
+  padding: 6px 10px;
+  background: var(--input-bg);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+
+.emailRow svg {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+.cardActions {
+  display: flex;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.btnProfile, .btnRemove {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.btnProfile:hover, .btnRemove:hover {
+  transform: translateY(-1px);
+}
+
+.btnProfile {
+  background: var(--blue-light);
+  color: var(--blue);
+  border-color: rgba(37,99,235,.20);
+}
+
+.btnProfile:hover {
+  background: var(--blue-subtle);
+}
+
+.btnRemove {
+  background: var(--red-light);
+  color: var(--red-text);
+  border-color: var(--red-border);
+}
+
+.btnRemove:hover {
+  background: #fee2e2;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
