@@ -1,0 +1,52 @@
+# Eclipse
+.metadata/
+.settings/
+.classpath
+.project
+.factorypath
+.apt_generated/
+
+bin/
+
+
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# VS Code
+.vscode/
+
+# Build
+build/
+/classes/
+target/
+src/main/webapp/WEB-INF/classes/
+
+# Java
+*.class
+
+# Logs
+*.log
+hs_err_pid*.log
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Tomcat / Local Servers
+TomcatRunner.class
+
+tomcat.8080/
+tomcat/
+jakarta.servlet-api.jar
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Temp files
+*.tmp
+*.temp
