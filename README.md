@@ -1,0 +1,1 @@
+"Ce projet a été initialement conçu et développé en binôme avec Khalid Lammachi. Ce dépôt personnel (Fork) me sert d'environnement d'apprentissage continu pour améliorer l'application, explorer de nouvelles architectures logicielles et intégrer des pratiques DevOps."
